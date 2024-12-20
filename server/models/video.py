@@ -6,6 +6,8 @@ from server.algorithms.player_tracking import PlayerTracker
 from server.data_storage.repository import Repository
 from server.models.frame import Frame
 from server.models.field_data import FieldData
+from server.views.dto.frame_dto import FrameDTO
+
 
 class Video:
     video_id: int
@@ -21,12 +23,15 @@ class Video:
     data_repository: Repository
 
     @classmethod
-    async def create_video(cls, video_path: Path, data_repository: Repository) -> "Video":
+    async def create_video(
+        cls, video_path: Path, data_repository: Repository
+    ) -> "Video":
         ...
 
     @classmethod
     async def import_video(
-        cls, video_path: Path, data_repository: Repository, frame_data: list[FrameDTO]
+        cls, video_path: Path,
+        data_repository: Repository, frame_data: list[FrameDTO]
     ) -> "Video":
         ...
 
