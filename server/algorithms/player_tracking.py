@@ -1,8 +1,11 @@
 import warnings
+import cv2
+import torch
 from pathlib import Path
 
 from detectron2 import model_zoo
 from detectron2.engine import DefaultPredictor
+from detectron2.utils.visualizer import ColorMode, Visualizer
 
 from detectron2.config import get_cfg
 
@@ -16,8 +19,50 @@ with warnings.catch_warnings() as w:
     cfg.MODEL.DEVICE = "cpu"
     predictor = DefaultPredictor(cfg)
 
+# predicted_classes = {
+#     1: "Player",
+#     2: "Referee",
+#     3: "Goalie"
+# }
+predicted_classes = [
+    "Player",
+    "Referee",
+    "Goalie"
+]
 print(Path("../../models/PlayersClassification.pth").resolve())
 
 
 class PlayerTracker:
     ...
+
+
+image = cv2.imread(str(Path(r"C:\Users\Rud356-pc\Documents\Projects source code\HockeyMinimapServer\projects\704_c.png")))
+image = cv2.resize(image, (700, 700))
+vis = Visualizer(
+    image[:, :, ::-1],
+    metadata={"thing_classes": predicted_classes},
+    scale=2,
+    instance_mode=ColorMode.IMAGE
+)
+# Set the threshold
+threshold = 0.5
+
+outputs = predictor(image)
+print(outputs)
+
+instances = outputs["instances"]
+high_confidence_idxs = instances.scores > threshold
+filtered_instances = instances[high_confidence_idxs]
+out = vis.draw_instance_predictions(filtered_instances.to("cpu"))
+out_mat = out.get_image()[:, :, ::-1]
+cv2.imwrite("out.png", img=out_mat)
+
+# Finding bottom point of each bounding box
+boxes = filtered_instances.pred_boxes.tensor
+x_centers = (boxes[:, 0] + boxes[:, 2]) / 2  # Midpoint of x_min and x_max
+y_bottoms = boxes[:, 1]  # y_min
+centers: list[list[float]] = torch.stack((x_centers, y_bottoms), dim=1).to("cpu").tolist()
+classes_pred: list[int] = filtered_instances.pred_classes.to("cpu").tolist()
+scores: list[float] = filtered_instances.scores.to("cpu").tolist()
+print(centers)
+print("Done!")
