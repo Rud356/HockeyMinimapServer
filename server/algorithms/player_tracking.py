@@ -1,20 +1,20 @@
 import warnings
-import cv2
-import torch
 from pathlib import Path
 
+import cv2
+import torch
 from detectron2 import model_zoo
+from detectron2.config import get_cfg
 from detectron2.engine import DefaultPredictor
 from detectron2.utils.visualizer import ColorMode, Visualizer
 
-from detectron2.config import get_cfg
-
+from server.algorithms.enums.player_classes_enum import PlayerClasses
 
 with warnings.catch_warnings() as w:
     model_zoo_path = "COCO-Detection/faster_rcnn_R_50_FPN_3x.yaml"
     cfg = get_cfg()
     cfg.merge_from_file(model_zoo.get_config_file(model_zoo_path))
-    cfg.MODEL.WEIGHTS = str(Path("../../models/PlayersClassification.pth").resolve())
+    cfg.MODEL.WEIGHTS = str(Path("../../models/PlayersClassification_720_1.pth").resolve())
     cfg.MODEL.ROI_HEADS.NUM_CLASSES = 3
     cfg.MODEL.DEVICE = "cpu"
     predictor = DefaultPredictor(cfg)
@@ -29,19 +29,19 @@ predicted_classes = [
     "Referee",
     "Goalie"
 ]
-print(Path("../../models/PlayersClassification.pth").resolve())
+print(Path("../../models/PlayersClassification_720_1.pth").resolve())
 
 
 class PlayerTracker:
     ...
 
 
-image = cv2.imread(str(Path(r"C:\Users\Rud356-pc\Documents\Projects source code\HockeyMinimapServer\projects\704_c.png")))
-image = cv2.resize(image, (700, 700))
+image = cv2.imread(str(Path(r"../../projects/510.jpeg")))
+# image = cv2.resize(image, (700, 700))
 vis = Visualizer(
     image[:, :, ::-1],
     metadata={"thing_classes": predicted_classes},
-    scale=2,
+    scale=1,
     instance_mode=ColorMode.IMAGE
 )
 # Set the threshold
@@ -62,7 +62,9 @@ boxes = filtered_instances.pred_boxes.tensor
 x_centers = (boxes[:, 0] + boxes[:, 2]) / 2  # Midpoint of x_min and x_max
 y_bottoms = boxes[:, 1]  # y_min
 centers: list[list[float]] = torch.stack((x_centers, y_bottoms), dim=1).to("cpu").tolist()
-classes_pred: list[int] = filtered_instances.pred_classes.to("cpu").tolist()
+classes_pred: list[PlayerClasses] = [
+    PlayerClasses(classifier) for classifier in filtered_instances.pred_classes.to("cpu").tolist()
+]
 scores: list[float] = filtered_instances.scores.to("cpu").tolist()
 print(centers)
 print("Done!")
