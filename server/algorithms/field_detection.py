@@ -1,16 +1,13 @@
 import warnings
+from pathlib import Path
 from typing import Optional
 
 import cv2
-import torch
-from pathlib import Path
-
 import numpy as np
 from detectron2 import model_zoo
+from detectron2.config import get_cfg
 from detectron2.engine import DefaultPredictor
 from detectron2.utils.visualizer import ColorMode, Visualizer
-
-from detectron2.config import get_cfg
 
 from server.algorithms.enums.field_classes_enum import FieldClasses
 
@@ -39,7 +36,7 @@ classes = [
     {"id":8,"name":"BlueCircle","supercategory":""}
 ]
 
-image = cv2.imread(str(Path(r"C:\Users\Rud356-pc\Documents\Projects source code\HockeyMinimapServer\projects\704_c.png")))
+image = cv2.imread(str(Path(r"../../projects/704_c.png")))
 image = cv2.resize(image, (1280, 720))
 
 # Set the threshold
