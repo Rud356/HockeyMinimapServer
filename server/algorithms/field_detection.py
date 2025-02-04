@@ -36,8 +36,8 @@ classes = [
     {"id":8,"name":"BlueCircle","supercategory":""}
 ]
 
-image = cv2.imread(str(Path(r"../../projects/704_c.png")))
-image = cv2.resize(image, (1280, 720))
+image = cv2.imread(str(Path(r"../../projects/341.jpeg")))
+# image = cv2.resize(image, (1280, 720))
 
 # Set the threshold
 threshold = 0.5
@@ -112,7 +112,12 @@ for mask, center, box, classified_as in zip(masks, boxes_centers, boxes, classes
 
 
 result = (np.sum(mask_arrays, axis=0) * 255).astype(np.uint8)
-cv2.imwrite("mask.png", result)
+
+# Expanding mask on 10 pixels
+kernel = np.ones((21, 21), np.uint8)  # Create a kernel of size 21x21 (10 pixels on each side)
+expanded_mask = cv2.dilate(result, kernel, iterations=1)
+
+cv2.imwrite("mask.png", expanded_mask)
 
 result_center_line = (np.sum(center_line_polys, axis=0) * 255).astype(np.uint8)
 
