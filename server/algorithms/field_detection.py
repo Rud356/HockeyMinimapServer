@@ -15,7 +15,7 @@ with warnings.catch_warnings() as w:
     model_zoo_path = "COCO-InstanceSegmentation/mask_rcnn_R_50_FPN_3x.yaml"
     cfg = get_cfg()
     cfg.merge_from_file(model_zoo.get_config_file(model_zoo_path))
-    cfg.MODEL.WEIGHTS = str(Path("../../models/FieldDetector.pth").resolve())
+    cfg.MODEL.WEIGHTS = str(Path("../../models/FieldDetector_new.pth").resolve())
     cfg.MODEL.ROI_HEADS.NUM_CLASSES = 8
     cfg.MODEL.DEVICE = "cpu"
     predictor = DefaultPredictor(cfg)
