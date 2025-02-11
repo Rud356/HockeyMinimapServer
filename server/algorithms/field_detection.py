@@ -4,10 +4,13 @@ from typing import Optional
 
 import cv2
 import numpy as np
+import torch
 from detectron2 import model_zoo
 from detectron2.config import get_cfg
 from detectron2.engine import DefaultPredictor
 from detectron2.utils.visualizer import ColorMode, Visualizer
+
+device = "cuda" if torch.cuda.is_available() else "cpu"
 
 from server.algorithms.enums.field_classes_enum import FieldClasses
 
@@ -15,9 +18,9 @@ with warnings.catch_warnings() as w:
     model_zoo_path = "COCO-InstanceSegmentation/mask_rcnn_R_50_FPN_3x.yaml"
     cfg = get_cfg()
     cfg.merge_from_file(model_zoo.get_config_file(model_zoo_path))
-    cfg.MODEL.WEIGHTS = str(Path("../../models/FieldDetector_new.pth").resolve())
+    cfg.MODEL.WEIGHTS = str(Path("../../models/FieldDetector_new_based_on_old.pth").resolve())
     cfg.MODEL.ROI_HEADS.NUM_CLASSES = 8
-    cfg.MODEL.DEVICE = "cpu"
+    cfg.MODEL.DEVICE = device
     predictor = DefaultPredictor(cfg)
 
 
@@ -36,8 +39,8 @@ classes = [
     {"id":8,"name":"BlueCircle","supercategory":""}
 ]
 
-image = cv2.imread(str(Path(r"../../projects/341.jpeg")))
-# image = cv2.resize(image, (1280, 720))
+image = cv2.imread(str(Path(r"../../projects/out.png")))
+image = cv2.resize(image, (1280, 720))
 
 # Set the threshold
 threshold = 0.5
@@ -75,9 +78,9 @@ red_circles_centers: list[tuple[float, float]] = []
 
 
 # Generating arrays with data
-masks = filtered_instances.pred_masks.numpy()
-boxes = filtered_instances.pred_boxes
-boxes_centers: list[list[float]] = boxes.get_centers().tolist()
+masks = filtered_instances.pred_masks.to("cpu").numpy()
+boxes = filtered_instances.pred_boxes.to("cpu")
+boxes_centers: list[list[float]] = boxes.get_centers().to("cpu").tolist()
 classes_predicted: list[FieldClasses] = [
     FieldClasses(classifier) for classifier in filtered_instances.pred_classes.to("cpu").tolist()
 ]
@@ -92,11 +95,18 @@ def clip_point_to_bbox(x1, y1, bbox):
     return x1, y1
 
 
+def calculate_combined_bbox(bboxes):
+    x_min = min(bbox[0] for bbox in bboxes)
+    y_min = min(bbox[1] for bbox in bboxes)
+    x_max = max(bbox[2] for bbox in bboxes)
+    y_max = max(bbox[3] for bbox in bboxes)
+    return [x_min, y_min, x_max, y_max]
+
 for mask, center, box, classified_as in zip(masks, boxes_centers, boxes, classes_predicted):
     if classified_as == FieldClasses.Field:
         mask_arrays.append(mask)
 
-    elif classified_as == FieldClasses.RedCenterLine:
+    elif classified_as == FieldClasses.GoalLine:
         center_line_polys.append(mask)
         center_line_boxes.append(box)
 
@@ -121,33 +131,35 @@ cv2.imwrite("mask.png", expanded_mask)
 
 result_center_line = (np.sum(center_line_polys, axis=0) * 255).astype(np.uint8)
 
-# Find center line bounding box
-coords = np.column_stack(np.where(result_center_line > 0))
-# Find bounding box of polygon
-y_min, x_min = coords.min(axis=0)
-y_max, x_max = coords.max(axis=0)
+# Find lines bounding box
+combined_bbox = calculate_combined_bbox([b.tolist() for b in center_line_boxes])
+x_min, y_min, x_max, y_max = map(int, combined_bbox)
 
-# Center line bounding box
-combined_bbox = [x_min, y_min, x_max, y_max]
-
+# Useless for just polygon lines
 edge_detected = cv2.Canny(result_center_line, 0, 128)
-lines = cv2.HoughLines(edge_detected, 1, np.pi / 180, 80, 1, 0)
-cv2.imwrite("center_line.png", result_center_line)
+# edge_detected = result_center_line
+cv2.imwrite("center_line_img.png", edge_detected)
 
-img = cv2.imread("center_line.png")
-for r, theta in lines[:, 0]:
-    a = np.cos(theta)
-    b = np.sin(theta)
+if result_center_line.any():
+    # Iteratively make threshold to give only 1 line?
+    lines = cv2.HoughLines(edge_detected, 1, np.pi / 180, 20, 1, 0)
+    print(len(lines))
+    cv2.imwrite("center_line.png", result_center_line)
 
-    x0 = a * r
-    y0 = b * r
-    pt1 = clip_point_to_bbox(int(x0 + 1000 * (-b)), int(y0 + 1000 * (a)), combined_bbox)
-    pt2 = clip_point_to_bbox(int(x0 - 1000 * (-b)), int(y0 - 1000 * (a)), combined_bbox)
+    img = cv2.imread("center_line.png")
+    for r, theta in lines[:, 0]:
+        a = np.cos(theta)
+        b = np.sin(theta)
 
-    output = cv2.line(img, pt1, pt2, (0, 0, 255), 3, cv2.LINE_AA)
+        x0 = a * r
+        y0 = b * r
+        pt1 = clip_point_to_bbox(int(x0 + 1000 * (-b)), int(y0 + 1000 * (a)), combined_bbox)
+        pt2 = clip_point_to_bbox(int(x0 - 1000 * (-b)), int(y0 - 1000 * (a)), combined_bbox)
 
-output = cv2.rectangle(output, (x_min, y_min), (x_max, y_max), (0, 255, 0), 2)
-cv2.imwrite("out_line.png", img=output)
+        output = cv2.line(img, pt1, pt2, (0, 0, 255), 3, cv2.LINE_AA)
+        output = cv2.rectangle(output, (x_min, y_min), (x_max, y_max), (0, 255, 0), 2)
+
+        cv2.imwrite(f"out_line.png", img=output)
 
 out = vis.draw_instance_predictions(filtered_instances.to("cpu"))
 out_mat = out.get_image()[:, :, ::-1]

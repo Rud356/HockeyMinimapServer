@@ -11,15 +11,17 @@ from detectron2.utils.visualizer import ColorMode, Visualizer
 
 from server.algorithms.enums.player_classes_enum import PlayerClasses
 
+device = "cuda" if torch.cuda.is_available() else "cpu"
+
+
 with warnings.catch_warnings() as w:
     model_zoo_path = "COCO-Detection/faster_rcnn_R_50_FPN_3x.yaml"
     cfg = get_cfg()
     cfg.merge_from_file(model_zoo.get_config_file(model_zoo_path))
     cfg.MODEL.WEIGHTS = str(Path("../../models/PlayersClassification_720_1.pth").resolve())
     cfg.MODEL.ROI_HEADS.NUM_CLASSES = 3
-    cfg.MODEL.DEVICE = "cpu"
+    cfg.MODEL.DEVICE = device
     predictor = DefaultPredictor(cfg)
-
 
 predicted_classes = [
     "Player",
@@ -32,9 +34,9 @@ class PlayerTracker:
     ...
 
 mask = cv2.imread(str(Path(r"mask.png")), 0)
-image = cv2.imread(str(Path(r"../../projects/341.jpeg")))
+image = cv2.imread(str(Path(r"../../projects/out.png")))
 
-# image = cv2.resize(image, (700, 700))
+image = cv2.resize(image, (1280, 720))
 vis = Visualizer(
     image[:, :, ::-1],
     metadata={"thing_classes": predicted_classes},
@@ -49,7 +51,7 @@ print(outputs)
 
 instances = outputs["instances"]
 high_confidence_idxs = instances.scores > threshold
-filtered_instances = instances[high_confidence_idxs]
+filtered_instances = instances[high_confidence_idxs].to("cpu")
 
 # Finding bottom point of each bounding box
 boxes = filtered_instances.pred_boxes.tensor
@@ -65,11 +67,11 @@ classes_pred: list[PlayerClasses] = [
 keep = [mask[int(y)-1, int(x)-1] > 0 for x, y in centers_bottoms]
 keep_tensor = torch.tensor(keep, dtype=torch.bool)
 
-filtered_on_field = filtered_instances[keep]
+filtered_on_field = filtered_instances[keep_tensor]
 
 out = vis.draw_instance_predictions(filtered_on_field)
 out_mat = out.get_image()[:, :, ::-1]
-cv2.imwrite("../../projects/out_test.png", img=out_mat)
+cv2.imwrite("out_test.png", img=out_mat)
 
 print(centers_bottoms)
 
@@ -140,6 +142,6 @@ def find_players_average_colors(image, center_pixels, kernel_size):
 
     return img_copy
 
-cv2.imwrite("out_Blurs.png", img=find_players_average_colors(image, centers_pixels, 35))
+cv2.imwrite("out_Blurs.png", img=find_players_average_colors(image, centers_pixels, 15))
 
 print("Done!")
