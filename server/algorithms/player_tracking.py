@@ -101,7 +101,6 @@ def classify_team(avg_color):
 centers_pixels: list[list[float]] = filtered_on_field.pred_boxes.get_centers().tolist()
 
 img_copy = image.copy()
-field_color = np.array([255, 255, 255], dtype=np.float32)
 
 
 def find_players_average_colors(image, center_pixels, kernel_size):
