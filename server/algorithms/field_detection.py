@@ -8,6 +8,7 @@ import torch
 from detectron2 import model_zoo
 from detectron2.config import get_cfg
 from detectron2.engine import DefaultPredictor
+from detectron2.structures import Instances
 from detectron2.utils.visualizer import ColorMode, Visualizer
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -57,10 +58,9 @@ vis = Visualizer(
 outputs = predictor(image)
 
 
-instances = outputs["instances"]
+instances: Instances = outputs["instances"]
 high_confidence_idxs = instances.scores > threshold
 filtered_instances = instances[high_confidence_idxs]
-
 
 # Mask generation and tracking points
 mask_arrays = []
