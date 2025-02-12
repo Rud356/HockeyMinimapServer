@@ -1,7 +1,7 @@
 import asyncio
 import threading
 from abc import ABC
-from asyncio import EventLoop, Future
+from asyncio import Future
 from concurrent.futures import ThreadPoolExecutor
 from typing import Iterable
 
@@ -31,7 +31,7 @@ class PredictorService(ABC):
 
         :return: Отсутствуют возвращаемые значения.
         """
-        loop: EventLoop = asyncio.get_running_loop()
+        loop: asyncio.AbstractEventLoop = asyncio.get_running_loop()
 
         with ThreadPoolExecutor(max_workers=1) as threadpool:
             while True:
@@ -42,7 +42,7 @@ class PredictorService(ABC):
     async def execute_model(
         self,
         nn_inputs: Iterable[numpy.ndarray],
-        loop: EventLoop,
+        loop: asyncio.AbstractEventLoop,
         threadpool: ThreadPoolExecutor
     ) -> list[Instances]:
         """
