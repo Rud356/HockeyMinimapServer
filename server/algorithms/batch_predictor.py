@@ -16,7 +16,6 @@ class BatchPredictor(DefaultPredictor):
             в порядке передачи изображений.
         """
 
-
         with torch.no_grad():
             # Преобразование изображений в BGR
             if self.input_format == "RGB":
@@ -42,5 +41,5 @@ class BatchPredictor(DefaultPredictor):
                 inputs.append(input_value)
 
             # Выполнение обработки нейросетью
-            results: list[Instances] = self.model([inputs])
+            results: list[Instances] = self.model(inputs)
             return results
