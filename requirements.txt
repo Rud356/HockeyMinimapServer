@@ -4,6 +4,7 @@ opencv-python~=4.10.0.84
 ffmpeg-python~=0.2.0
 fastapi
 uvicorn
+dishka~=1.4.2
 cython~=3.0.11
 torch~=2.5.1
 torchvision~=0.20.1

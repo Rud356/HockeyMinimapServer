@@ -10,12 +10,12 @@ done = False
 
 while not done:
     (
-        ffmpeg.input("../../projects/441.jpeg", hwaccel=hwaccel)
+        ffmpeg.input("../../static/projects/441.jpeg", hwaccel=hwaccel)
         .output("out.png", vf=f"scale=1280:720,lenscorrection=k1={k1}:k2={k2}")
         .global_args("-y")
         .run()
     )
-    image = cv2.imread("../../projects/out.png")
+    image = cv2.imread("../../static/projects/out.png")
     cv2.imshow('Image', image)
     cv2.waitKey(0)
     cv2.destroyAllWindows()

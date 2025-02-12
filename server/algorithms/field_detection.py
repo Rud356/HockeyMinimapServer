@@ -40,7 +40,7 @@ classes = [
     {"id":8,"name":"BlueCircle","supercategory":""}
 ]
 
-image = cv2.imread(str(Path(r"../../projects/out.png")))
+image = cv2.imread(str(Path(r"../../static/projects/out.png")))
 image = cv2.resize(image, (1280, 720))
 
 # Set the threshold
