@@ -1,7 +1,5 @@
-import asyncio
 import threading
-from asyncio import Future, InvalidStateError, Queue
-from concurrent.futures import ThreadPoolExecutor
+from asyncio import Future, Queue
 from pathlib import Path
 from typing import ClassVar, Optional
 
@@ -11,23 +9,26 @@ from detectron2.config import get_cfg
 from detectron2.structures import Instances
 
 from server.algorithms.batch_predictor import BatchPredictor
+from server.algorithms.predictor_service import PredictorService
 
 
-class FieldPredictorService:
+class FieldPredictorService(PredictorService):
     """
     Класс сервиса обработки разметки поля в фоновом режиме с помощью detectron2.
     """
 
     _model_zoo_path: ClassVar[str] = "COCO-InstanceSegmentation/mask_rcnn_R_50_FPN_3x.yaml"
-    predictor: BatchPredictor
-    device_lock: threading.Lock
-    image_queue: Queue[tuple[numpy.ndarray, Future]]
 
     def __init__(
         self,
         weights: Path,
         device: str,
-        image_queue: Queue[tuple[numpy.ndarray, Future]],
+        image_queue: Queue[
+            tuple[
+                tuple[numpy.ndarray, ...],
+                Future[list[Instances]]
+            ]
+        ],
         threshold: float = 0.5,
         device_lock: Optional[threading.Lock] = None
     ):
@@ -53,41 +54,3 @@ class FieldPredictorService:
 
         if self.device_lock is None:
             self.device_lock = threading.Lock()
-
-    async def __call__(self) -> None:
-        """
-        Обрабатывает изображения в режиме сервиса на устройстве обработки.
-
-        :return: Отсутствуют возвращаемые значения.
-        """
-        loop = asyncio.get_running_loop()
-
-        with ThreadPoolExecutor(max_workers=1) as threadpool:
-            while True:
-                nn_input, future_result = await self.image_queue.get()
-
-                try:
-                    async with self.device_lock:
-                        result = await loop.run_in_executor(
-                            threadpool,
-                            self.predictor.batch_predict,
-                            nn_input
-                        )
-                    future_result.set_result(result)
-
-                except InvalidStateError:
-                    # Уже установлен результат для футуры
-                    continue
-
-    async def add_field_inference_task_to_queue(self, image: numpy.ndarray) -> Future[list[Instances]]:
-        """
-        Добавляет задачу получения разметки поля.
-
-        :param image: Изображение в формате BGR из OpenCV для обработки.
-        :return: Футура с ожиданием обработки изображения.
-        """
-        future_result: Future[list[Instances]] = Future()
-        # Добавить задачу генерации разметки поля
-        await self.image_queue.put((image, future_result))
-
-        return future_result

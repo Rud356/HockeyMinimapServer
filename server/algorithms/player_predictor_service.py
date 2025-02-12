@@ -11,9 +11,10 @@ from detectron2.config import get_cfg
 from detectron2.structures import Instances
 
 from server.algorithms.batch_predictor import BatchPredictor
+from server.algorithms.predictor_service import PredictorService
 
 
-class PlayerPredictorService:
+class PlayerPredictorService(PredictorService):
     """
     Класс сервиса обработки разметки игроков в фоновом режиме с помощью detectron2.
     """
@@ -53,41 +54,3 @@ class PlayerPredictorService:
 
         if self.device_lock is None:
             self.device_lock = threading.Lock()
-
-    async def __call__(self) -> None:
-        """
-        Обрабатывает изображения в режиме сервиса на устройстве обработки.
-
-        :return: Отсутствуют возвращаемые значения.
-        """
-        loop = asyncio.get_running_loop()
-
-        with ThreadPoolExecutor(max_workers=1) as threadpool:
-            while True:
-                nn_input, future_result = await self.image_queue.get()
-
-                try:
-                    async with self.device_lock:
-                        result = await loop.run_in_executor(
-                            threadpool,
-                            self.predictor.batch_predict,
-                            *nn_input
-                        )
-                    future_result.set_result(result)
-
-                except InvalidStateError:
-                    # Уже установлен результат для футуры
-                    continue
-
-    async def add_players_inference_task_to_queue(self, *images: numpy.ndarray) -> Future[list[Instances]]:
-        """
-        Добавляет задачу получения разметки поля.
-
-        :param images: Изображения в формате BGR из OpenCV для обработки.
-        :return: Футура с ожиданием обработки изображения.
-        """
-        future_result: Future[list[Instances]] = Future()
-        # Добавить задачу генерации разметки поля
-        await self.image_queue.put((images, future_result))
-
-        return future_result
