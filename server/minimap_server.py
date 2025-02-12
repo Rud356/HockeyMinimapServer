@@ -1,3 +1,4 @@
+import asyncio
 from contextlib import asynccontextmanager
 
 import uvicorn
@@ -15,6 +16,25 @@ from server.utils.config import AppConfig, ServerConfig, VideoPreprocessingConfi
 from server.utils.config.neural_netwroks_config import NeuralNetworkConfig
 
 
+class BackgroundService:
+    def __init__(self):
+        self.queue = asyncio.Queue()
+
+    async def __call__(self, *args, **kwargs):
+        while True:
+            print(await self.queue.get())
+
+
+class TestProvider(Provider):
+    def __init__(self, service):
+        super().__init__()
+        self.service = service
+
+    @provide(scope=Scope.REQUEST)
+    def provide_service(self) -> BackgroundService:
+        return self.service
+
+
 class MinimapServer:
     app: FastAPI
 
@@ -26,8 +46,11 @@ class MinimapServer:
             **fastapi_app_config
         )
         self.router: APIRouter = APIRouter(route_class=DishkaRoute)
+
+        self.service = BackgroundService()
         container: AsyncContainer = make_async_container(
             # YourProvider(),
+            TestProvider(self.service),
             FastapiProvider()
         )
 
@@ -39,11 +62,11 @@ class MinimapServer:
     def finish_setup(self):
         self.app.include_router(self.router)
 
-    @staticmethod
     @asynccontextmanager
-    async def lifespan(app: FastAPI):
+    async def lifespan(self, app: FastAPI):
+        asyncio.create_task(self.service())
         yield
-        await app.state.dishka_container.close()
+        await self.app.state.dishka_container.close()
 
     def start(self):
         uvicorn.run(self.app)
@@ -53,7 +76,7 @@ class Route:
 
     def __init__(self, id=123):
         self.id_ = id
-        self.router = APIRouter()
+        self.router = APIRouter(route_class=DishkaRoute)
         self.router.get("/get")(self.get)
 
     async def get(self) -> str:
@@ -66,11 +89,13 @@ server = MinimapServer(
         video_processing=VideoPreprocessingConfig(fps=30, video_width=1280, video_height=720, crf=30))
 )
 router = Route().router
-@server.app.get(
+@server.router.get(
     "/put"
 )
-async def example() -> str:
-    return "Hello world!"
+async def example(serv: FromDishka[BackgroundService]) -> str:
+    await serv.queue.put("Example text")
+    print("Added to queue")
+    return "Hello world! 234"
 
 server.register_routes(router, "/api")
 
@@ -78,3 +103,4 @@ server.register_routes(Route(88005553535).router, "/api/test")
 
 server.finish_setup()
 server.register_routes(router, "/api")
+server.start()
