@@ -106,4 +106,6 @@ server.register_routes(Route(88005553535).router, "/api/test")
 
 server.finish_setup()
 server.register_routes(router, "/api")
-server.start()
+
+if __name__ == "__main__":
+    server.start()
