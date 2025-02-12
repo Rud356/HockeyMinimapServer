@@ -89,6 +89,8 @@ server = MinimapServer(
         video_processing=VideoPreprocessingConfig(fps=30, video_width=1280, video_height=720, crf=30))
 )
 router = Route().router
+
+
 @server.router.get(
     "/put"
 )
@@ -96,6 +98,7 @@ async def example(serv: FromDishka[BackgroundService]) -> str:
     await serv.queue.put("Example text")
     print("Added to queue")
     return "Hello world! 234"
+
 
 server.register_routes(router, "/api")
 

@@ -6,5 +6,5 @@ class ServerConfig(BaseModel):
     Конфигурация серверной части приложения для вывода в сеть.
     """
     host: str
-    port: int = Field(ge=1, lt=65536)
+    port: int = Field(default=17600, ge=1, lt=65536)
     is_local_instance: bool
