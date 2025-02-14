@@ -136,7 +136,7 @@ class TeamDetectionPredictor:
 
             return Team.Away
 
-trainer = TeamDetectorTeacher(train_dataset, val_dataset, 5, TeamDetectorModel())
+trainer = TeamDetectorTeacher(train_dataset, val_dataset, 8, TeamDetectorModel())
 model = trainer.train_nn()
 predictor = TeamDetectionPredictor(model, transform)
 
