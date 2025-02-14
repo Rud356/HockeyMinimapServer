@@ -8,6 +8,13 @@ k2 = 0.02
 hwaccel = "vulkan"
 done = False
 
+# Skip frames to
+# cap = cv2.VideoCapture('path/to/video/file')
+# start_frame_number = 50
+# For timestamps cv.CAP_PROP_POS_MSEC can be used
+# cap.set(cv2.CAP_PROP_POS_FRAMES, start_frame_number)
+done = True
+
 while not done:
     (
         ffmpeg.input("../../static/projects/441.jpeg", hwaccel=hwaccel)
@@ -32,3 +39,14 @@ while not done:
 
     except ValueError:
         pass
+
+cap = cv2.VideoCapture("../../test_fetch_frame.mp4")
+while cap.isOpened():
+    ret, frame = cap.read()
+
+    if not ret:
+        break
+
+    cv2.imshow("Frame", frame)
+    cv2.waitKey()
+    cv2.destroyAllWindows()
