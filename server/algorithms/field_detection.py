@@ -22,6 +22,8 @@ with warnings.catch_warnings() as w:
     cfg.MODEL.WEIGHTS = str(Path("../../models/FieldDetector_new_based_on_old.pth").resolve())
     cfg.MODEL.ROI_HEADS.NUM_CLASSES = 8
     cfg.MODEL.DEVICE = device
+    cfg.INPUT.MIN_SIZE_TEST = 700
+    cfg.INPUT.MAX_SIZE_TEST = 700
     predictor = DefaultPredictor(cfg)
 
 
@@ -106,7 +108,7 @@ for mask, center, box, classified_as in zip(masks, boxes_centers, boxes, classes
     if classified_as == FieldClasses.Field:
         mask_arrays.append(mask)
 
-    elif classified_as == FieldClasses.GoalLine:
+    elif classified_as == FieldClasses.RedCenterLine:
         center_line_polys.append(mask)
         center_line_boxes.append(box)
 
@@ -142,7 +144,7 @@ cv2.imwrite("center_line_img.png", edge_detected)
 
 if result_center_line.any():
     # Iteratively make threshold to give only 1 line?
-    lines = cv2.HoughLines(edge_detected, 1, np.pi / 180, 20, 1, 0)
+    lines = cv2.HoughLines(edge_detected, 1, np.pi / 180, 100, 1, 0)
     print(len(lines))
     cv2.imwrite("center_line.png", result_center_line)
 
