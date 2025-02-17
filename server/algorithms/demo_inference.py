@@ -1,6 +1,8 @@
 # DEMO FILE!
 import asyncio
 import dataclasses
+import math
+import pprint
 from pathlib import Path
 from typing import Optional
 
@@ -12,11 +14,12 @@ from detectron2.utils.visualizer import ColorMode, Visualizer
 from server.algorithms.data_types.bounding_box import BoundingBox
 from server.algorithms.data_types.line import Line
 from server.algorithms.data_types.point import Point
+from server.algorithms.enums.coordinate_split import HorizontalPosition, VerticalPosition
 from server.algorithms.enums.field_classes_enum import FieldClasses
 # predicts teams based on reference images
 from server.algorithms.field_predictor_service import FieldPredictorService
 from server.algorithms.player_predictor_service import PlayerPredictorService
-from server.utils.config.minimap_config import MinimapKeyPointConfig
+from server.utils.config.minimap_config import KeyPoint, MinimapKeyPointConfig
 
 MINIMAP_KEY_POINTS = MinimapKeyPointConfig(**
     {
@@ -54,19 +57,76 @@ MINIMAP_KEY_POINTS = MinimapKeyPointConfig(**
     }
 )
 
+
 @dataclasses.dataclass
 class CameraPosition:
     pos_id: int
     x: int
     y: int
 
-
+# Сектора с 1 до 6 слева-направо сверху-вниз нумеруются относительно мини-карты
 CAMERA_POSITION = CameraPosition(2, 631, 68)
 
 
-def map_key_points_pixels_to_coordinates_on_minimap():
+def map_key_points_pixels_to_coordinates_on_minimap(
+    minmap_points: MINIMAP_KEY_POINTS,
+    camera_sector: int,
+    points: list[Point]
+):
     pass
 
+def match_circle_points(circle_points: list[Point], camera_position: int) -> dict[KeyPoint, Point]:
+    assert camera_position in range(1, 7), "Invalid camera position"
+
+    if not len(circle_points):
+        raise ValueError("No points found")
+
+    if len(circle_points) > 4:
+        raise ValueError("Invalid circle points amount for blue circles")
+
+    # Image space coordinates
+    key_points: dict[tuple[HorizontalPosition, VerticalPosition], KeyPoint] = {
+        (HorizontalPosition.top, VerticalPosition.left): MINIMAP_KEY_POINTS.blue_circle_top_left,
+        (HorizontalPosition.top, VerticalPosition.right): MINIMAP_KEY_POINTS.blue_circle_top_right,
+        (HorizontalPosition.bottom, VerticalPosition.left): MINIMAP_KEY_POINTS.blue_circle_bottom_left,
+        (HorizontalPosition.bottom, VerticalPosition.right): MINIMAP_KEY_POINTS.blue_circle_bottom_right
+    }
+
+    circle_points_count = len(circle_points)
+    # Using distances from top left to judge visible points location
+    circle_points.sort(key=lambda p: math.sqrt(p.x ** 2 + p.y ** 2))
+
+    distances_corners = [
+        (HorizontalPosition.top, VerticalPosition.left),
+        (HorizontalPosition.bottom, VerticalPosition.left),
+        (HorizontalPosition.top, VerticalPosition.right),
+        (HorizontalPosition.bottom, VerticalPosition.right),
+    ]
+    resulting_points: list[
+        tuple[Point, tuple[HorizontalPosition, VerticalPosition]]
+    ] = list(zip(circle_points, distances_corners))
+
+    # Camera is on opposite side
+    flips: list[
+        tuple[Point, tuple[HorizontalPosition, VerticalPosition]]
+    ] = []
+    if camera_position < 4:
+        for point, mapped_to in resulting_points:
+            if mapped_to[0] == HorizontalPosition.top:
+                flips.append((point, (HorizontalPosition.bottom, mapped_to[1])))
+
+            else:
+                flips.append((point, (HorizontalPosition.top, mapped_to[1])))
+
+        resulting_points = flips
+
+    mapped_coordinates: dict[KeyPoint, Point] = {}
+
+    for point, mapped_to_point in resulting_points:
+        map_to = key_points[mapped_to_point]
+        mapped_coordinates[map_to] = point
+
+    return mapped_coordinates
 
 async def main(video_path: Path):
     device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -204,6 +264,8 @@ async def main(video_path: Path):
             for p in red_circles_centers:
                 out = p.visualize_point_on_image(out)
 
+            pprint.pprint(match_circle_points(red_circles_centers, CAMERA_POSITION.pos_id))
+            cv2.imwrite("out_points_coords.png", out)
             cv2.imshow("Field detected with center line and circle", out)
             cv2.waitKey()
             cv2.destroyAllWindows()

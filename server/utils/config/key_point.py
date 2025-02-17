@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 
 class KeyPoint(BaseModel):
@@ -10,3 +10,5 @@ class KeyPoint(BaseModel):
     """
     x: int
     y: int
+
+    model_config = ConfigDict(frozen=True)
