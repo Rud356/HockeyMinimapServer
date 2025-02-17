@@ -1,5 +1,4 @@
 import asyncio
-import threading
 from abc import ABC
 from asyncio import Future
 from concurrent.futures import ThreadPoolExecutor
@@ -17,7 +16,7 @@ class PredictorService(ABC):
     """
 
     predictor: BatchPredictor
-    device_lock: threading.Lock
+    device_lock: asyncio.Lock
     image_queue: asyncio.Queue[
         tuple[
             tuple[numpy.ndarray, ...],
@@ -54,12 +53,12 @@ class PredictorService(ABC):
         :return: Список полученных результатов для изображений.
         """
         async with self.device_lock:
-            result: list[Instances] = await loop.run_in_executor(
+            result: list[dict[str, Instances]] = await loop.run_in_executor(
                 threadpool,
                 self.predictor.batch_predict,
                 *nn_inputs
             )
-            return result
+            return [result_instance["instances"] for result_instance in result]
 
     async def add_inference_task_to_queue(self, *images: numpy.ndarray) -> Future[list[Instances]]:
         """
