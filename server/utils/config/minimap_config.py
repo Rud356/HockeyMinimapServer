@@ -1,54 +1,44 @@
 from pydantic import BaseModel
+from server.utils.config.key_point import KeyPoint
 
 
-class MinimapConfig(BaseModel):
-    # Верхняя левая точка игрового поля
-    top_left_corner_x: int
-    top_left_corner_y: int
+class MinimapKeyPointConfig(BaseModel):
+    # Границы абсолютных координат поля мини-карты
+    top_left_field_point: KeyPoint
+    bottom_right_field_point: KeyPoint
 
-    # Нижняя правая точка игрового поля
-    bottom_right_corner_x: int
-    bottom_right_corner_y: int
-
-    # Центр левой зоны ворот
-    left_goal_zone_position_x: int
-    left_goal_zone_position_y: int
-
-    # Центр правой зоны ворот
-    right_goal_zone_position_x: int
-    right_goal_zone_position_y: int
+    # Левая зона гола
+    left_goal_zone: KeyPoint
+    # Правая зона гола
+    right_goal_zone: KeyPoint
 
     # Центральная линия
-    red_line_top_position_x: int
-    red_line_top_position_y: int
+    center_line_top: KeyPoint
+    center_line_bottom: KeyPoint
 
-    red_line_bottom_position_x: int
-    red_line_bottom_position_y: int
+    # Левая синяя линия
+    left_blue_line_top: KeyPoint
+    left_blue_line_bottom: KeyPoint
 
-    # Синяя линия слева
-    left_blue_line_top_position_x: int
-    left_blue_line_top_position_y: int
+    # Правая синяя линия
+    right_blue_line_top: KeyPoint
+    right_blue_line_bottom: KeyPoint
 
-    left_red_line_bottom_position_x: int
-    left_red_line_bottom_position_y: int
+    # Левая линия гола
+    left_goal_line_top: KeyPoint
+    left_goal_line_bottom: KeyPoint
+    left_goal_line_after_zone_top: KeyPoint
+    left_goal_line_after_zone_bottom: KeyPoint
 
-    # Синяя линия справа
-    right_blue_line_top_position_x: int
-    right_blue_line_top_position_y: int
+    # Левая линия гола
+    right_goal_line_top: KeyPoint
+    right_goal_line_bottom: KeyPoint
+    right_goal_line_after_zone_top: KeyPoint
+    right_goal_line_after_zone_bottom: KeyPoint
 
-    right_red_line_bottom_position_x: int
-    right_red_line_bottom_position_y: int
+    # Синие круги
+    blue_circle_top_left: KeyPoint
+    blue_circle_top_right: KeyPoint
+    blue_circle_bottom_left: KeyPoint
+    blue_circle_bottom_right: KeyPoint
 
-    # Синяя линия ворот слева
-    left_goal_line_top_position_x: int
-    left_goal_line_top_position_y: int
-
-    left_goal_line_bottom_position_x: int
-    left_goal_line_bottom_position_y: int
-
-    # Синяя линия ворот справа
-    right_goal_line_top_position_x: int
-    right_goal_line_top_position_y: int
-
-    right_goal_line_bottom_position_x: int
-    right_goal_line_bottom_position_y: int
