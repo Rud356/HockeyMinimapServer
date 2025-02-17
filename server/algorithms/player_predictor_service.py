@@ -1,14 +1,11 @@
 import asyncio
-import threading
-from asyncio import Future, InvalidStateError, Queue
-from concurrent.futures import ThreadPoolExecutor
+from asyncio import Future, Queue
 from pathlib import Path
 from typing import ClassVar, Optional
 
 import numpy
 from detectron2 import model_zoo
 from detectron2.config import get_cfg
-from detectron2.structures import Instances
 
 from server.algorithms.batch_predictor import BatchPredictor
 from server.algorithms.predictor_service import PredictorService
@@ -21,7 +18,7 @@ class PlayerPredictorService(PredictorService):
 
     _model_zoo_path: ClassVar[str] = "COCO-Detection/faster_rcnn_R_50_FPN_3x.yaml"
     predictor: BatchPredictor
-    device_lock: threading.Lock
+    device_lock: asyncio.Lock
     image_queue: Queue[tuple[tuple[numpy.ndarray, ...], Future]]
 
     def __init__(
@@ -30,7 +27,7 @@ class PlayerPredictorService(PredictorService):
         device: str,
         image_queue: Queue[tuple[tuple[numpy.ndarray, ...], Future]],
         threshold: float = 0.5,
-        device_lock: Optional[threading.Lock] = None
+        device_lock: Optional[asyncio.Lock] = None
     ):
         """
         Инициализирует сервис обработки нейронной сетью изображений поля с игроками для получения их типов и позиций.
@@ -53,4 +50,4 @@ class PlayerPredictorService(PredictorService):
         self.device_lock = device_lock
 
         if self.device_lock is None:
-            self.device_lock = threading.Lock()
+            self.device_lock = asyncio.Lock()
