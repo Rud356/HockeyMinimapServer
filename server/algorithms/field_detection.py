@@ -47,10 +47,6 @@ image = cv2.resize(image, (1280, 720))
 
 # Set the threshold
 threshold = 0.5
-class_names = [
-    "RedCenterLine", "BlueLine", "RedCircle", "GoalLine",
-    "Field", "GoalZone", "Goal", "BlueCircle"
-]
 vis = Visualizer(
     image[:, :, ::-1],
     metadata={"thing_classes": list(FieldClasses.__members__.keys())},
