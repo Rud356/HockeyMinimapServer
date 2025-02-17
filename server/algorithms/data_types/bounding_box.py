@@ -1,12 +1,11 @@
 from __future__ import annotations
 
-from typing import NamedTuple, TYPE_CHECKING
+from typing import NamedTuple
 
 import cv2
 import numpy
 
-if TYPE_CHECKING:
-    from server.algorithms.data_types.point import Point
+from server.algorithms.data_types.point import Point
 
 
 class BoundingBox(NamedTuple):
@@ -16,14 +15,25 @@ class BoundingBox(NamedTuple):
     min_point: Point
     max_point: Point
 
-    def visualize_bounding_box(self, image: numpy.ndarray) -> numpy.ndarray:
+    def visualize_bounding_box(
+        self,
+        image: numpy.ndarray,
+        color: tuple[int, int, int] = (0, 255, 0)
+    ) -> numpy.ndarray:
         """
         Визуализирует прямоугольник на изображении.
 
+        :param color: Цвет прямоугольника.
         :param image: Исходное изображение.
         :return: Изображение с прямоугольником.
         """
-        return cv2.rectangle(image, self.min_point, self.max_point, (0, 255, 0), 2)
+        return cv2.rectangle(
+            image,
+            tuple(map(int, self.min_point)),
+            tuple(map(int, self.max_point)),
+            color,
+            2
+        )
 
     @classmethod
     def calculate_combined_bbox(cls, *bounding_boxes) -> BoundingBox:

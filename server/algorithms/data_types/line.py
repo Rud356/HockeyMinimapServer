@@ -5,9 +5,9 @@ from typing import NamedTuple, Optional, TYPE_CHECKING
 import cv2
 import numpy
 
+from server.algorithms.data_types.point import Point
 
 if TYPE_CHECKING:
-    from server.algorithms.data_types.point import Point
     from server.algorithms.data_types.bounding_box import BoundingBox
 
 
@@ -18,14 +18,26 @@ class Line(NamedTuple):
     min_point: Point
     max_point: Point
 
-    def visualize_line_on_image(self, image: numpy.ndarray) -> numpy.ndarray:
+    def visualize_line_on_image(
+        self,
+        image: numpy.ndarray,
+        color: tuple[int, int, int] = (0, 128, 196)
+    ) -> numpy.ndarray:
         """
         Визуализирует линию на изображении.
 
+        :param color: Цвет линии.
         :param image: Исходное изображение.
         :return: Новое изображение.
         """
-        return cv2.line(image, self.min_point, self.max_point, (0, 128, 196), 2, cv2.LINE_AA)
+        return cv2.line(
+            image,
+            tuple(map(int, self.min_point)),
+            tuple(map(int, self.max_point)),
+            color,
+            2,
+            cv2.LINE_AA
+        )
 
     def clip_line_to_bounding_box(self, bounding_box: BoundingBox) -> Line:
         """
@@ -44,7 +56,7 @@ class Line(NamedTuple):
         cls,
         image: numpy.ndarray,
         min_threshold: int = 1,
-        max_threshold: int = 250
+        max_threshold: int = 1000
     ) -> Optional[Line]:
         """
         Находит линию на изображении с помощью алгоритма Hough Line из OpenCV.
