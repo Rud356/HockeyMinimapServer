@@ -1,3 +1,4 @@
+import asyncio
 import threading
 from asyncio import Future, Queue
 from pathlib import Path
@@ -30,7 +31,7 @@ class FieldPredictorService(PredictorService):
             ]
         ],
         threshold: float = 0.5,
-        device_lock: Optional[threading.Lock] = None
+        device_lock: Optional[asyncio.Lock] = None
     ):
         """
         Инициализирует сервис обработки нейронной сетью изображений поля для получения разметки.
@@ -47,10 +48,12 @@ class FieldPredictorService(PredictorService):
         cfg.MODEL.ROI_HEADS.NUM_CLASSES = 8
         cfg.MODEL.DEVICE = device
         cfg.MODEL.ROI_HEADS.SCORE_THRESH_TEST = threshold
+        cfg.INPUT.MIN_SIZE_TEST = 700
+        cfg.INPUT.MAX_SIZE_TEST = 700
 
         self.predictor = BatchPredictor(cfg)
         self.image_queue = image_queue
         self.device_lock = device_lock
 
         if self.device_lock is None:
-            self.device_lock = threading.Lock()
+            self.device_lock = asyncio.Lock()

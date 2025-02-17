@@ -7,7 +7,7 @@ from server.algorithms.data_types.detectron2_input import Detectron2Input
 
 
 class BatchPredictor(DefaultPredictor):
-    def batch_predict(self, *images: numpy.ndarray) -> list[Instances]:
+    def batch_predict(self, *images: numpy.ndarray) -> list[dict[str, Instances]]:
         """
         Используется для получения выделений сразу на нескольких изображениях в BRG формате
         (формат по умолчанию OpenCV).
@@ -41,5 +41,5 @@ class BatchPredictor(DefaultPredictor):
                 inputs.append(input_value)
 
             # Выполнение обработки нейросетью
-            results: list[Instances] = self.model(inputs)
+            results: list[dict[str, Instances]] = self.model(inputs)
             return results
