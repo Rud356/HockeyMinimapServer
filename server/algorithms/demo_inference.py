@@ -68,45 +68,66 @@ class CameraPosition:
 CAMERA_POSITION = CameraPosition(2, 631, 68)
 
 
-def map_key_points_pixels_to_coordinates_on_minimap(
-    minmap_points: MINIMAP_KEY_POINTS,
-    camera_sector: int,
-    points: list[Point]
-):
-    pass
+def match_points(
+    points: list[Point],
+    camera_position: int,
+    key_points: dict[tuple[HorizontalPosition, VerticalPosition], KeyPoint],
+    center_point: Optional[Point]
+) -> dict[KeyPoint, Point]:
+    """
+    Соотносит точки с переданными квадрантами и сопоставленными им ключевыми точками мини-карты.
 
-def match_circle_points(circle_points: list[Point], camera_position: int) -> dict[KeyPoint, Point]:
-    assert camera_position in range(1, 7), "Invalid camera position"
-
-    if not len(circle_points):
+    :param points: Точки для соотнесения (до четырех штук).
+    :param camera_position: Идентификатор положения камеры.
+    :param key_points: Словарь соотнесения ключевых точек по квадрантам поля.
+    :param center_point: Опциональная ключевая точка для определения стороны.
+    :return: Соотнесенные ключевые точки к точкам из видео.
+    """
+    if not points:
         raise ValueError("No points found")
 
-    if len(circle_points) > 4:
-        raise ValueError("Invalid circle points amount for blue circles")
+    if len(points) > 4:
+        raise ValueError(f"Invalid points amount for key points (must be 4 at max, got {len(points)})")
 
-    # Image space coordinates
-    key_points: dict[tuple[HorizontalPosition, VerticalPosition], KeyPoint] = {
-        (HorizontalPosition.top, VerticalPosition.left): MINIMAP_KEY_POINTS.blue_circle_top_left,
-        (HorizontalPosition.top, VerticalPosition.right): MINIMAP_KEY_POINTS.blue_circle_top_right,
-        (HorizontalPosition.bottom, VerticalPosition.left): MINIMAP_KEY_POINTS.blue_circle_bottom_left,
-        (HorizontalPosition.bottom, VerticalPosition.right): MINIMAP_KEY_POINTS.blue_circle_bottom_right
-    }
+    ordered_points = points.copy()
+    if center_point is not None:
+        # Add center point to order by
+        ordered_points.append(center_point)
 
-    circle_points_count = len(circle_points)
-    # Using distances from top left to judge visible points location
-    circle_points.sort(key=lambda p: math.sqrt(p.x ** 2 + p.y ** 2))
-
-    distances_corners = [
+    # Build corners list and additional center point as anchor
+    distances_corners: list[tuple[HorizontalPosition, VerticalPosition]] = [
         (HorizontalPosition.top, VerticalPosition.left),
         (HorizontalPosition.bottom, VerticalPosition.left),
         (HorizontalPosition.top, VerticalPosition.right),
         (HorizontalPosition.bottom, VerticalPosition.right),
     ]
+
+    # Adding center point into calculations
+    if center_point is not None:
+        distances_corners.insert(2, (HorizontalPosition.center, VerticalPosition.center))
+
+    # Sort points by distance
+    ordered_points.sort(key=lambda p: math.sqrt(p.x ** 2 + p.y ** 2))
     resulting_points: list[
         tuple[Point, tuple[HorizontalPosition, VerticalPosition]]
-    ] = list(zip(circle_points, distances_corners))
+    ] = list(zip(ordered_points, distances_corners))
 
-    # Camera is on opposite side
+    # Replace points coordinates to center for cases when it might be displaced
+    center_point_index: int = -1
+    for n, (point, key_point_mapping) in enumerate(resulting_points):
+        if point == center_point:
+            center_point_index = n
+
+    if center_point_index != -1:
+        resulting_points[center_point_index] = (center_point, (HorizontalPosition.center, VerticalPosition.center))
+
+        # Everything after center point is on the right side of screen
+        for i, (point, key_point_mapping) in enumerate(resulting_points):
+            if i > center_point_index:
+                resulting_points[i] = (point, (key_point_mapping[0], VerticalPosition.right))
+
+
+    # Camera is on opposite side, so we need to preprocess points
     flips: list[
         tuple[Point, tuple[HorizontalPosition, VerticalPosition]]
     ] = []
@@ -115,18 +136,19 @@ def match_circle_points(circle_points: list[Point], camera_position: int) -> dic
             if mapped_to[0] == HorizontalPosition.top:
                 flips.append((point, (HorizontalPosition.bottom, mapped_to[1])))
 
-            else:
+            elif mapped_to[0] == HorizontalPosition.bottom:
                 flips.append((point, (HorizontalPosition.top, mapped_to[1])))
 
         resulting_points = flips
 
+    # Map coordinates to key points
     mapped_coordinates: dict[KeyPoint, Point] = {}
-
     for point, mapped_to_point in resulting_points:
         map_to = key_points[mapped_to_point]
         mapped_coordinates[map_to] = point
 
     return mapped_coordinates
+
 
 async def main(video_path: Path):
     device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -253,6 +275,8 @@ async def main(video_path: Path):
             # Apply processing to blue lines
 
             # TODO: Process being partially visible
+            # TEST CIRCLE POINTS AFTER CENTER
+            red_circles_centers.append(Point(1200, 173))
             # Set center circle
             if len(blue_circles_centers) == 1:
                 center_circle_point = blue_circles_centers[0]
@@ -264,7 +288,23 @@ async def main(video_path: Path):
             for p in red_circles_centers:
                 out = p.visualize_point_on_image(out)
 
-            pprint.pprint(match_circle_points(red_circles_centers, CAMERA_POSITION.pos_id))
+            key_points_of_red_circles = {
+                (HorizontalPosition.top, VerticalPosition.left): MINIMAP_KEY_POINTS.blue_circle_top_left,
+                (HorizontalPosition.top, VerticalPosition.right): MINIMAP_KEY_POINTS.blue_circle_top_right,
+                (HorizontalPosition.center, VerticalPosition.center): MINIMAP_KEY_POINTS.center_line_top,
+                (HorizontalPosition.bottom, VerticalPosition.left): MINIMAP_KEY_POINTS.blue_circle_bottom_left,
+                (HorizontalPosition.bottom, VerticalPosition.right): MINIMAP_KEY_POINTS.blue_circle_bottom_right
+            }
+
+
+
+            matched_points = match_points(
+                red_circles_centers,
+                CAMERA_POSITION.pos_id,
+                key_points_of_red_circles,
+                center_line.min_point
+            )
+            pprint.pprint(matched_points)
             cv2.imwrite("out_points_coords.png", out)
             cv2.imshow("Field detected with center line and circle", out)
             cv2.waitKey()
