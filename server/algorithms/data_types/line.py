@@ -67,6 +67,8 @@ class Line(NamedTuple):
 
         :return: Искомая линия, проходящая через точки на изображении.
         """
+        image = cv2.Canny(image.copy(), 100, 200)
+
         assert min_threshold > 0, ("Минимальное пороговое значение алгоритма преобразования Хафа "
                                    "должно быть не меньше 1")
 
@@ -77,7 +79,7 @@ class Line(NamedTuple):
             if lines is None:
                 max_threshold = base_threshold - 1
 
-            elif len(lines) > 1:
+            elif len(lines) > 2:
                 min_threshold = base_threshold + 1
 
             else:
