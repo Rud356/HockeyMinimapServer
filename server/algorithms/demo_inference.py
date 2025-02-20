@@ -72,6 +72,7 @@ def match_points(
     points: list[Point],
     camera_position: int,
     key_points: dict[tuple[HorizontalPosition, VerticalPosition], KeyPoint],
+    mapping_sides: list[tuple[HorizontalPosition, VerticalPosition]],
     center_point: Optional[Point]
 ) -> dict[KeyPoint, Point]:
     """
@@ -79,10 +80,14 @@ def match_points(
 
     :param points: Точки для соотнесения (до четырех штук).
     :param camera_position: Идентификатор положения камеры.
+    :param mapping_sides: Стороны расположения точек для соотнесения.
     :param key_points: Словарь соотнесения ключевых точек по квадрантам поля.
     :param center_point: Опциональная ключевая точка для определения стороны.
     :return: Соотнесенные ключевые точки к точкам из видео.
     """
+    if not mapping_sides or len(mapping_sides) != 4:
+        raise ValueError("Algorithm must have 4 mapping sides")
+
     if not points:
         raise ValueError("No points found")
 
@@ -90,42 +95,35 @@ def match_points(
         raise ValueError(f"Invalid points amount for key points (must be 4 at max, got {len(points)})")
 
     ordered_points = points.copy()
-    if center_point is not None:
-        # Add center point to order by
-        ordered_points.append(center_point)
-
     # Build corners list and additional center point as anchor
-    distances_corners: list[tuple[HorizontalPosition, VerticalPosition]] = [
-        (HorizontalPosition.top, VerticalPosition.left),
-        (HorizontalPosition.bottom, VerticalPosition.left),
-        (HorizontalPosition.top, VerticalPosition.right),
-        (HorizontalPosition.bottom, VerticalPosition.right),
-    ]
+    distances_corners: list[tuple[HorizontalPosition, VerticalPosition]] = mapping_sides.copy()
 
     # Adding center point into calculations
     if center_point is not None:
-        distances_corners.insert(2, (HorizontalPosition.center, VerticalPosition.center))
+        # Insert center point
+        ordered_points.append(center_point)
 
     # Sort points by distance
     ordered_points.sort(key=lambda p: math.sqrt(p.x ** 2 + p.y ** 2))
+
+    # Replace points coordinates to center for cases when it might be displaced
+    center_point_index: int = -1
+    if center_point is not None:
+        center_point_index = ordered_points.index(center_point)
+        distances_corners.insert(
+            center_point_index, (HorizontalPosition.center, VerticalPosition.center)
+        )
+
+    # Collecting points
     resulting_points: list[
         tuple[Point, tuple[HorizontalPosition, VerticalPosition]]
     ] = list(zip(ordered_points, distances_corners))
 
-    # Replace points coordinates to center for cases when it might be displaced
-    center_point_index: int = -1
-    for n, (point, key_point_mapping) in enumerate(resulting_points):
-        if point == center_point:
-            center_point_index = n
-
     if center_point_index != -1:
-        resulting_points[center_point_index] = (center_point, (HorizontalPosition.center, VerticalPosition.center))
-
         # Everything after center point is on the right side of screen
         for i, (point, key_point_mapping) in enumerate(resulting_points):
             if i > center_point_index:
                 resulting_points[i] = (point, (key_point_mapping[0], VerticalPosition.right))
-
 
     # Camera is on opposite side, so we need to preprocess points
     flips: list[
@@ -273,10 +271,51 @@ async def main(video_path: Path):
             cv2.destroyAllWindows()
 
             # Apply processing to blue lines
+            blue_lines_processed: list[Line] = []
+
+            for blue_line in blue_lines:
+                poly = (blue_line["poly"] * 255).astype(np.uint8)
+                line = Line.find_lines(poly)
+
+                if line is not None:
+                    line = line.clip_line_to_bounding_box(BoundingBox.calculate_combined_bbox(blue_line["bbox"]))
+                    blue_lines_processed.append(line)
+
+            for blue_line in blue_lines_processed:
+                out = blue_line.visualize_line_on_image(frame, color=(180, 50, 50))
+
+            cv2.imshow("Field detected with center line and blue lines", out)
+            cv2.waitKey()
+            cv2.destroyAllWindows()
+
+            # Match points of lines to key points
+            key_points_of_lines_sides = [
+                (HorizontalPosition.top, VerticalPosition.left),
+                (HorizontalPosition.bottom, VerticalPosition.left),
+                (HorizontalPosition.top, VerticalPosition.right),
+                (HorizontalPosition.bottom, VerticalPosition.right)
+            ]
+
+            key_points_of_lines = {
+                (HorizontalPosition.top, VerticalPosition.left): MINIMAP_KEY_POINTS.left_blue_line_top,
+                (HorizontalPosition.top, VerticalPosition.right): MINIMAP_KEY_POINTS.right_blue_line_top,
+                (HorizontalPosition.bottom, VerticalPosition.left): MINIMAP_KEY_POINTS.left_blue_line_bottom,
+                (HorizontalPosition.bottom, VerticalPosition.right): MINIMAP_KEY_POINTS.right_blue_line_bottom
+            }
+
+            matched_blue_lines_points = match_points(
+                [line.min_point for line in blue_lines_processed],
+                CAMERA_POSITION.pos_id,
+                key_points_of_lines,
+                key_points_of_lines_sides,
+                center_line.min_point
+            )
+
+            for p in matched_blue_lines_points.values():
+                out = p.visualize_point_on_image(out, color=(0, 128, 255))
+
 
             # TODO: Process being partially visible
-            # TEST CIRCLE POINTS AFTER CENTER
-            red_circles_centers.append(Point(1200, 173))
             # Set center circle
             if len(blue_circles_centers) == 1:
                 center_circle_point = blue_circles_centers[0]
@@ -286,25 +325,29 @@ async def main(video_path: Path):
                 cv2.destroyAllWindows()
 
             for p in red_circles_centers:
-                out = p.visualize_point_on_image(out)
+                out = p.visualize_point_on_image(out, color=(0, 255, 255))
 
+            red_circles_sides = [
+                (HorizontalPosition.top, VerticalPosition.left),
+                (HorizontalPosition.bottom, VerticalPosition.left),
+                (HorizontalPosition.top, VerticalPosition.right),
+                (HorizontalPosition.bottom, VerticalPosition.right),
+            ]
             key_points_of_red_circles = {
                 (HorizontalPosition.top, VerticalPosition.left): MINIMAP_KEY_POINTS.blue_circle_top_left,
                 (HorizontalPosition.top, VerticalPosition.right): MINIMAP_KEY_POINTS.blue_circle_top_right,
-                (HorizontalPosition.center, VerticalPosition.center): MINIMAP_KEY_POINTS.center_line_top,
                 (HorizontalPosition.bottom, VerticalPosition.left): MINIMAP_KEY_POINTS.blue_circle_bottom_left,
                 (HorizontalPosition.bottom, VerticalPosition.right): MINIMAP_KEY_POINTS.blue_circle_bottom_right
             }
 
-
-
-            matched_points = match_points(
+            matched_blue_circle_points = match_points(
                 red_circles_centers,
                 CAMERA_POSITION.pos_id,
                 key_points_of_red_circles,
+                red_circles_sides,
                 center_line.min_point
             )
-            pprint.pprint(matched_points)
+            pprint.pprint(matched_blue_circle_points)
             cv2.imwrite("out_points_coords.png", out)
             cv2.imshow("Field detected with center line and circle", out)
             cv2.waitKey()
