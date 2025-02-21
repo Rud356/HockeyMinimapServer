@@ -50,6 +50,7 @@ MINIMAP_KEY_POINTS = MinimapKeyPointConfig(**
         "right_goal_line_after_zone_top": {"x": 1162, "y": 433},
         "right_goal_line_after_zone_bottom": {"x": 1162, "y": 688},
 
+        "center_circle": {"x": 630, "y": 396},
         "blue_circle_top_left": {"x": 241, "y": 243},
         "blue_circle_top_right": {"x": 1020, "y": 243},
         "blue_circle_bottom_left": {"x": 241, "y": 550},
@@ -68,12 +69,19 @@ class CameraPosition:
 CAMERA_POSITION = CameraPosition(2, 631, 68)
 
 
+# TODO: WRITE WRAPPER CODE FOR WORKING WITH LINES EASIER
+def determine_quadrant(center_point: Point, point: Point) -> tuple[HorizontalPosition, VerticalPosition]:
+    horizontal = HorizontalPosition.top if point.y < center_point.y else HorizontalPosition.bottom
+    vertical = VerticalPosition.left if point.x < center_point.x else VerticalPosition.right
+    return horizontal, vertical
+
+
 def match_points(
     points: list[Point],
     camera_position: int,
     key_points: dict[tuple[HorizontalPosition, VerticalPosition], KeyPoint],
     mapping_sides: list[tuple[HorizontalPosition, VerticalPosition]],
-    center_point: Optional[Point]
+    center_point: Optional[Point] = None
 ) -> dict[KeyPoint, Point]:
     """
     Соотносит точки с переданными квадрантами и сопоставленными им ключевыми точками мини-карты.
@@ -94,36 +102,9 @@ def match_points(
     if len(points) > 4:
         raise ValueError(f"Invalid points amount for key points (must be 4 at max, got {len(points)})")
 
-    ordered_points = points.copy()
-    # Build corners list and additional center point as anchor
-    distances_corners: list[tuple[HorizontalPosition, VerticalPosition]] = mapping_sides.copy()
-
-    # Adding center point into calculations
-    if center_point is not None:
-        # Insert center point
-        ordered_points.append(center_point)
-
-    # Sort points by distance
-    ordered_points.sort(key=lambda p: math.sqrt(p.x ** 2 + p.y ** 2))
-
-    # Replace points coordinates to center for cases when it might be displaced
-    center_point_index: int = -1
-    if center_point is not None:
-        center_point_index = ordered_points.index(center_point)
-        distances_corners.insert(
-            center_point_index, (HorizontalPosition.center, VerticalPosition.center)
-        )
-
-    # Collecting points
-    resulting_points: list[
-        tuple[Point, tuple[HorizontalPosition, VerticalPosition]]
-    ] = list(zip(ordered_points, distances_corners))
-
-    if center_point_index != -1:
-        # Everything after center point is on the right side of screen
-        for i, (point, key_point_mapping) in enumerate(resulting_points):
-            if i > center_point_index:
-                resulting_points[i] = (point, (key_point_mapping[0], VerticalPosition.right))
+    resulting_points = [
+        (point, determine_quadrant(center_point, point)) for point in points
+    ]
 
     # Camera is on opposite side, so we need to preprocess points
     flips: list[
@@ -147,6 +128,9 @@ def match_points(
 
     return mapped_coordinates
 
+
+def draw_text(img, text, pos, color):
+    return cv2.putText(img, text, pos, cv2.FONT_HERSHEY_SIMPLEX, 1.5, color, 2, cv2.LINE_AA)
 
 async def main(video_path: Path):
     device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -177,10 +161,11 @@ async def main(video_path: Path):
         "src": [],
         "dest": []
     }
+    homography_transform = None
 
     while cap.isOpened():
         ret, frame = cap.read()
-
+        cv2.imwrite("test.png", frame)
         if not ret:
             break
 
@@ -215,6 +200,8 @@ async def main(video_path: Path):
                 FieldClasses(classifier) for classifier in cpu_instances.pred_classes.tolist()
             ]
 
+            map_img = cv2.imread("map.png")
+
             # Data
             field_masks = []
             center_lines = {
@@ -224,6 +211,7 @@ async def main(video_path: Path):
             blue_circles_centers = []
 
             blue_lines = []
+            goal_lines = []
             goal_zone_centers = []
 
             for mask, center, box, classified_as in zip(masks, boxes_centers, boxes, classes_predicted):
@@ -246,6 +234,9 @@ async def main(video_path: Path):
 
                 elif classified_as == FieldClasses.BlueLine:
                     blue_lines.append({"poly": mask, "bbox": box})
+
+                elif classified_as == FieldClasses.GoalLine:
+                    goal_lines.append({"poly": mask, "bbox": box})
 
                 elif classified_as == FieldClasses.GoalZone:
                     goal_zone_centers.append(Point(center[0], center[1]))
@@ -273,6 +264,15 @@ async def main(video_path: Path):
             # Apply processing to blue lines
             blue_lines_processed: list[Line] = []
 
+            # TODO: Process being partially visible
+            # Set center circle
+            if len(blue_circles_centers) == 1:
+                center_circle_point = blue_circles_centers[0]
+                out = center_circle_point.visualize_point_on_image(out)
+                cv2.imshow("Field detected with center line and circle", out)
+                cv2.waitKey()
+                cv2.destroyAllWindows()
+
             for blue_line in blue_lines:
                 poly = (blue_line["poly"] * 255).astype(np.uint8)
                 line = Line.find_lines(poly)
@@ -295,42 +295,73 @@ async def main(video_path: Path):
                 (HorizontalPosition.top, VerticalPosition.right),
                 (HorizontalPosition.bottom, VerticalPosition.right)
             ]
-
             key_points_of_lines = {
                 (HorizontalPosition.top, VerticalPosition.left): MINIMAP_KEY_POINTS.left_blue_line_top,
                 (HorizontalPosition.top, VerticalPosition.right): MINIMAP_KEY_POINTS.right_blue_line_top,
-                (HorizontalPosition.bottom, VerticalPosition.left): MINIMAP_KEY_POINTS.left_blue_line_bottom,
-                (HorizontalPosition.bottom, VerticalPosition.right): MINIMAP_KEY_POINTS.right_blue_line_bottom
+                (HorizontalPosition.bottom, VerticalPosition.left): MINIMAP_KEY_POINTS.right_blue_line_bottom,
+                (HorizontalPosition.bottom, VerticalPosition.right): MINIMAP_KEY_POINTS.left_blue_line_bottom
             }
 
+            points_by_smallest_distance = [line.min_point for line in blue_lines_processed]
             matched_blue_lines_points = match_points(
-                [line.min_point for line in blue_lines_processed],
+                points_by_smallest_distance,
                 CAMERA_POSITION.pos_id,
                 key_points_of_lines,
                 key_points_of_lines_sides,
-                center_line.min_point
+                center_circle_point
             )
+            print("Blue lines mapping:")
+            pprint.pprint(matched_blue_lines_points)
 
             for p in matched_blue_lines_points.values():
                 out = p.visualize_point_on_image(out, color=(0, 128, 255))
 
 
-            # TODO: Process being partially visible
-            # Set center circle
-            if len(blue_circles_centers) == 1:
-                center_circle_point = blue_circles_centers[0]
-                out = center_circle_point.visualize_point_on_image(out)
-                cv2.imshow("Field detected with center line and circle", out)
-                cv2.waitKey()
-                cv2.destroyAllWindows()
+            # TODO: Generalize by finding first not none point out of some central points in order of: center line top, center circle point, goal zone
+            # Processing goal lines
+            key_points_of_lines = {
+                (HorizontalPosition.top, VerticalPosition.left): MINIMAP_KEY_POINTS.left_goal_line_top,
+                (HorizontalPosition.top, VerticalPosition.right): MINIMAP_KEY_POINTS.left_goal_line_after_zone_top,
+                (HorizontalPosition.bottom, VerticalPosition.left): MINIMAP_KEY_POINTS.right_goal_line_top,
+                (HorizontalPosition.bottom, VerticalPosition.right): MINIMAP_KEY_POINTS.right_goal_line_after_zone_top
+            }
 
+            # Apply processing to goal lines
+            goal_lines_processed: list[Line] = []
+
+            for goal_line in goal_lines:
+                poly = (goal_line["poly"] * 255).astype(np.uint8)
+                line = Line.find_lines(poly)
+
+                if line is not None:
+                    line = line.clip_line_to_bounding_box(BoundingBox.calculate_combined_bbox(goal_line["bbox"]))
+                    goal_lines_processed.append(line)
+
+            for goal_line in goal_lines_processed:
+                out = goal_line.visualize_line_on_image(frame, color=(120, 80, 50))
+
+            # TODO: THIS DOES NOT ORDER LINES PROPERLY WHEN MIRRORED, need two pass ordering (first - lines order, second - flips relative to camera)
+            # matched_points_goal_lines = match_points(
+            #     goal_lines_processed,
+            #     CAMERA_POSITION.pos_id,
+            #     key_points_of_lines,
+            #     key_points_of_lines_sides,
+            #     center_line.min_point
+            # )
+
+            matched_point_goal_lines = {
+                MINIMAP_KEY_POINTS.right_goal_line_after_zone_top: goal_lines_processed[0].min_point,
+                MINIMAP_KEY_POINTS.right_goal_line_after_zone_bottom: goal_lines_processed[0].max_point,
+            }
+
+            # Process red circles
             for p in red_circles_centers:
                 out = p.visualize_point_on_image(out, color=(0, 255, 255))
 
             red_circles_sides = [
                 (HorizontalPosition.top, VerticalPosition.left),
-                (HorizontalPosition.bottom, VerticalPosition.left),
                 (HorizontalPosition.top, VerticalPosition.right),
+                (HorizontalPosition.bottom, VerticalPosition.left),
                 (HorizontalPosition.bottom, VerticalPosition.right),
             ]
             key_points_of_red_circles = {
@@ -345,11 +376,97 @@ async def main(video_path: Path):
                 CAMERA_POSITION.pos_id,
                 key_points_of_red_circles,
                 red_circles_sides,
-                center_line.min_point
+                goal_zone_centers[0]
             )
+            print("Blue circles mapping")
             pprint.pprint(matched_blue_circle_points)
             cv2.imwrite("out_points_coords.png", out)
             cv2.imshow("Field detected with center line and circle", out)
+            cv2.waitKey()
+            cv2.destroyAllWindows()
+
+            print("Combined mapping:")
+            # FILTER BECAUSE IN FUTURE NOT ALL POINTS MIGHT BE PRESENT
+            combined_points = [
+                (MINIMAP_KEY_POINTS.center_line_bottom, center_line.min_point),
+                *tuple(matched_blue_lines_points.items()),
+                (MINIMAP_KEY_POINTS.center_circle, center_circle_point),
+                *tuple(matched_blue_circle_points.items()),
+                *tuple(matched_point_goal_lines.items()),
+                (MINIMAP_KEY_POINTS.right_goal_zone, Point(*goal_zone_centers[0])),
+                (MINIMAP_KEY_POINTS.center_line_top, center_line.max_point),
+                (MINIMAP_KEY_POINTS.left_blue_line_top, blue_lines_processed[0].max_point)
+            ]
+            #
+            # combined_points = [
+            #     (KeyPoint(x=630, y=700), Point(x=902.1317138671875, y=53.99676513671875)),
+            #     (KeyPoint(x=838, y=700), Point(x=734.0, y=35.026885986328125)),
+            #     (KeyPoint(x=838, y=92), Point(x=1079.17626953125, y=70.30628967285156)),
+            #     (KeyPoint(x=630, y=396), Point(x=984.2107543945312, y=254.60848999023438)),
+            #     (KeyPoint(x=1020, y=243), Point(x=200.67494201660156, y=390.2291259765625)),
+            #     (KeyPoint(x=1020, y=550), Point(x=379.1551818847656, y=101.2994155883789)),
+            #     (KeyPoint(x=1162, y=433), Point(x=148.30401611328125, y=180.19952392578125)),
+            #     (KeyPoint(x=1162, y=688), Point(x=284.37225341796875, y=44.409393310546875))
+            # ]
+
+            combined_points = [
+                (KeyPoint(x=630, y=700), Point(x=902.1317138671875, y=53.99676513671875)),
+                (KeyPoint(x=838, y=700), Point(x=734.0, y=35.026885986328125)),
+                (KeyPoint(x=423, y=700), Point(x=1079.17626953125, y=70.30628967285156)),
+                (KeyPoint(x=630, y=396), Point(x=979, y=242)),
+                (KeyPoint(x=1020, y=243), Point(x=200.67494201660156, y=390.2291259765625)),
+                (KeyPoint(x=1020, y=550), Point(x=381, y=93)),
+                (KeyPoint(x=1162, y=433), Point(x=148.30401611328125, y=180.19952392578125)),
+                (KeyPoint(x=1162, y=688), Point(x=284.37225341796875, y=44.409393310546875)),
+                (KeyPoint(x=1144, y=396), Point(x=153.77694702148438, y=204.68563842773438)),
+                (KeyPoint(x=630, y=92), Point(x=1110.5455322265625, y=667.5072021484375)),
+                (KeyPoint(x=423, y=92), Point(x=734.0, y=626.1878662109375))
+            ]
+
+            for n, (map_p, p) in enumerate(combined_points):
+                out = draw_text(out, str(n), (int(p.x), int(p.y-10)), (255, 192, 255))
+                out = p.visualize_point_on_image(out)
+                map_img = draw_text(map_img, str(n), (int(map_p.x), int(map_p.y - 10)), (255, 192, 255))
+                map_img = Point(int(map_p.x), int(map_p.y)).visualize_point_on_image(map_img)
+
+            pprint.pprint(
+                combined_points
+            )
+
+            cv2.imshow("Output", out)
+            cv2.imshow("Map", map_img)
+            cv2.waitKey()
+            cv2.destroyAllWindows()
+
+            reprojThreshold = 3.0
+            maxIters = 2000
+            confidence = 0.9
+
+            src_points = np.array([[pt.x, pt.y] for kp, pt in combined_points], dtype='float32')
+            dst_pts = np.array([[kp.x, kp.y] for kp, pt in combined_points], dtype='float32')
+            homography_transform, status = cv2.findHomography(src_points, dst_pts, cv2.RANSAC, reprojThreshold, maxIters=maxIters, confidence=confidence)
+
+            combined_points = [
+                (MINIMAP_KEY_POINTS.center_line_bottom, center_line.min_point),
+                *tuple(matched_blue_lines_points.items()),
+                (MINIMAP_KEY_POINTS.center_circle, center_circle_point),
+                *tuple(matched_blue_circle_points.items()),
+                *tuple(matched_point_goal_lines.items())
+            ]
+
+            a = np.array([[p.x, p.y] for _, p in combined_points], dtype='float32')
+            a = np.array([a])  # Ensure the shape is (1, N, 2)
+            to_map_coordinates = cv2.perspectiveTransform(a, homography_transform)[0]
+
+            height, width = out.shape[:2]
+            warped_image = cv2.warpPerspective(out, homography_transform, (width, height))
+            cv2.imshow("Warped", warped_image)
+            map_img = cv2.resize(map_img, (1280, 720))
+            for n, (x, y) in enumerate(to_map_coordinates):
+                map_img = draw_text(map_img, str(n), (int(x), int(y - 10)), (255, 192, 255))
+                map_img = cv2.circle(map_img, (int(x), int(y)), radius=5, color=(70, 92, 160), thickness=-1)
+                print(x, y)
+            cv2.imshow("Transformed", map_img)
             cv2.waitKey()
             cv2.destroyAllWindows()
 

@@ -16,7 +16,7 @@ done = False
 # start_frame_number = 50
 # For timestamps cv.CAP_PROP_POS_MSEC can be used
 # cap.set(cv2.CAP_PROP_POS_FRAMES, start_frame_number)
-done = False
+# done = False
 # ffmpeg.input("E:\Photo\Concert 26.09.2021\VID_20210926_214140.mp4", hwaccel=hwaccel).output("test_fetch_frame.mp4", frames="260", ss="15", preset="fast", crf="27", vf=f"scale=1280:720,lenscorrection=k1=-0.3223:k2=0.55").global_args("-y").run()
 
 
@@ -24,7 +24,7 @@ while not done:
     (
         ffmpeg.input(r"H:\ai\diploma_test\14-41-29 2023-01-15.mkv", hwaccel=hwaccel)
         .output(
-            "converted_demo.mp4", vf=f"scale=1280:720,lenscorrection=k1={k1}:k2={k2}",
+            "test_video_frame.mp4", vf=f"scale=3840:2160,lenscorrection=k1={k1}:k2={k2}",
             frames="1200", ss="15", preset="fast", crf="27",
         )
         .global_args("-y")

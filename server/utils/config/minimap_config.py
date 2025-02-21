@@ -42,3 +42,5 @@ class MinimapKeyPointConfig(BaseModel):
     blue_circle_bottom_left: KeyPoint
     blue_circle_bottom_right: KeyPoint
 
+    # Центральный круг
+    center_circle: KeyPoint
