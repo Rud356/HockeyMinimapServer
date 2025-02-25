@@ -20,7 +20,7 @@ done = False
 # ffmpeg.input("E:\Photo\Concert 26.09.2021\VID_20210926_214140.mp4", hwaccel=hwaccel).output("test_fetch_frame.mp4", frames="260", ss="15", preset="fast", crf="27", vf=f"scale=1280:720,lenscorrection=k1=-0.3223:k2=0.55").global_args("-y").run()
 
 
-while not done:
+while done:
     (
         ffmpeg.input(r"H:\ai\diploma_test\14-41-29 2023-01-15.mkv", hwaccel=hwaccel)
         .output(

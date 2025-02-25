@@ -408,19 +408,19 @@ async def main(video_path: Path):
             #     (KeyPoint(x=1162, y=433), Point(x=148.30401611328125, y=180.19952392578125)),
             #     (KeyPoint(x=1162, y=688), Point(x=284.37225341796875, y=44.409393310546875))
             # ]
-
+            #
             combined_points = [
                 (KeyPoint(x=630, y=700), Point(x=902.1317138671875, y=53.99676513671875)),
                 (KeyPoint(x=838, y=700), Point(x=734.0, y=35.026885986328125)),
                 (KeyPoint(x=423, y=700), Point(x=1079.17626953125, y=70.30628967285156)),
                 (KeyPoint(x=630, y=396), Point(x=979, y=242)),
-                (KeyPoint(x=1020, y=243), Point(x=200.67494201660156, y=390.2291259765625)),
+                (KeyPoint(x=1020, y=243), Point(x=203, y=367)),
                 (KeyPoint(x=1020, y=550), Point(x=381, y=93)),
                 (KeyPoint(x=1162, y=433), Point(x=148.30401611328125, y=180.19952392578125)),
                 (KeyPoint(x=1162, y=688), Point(x=284.37225341796875, y=44.409393310546875)),
                 (KeyPoint(x=1144, y=396), Point(x=153.77694702148438, y=204.68563842773438)),
                 (KeyPoint(x=630, y=92), Point(x=1110.5455322265625, y=667.5072021484375)),
-                (KeyPoint(x=423, y=92), Point(x=734.0, y=626.1878662109375))
+                (KeyPoint(x=838, y=92), Point(x=734.0, y=626.1878662109375)),
             ]
 
             for n, (map_p, p) in enumerate(combined_points):
@@ -438,7 +438,7 @@ async def main(video_path: Path):
             cv2.waitKey()
             cv2.destroyAllWindows()
 
-            reprojThreshold = 3.0
+            reprojThreshold = 4.0
             maxIters = 2000
             confidence = 0.9
 
@@ -446,13 +446,13 @@ async def main(video_path: Path):
             dst_pts = np.array([[kp.x, kp.y] for kp, pt in combined_points], dtype='float32')
             homography_transform, status = cv2.findHomography(src_points, dst_pts, cv2.RANSAC, reprojThreshold, maxIters=maxIters, confidence=confidence)
 
-            combined_points = [
-                (MINIMAP_KEY_POINTS.center_line_bottom, center_line.min_point),
-                *tuple(matched_blue_lines_points.items()),
-                (MINIMAP_KEY_POINTS.center_circle, center_circle_point),
-                *tuple(matched_blue_circle_points.items()),
-                *tuple(matched_point_goal_lines.items())
-            ]
+            # combined_points = [
+            #     (MINIMAP_KEY_POINTS.center_line_bottom, center_line.min_point),
+            #     *tuple(matched_blue_lines_points.items()),
+            #     (MINIMAP_KEY_POINTS.center_circle, center_circle_point),
+            #     *tuple(matched_blue_circle_points.items()),
+            #     *tuple(matched_point_goal_lines.items())
+            # ]
 
             a = np.array([[p.x, p.y] for _, p in combined_points], dtype='float32')
             a = np.array([a])  # Ensure the shape is (1, N, 2)

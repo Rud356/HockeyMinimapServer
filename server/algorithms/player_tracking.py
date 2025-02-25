@@ -34,7 +34,7 @@ class PlayerTracker:
     ...
 
 mask = cv2.imread(str(Path(r"mask.png")), 0)
-image = cv2.imread(str(Path(r"../../static/projects/out.png")))
+image = cv2.imread(str(Path(r"out.png")))
 
 image = cv2.resize(image, (1280, 720))
 vis = Visualizer(
