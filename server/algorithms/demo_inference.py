@@ -179,14 +179,17 @@ async def main(video_path: Path):
         "dest": []
     }
     homography_transform = None
+    fourcc = cv2.VideoWriter_fourcc(*'XVID')
+    out_video = cv2.VideoWriter('output.avi', fourcc, 25.0, (1280, 720))
+    out_map_video = cv2.VideoWriter('output_map.avi', fourcc, 25.0, (1259, 770))
 
     while cap.isOpened():
         ret, frame = cap.read()
-        frame_copy = frame.copy()
         cv2.imwrite("test.png", frame)
         if not ret:
             break
 
+        frame_copy = frame.copy()
         if frame_n == 0:
             fut_result: asyncio.Future = await field_service.add_inference_task_to_queue(frame)
             result = await fut_result
@@ -514,15 +517,20 @@ async def main(video_path: Path):
         classes_pred = filtered_on_field.pred_classes
         dets = np.array([np.array([*box, score, class_pred]) for box, score, class_pred in zip(boxes, scores, classes_pred)])
         targets = TRACKER.update(dets, 0).astype(np.int32).tolist()
+
         object_ids = [obj[4] for obj in targets]
+        bounding_boxes = [obj[:4] for obj in targets]
+        class_ids = [obj[5] for obj in targets]
+        scores = [obj[6] for obj in targets]
         print(targets)
 
-        bboxes = [BoundingBox.calculate_combined_bbox(box) for box in filtered_on_field.pred_boxes.tensor.tolist()]
-        x_centers = (boxes[:, 0] + boxes[:, 2]) / 2  # Midpoint of x_min and x_max
-        y_bottoms = boxes[:, 3]  # y_max (bottom coordinate)
-        centers_bottoms: list[list[float]] = torch.stack((x_centers, y_bottoms), dim=1).to("cpu").tolist()
+        bboxes = [BoundingBox.calculate_combined_bbox(box) for box in bounding_boxes]
+        bounding_boxes_np = np.array(bounding_boxes)
+        x_centers = (bounding_boxes_np[:, 0] + bounding_boxes_np[:, 2]) / 2  # Midpoint of x_min and x_max
+        y_bottoms = bounding_boxes_np[:, 3]  # y_max (bottom coordinate)
+        centers_bottoms: list[list[float]] = np.stack((x_centers, y_bottoms), axis=1).tolist()
         classes_pred: list[PlayerClasses] = [
-            PlayerClasses(classifier) for classifier in filtered_on_field.pred_classes.to("cpu").tolist()
+            PlayerClasses(classifier) for classifier in class_ids
         ]
 
         center_bottom_points: list[Point] = [Point(*center) for center in centers_bottoms]
@@ -560,34 +568,31 @@ async def main(video_path: Path):
             draw_text(out, text, (int(bbox.min_point.x), int(bbox.min_point.y-10)), (90, 170, 80))
 
         try:
-            cv2.imshow("Frame markup", out)
-            cv2.imshow("Map markup", out_map)
-
-            vis = Visualizer(
-                frame[:, :, ::-1],
-                metadata={
-                    "thing_classes": [
-                        "Player",
-                        "Referee",
-                        "Goalie"
-                    ]
-                },
-                scale=1,
-                instance_mode=ColorMode.IMAGE
-            )
-            out = vis.draw_instance_predictions(filtered_on_field)
-            out_mat = out.get_image()[:, :, ::-1]
-            cv2.imshow("Detectron2 out", out_mat)
-            cv2.waitKey()
-            cv2.destroyAllWindows()
+            out_video.write(out)
+            out_map_video.write(out_map)
+            print(f"Frame id: {frame_n}")
+            # vis = Visualizer(
+            #     frame[:, :, ::-1],
+            #     metadata={
+            #         "thing_classes": [
+            #             "Player",
+            #             "Referee",
+            #             "Goalie"
+            #         ]
+            #     },
+            #     scale=1,
+            #     instance_mode=ColorMode.IMAGE
+            # )
+            # out = vis.draw_instance_predictions(filtered_on_field)
+            # out_mat = out.get_image()[:, :, ::-1]
+            # cv2.imshow("Detectron2 out", out_mat)
+            # cv2.waitKey()
+            # cv2.destroyAllWindows()
 
         except:
             pass
 
         frame_n += 1
-
-        if frame_n == 6:
-            break
 
 if __name__ == "__main__":
     asyncio.run(
