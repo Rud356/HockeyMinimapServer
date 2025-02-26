@@ -10,3 +10,4 @@ torch~=2.5.1
 torchvision~=0.20.1
 torchaudio~=2.5.1
 scikit-learn~=1.6.1
+sort-track~=0.0.8

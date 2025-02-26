@@ -50,8 +50,8 @@ transform = transforms.Compose(
     ]
 )
 classes_names = list(Team.__members__)
-test_dir = '../../datasets/custom_validation'
-data_dir = '../../datasets/custom_dataset'
+test_dir = 'datasets/custom_validation'
+data_dir = 'datasets/custom_dataset'
 
 train_dataset = datasets.ImageFolder(os.path.join(data_dir, 'train'), transform=transform)
 val_dataset = datasets.ImageFolder(os.path.join(data_dir, 'val'), transform=transform)

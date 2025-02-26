@@ -10,13 +10,16 @@ import cv2
 import numpy as np
 import torch
 from detectron2.utils.visualizer import ColorMode, Visualizer
+from sort.tracker import SortTracker
 
 from server.algorithms.data_types.bounding_box import BoundingBox
 from server.algorithms.data_types.line import Line
 from server.algorithms.data_types.point import Point
 from server.algorithms.enums.coordinate_split import HorizontalPosition, VerticalPosition
 from server.algorithms.enums.field_classes_enum import FieldClasses
+from server.algorithms.enums.player_classes_enum import PlayerClasses
 # predicts teams based on reference images
+from server.algorithms.nn.team_detector import predictor
 from server.algorithms.field_predictor_service import FieldPredictorService
 from server.algorithms.player_predictor_service import PlayerPredictorService
 from server.utils.config.minimap_config import KeyPoint, MinimapKeyPointConfig
@@ -130,9 +133,23 @@ def match_points(
 
 
 def draw_text(img, text, pos, color):
-    return cv2.putText(img, text, pos, cv2.FONT_HERSHEY_SIMPLEX, 1.5, color, 2, cv2.LINE_AA)
+    return cv2.putText(img, text, pos, cv2.FONT_HERSHEY_SIMPLEX, 1.2, color, 2, cv2.LINE_AA)
+
+def cut_out_image_part(image: np.ndarray, bbox: BoundingBox) -> np.ndarray:
+    """
+    Cuts out the part of the image defined by the bounding box.
+
+    :param image: The original image.
+    :param bbox: The bounding box defining the area to cut out.
+    :return: The cut-out part of the image.
+    """
+    return image[
+           int(bbox.min_point.y):int(bbox.max_point.y),
+           int(bbox.min_point.x):int(bbox.max_point.x)
+       ]
 
 async def main(video_path: Path):
+    TRACKER = SortTracker(2)
     device = "cuda" if torch.cuda.is_available() else "cpu"
 
     field_service = FieldPredictorService(
@@ -165,6 +182,7 @@ async def main(video_path: Path):
 
     while cap.isOpened():
         ret, frame = cap.read()
+        frame_copy = frame.copy()
         cv2.imwrite("test.png", frame)
         if not ret:
             break
@@ -470,13 +488,105 @@ async def main(video_path: Path):
             cv2.waitKey()
             cv2.destroyAllWindows()
 
+        frame = frame_copy
         # Inference
         fut_players_result = await player_service.add_inference_task_to_queue(frame)
         result = await fut_players_result
 
+        threshold = 0.5
+        instances = result[0].to("cpu")
+        high_confidence_idxs = instances.scores > threshold
+        filtered_instances = instances[high_confidence_idxs].to("cpu")
+
+        # Finding bottom point of each bounding box
+        boxes = filtered_instances.pred_boxes.tensor
+        x_centers = (boxes[:, 0] + boxes[:, 2]) / 2  # Midpoint of x_min and x_max
+        y_bottoms = boxes[:, 3]  # y_max (bottom coordinate)
+        centers_bottoms: list[list[float]] = torch.stack((x_centers, y_bottoms), dim=1).to("cpu").tolist()
+
+        keep = [field_mask[int(y) - 1, int(x) - 1] > 0 for x, y in centers_bottoms]
+        keep_tensor = torch.tensor(keep, dtype=torch.bool)
+        filtered_on_field = filtered_instances[keep_tensor]
+
+        # Finding bottom point of each bounding box
+        boxes = filtered_on_field.pred_boxes.tensor
+        scores = filtered_on_field.scores
+        classes_pred = filtered_on_field.pred_classes
+        dets = np.array([np.array([*box, score, class_pred]) for box, score, class_pred in zip(boxes, scores, classes_pred)])
+        targets = TRACKER.update(dets, 0).astype(np.int32).tolist()
+        object_ids = [obj[4] for obj in targets]
+        print(targets)
+
+        bboxes = [BoundingBox.calculate_combined_bbox(box) for box in filtered_on_field.pred_boxes.tensor.tolist()]
+        x_centers = (boxes[:, 0] + boxes[:, 2]) / 2  # Midpoint of x_min and x_max
+        y_bottoms = boxes[:, 3]  # y_max (bottom coordinate)
+        centers_bottoms: list[list[float]] = torch.stack((x_centers, y_bottoms), dim=1).to("cpu").tolist()
+        classes_pred: list[PlayerClasses] = [
+            PlayerClasses(classifier) for classifier in filtered_on_field.pred_classes.to("cpu").tolist()
+        ]
+
+        center_bottom_points: list[Point] = [Point(*center) for center in centers_bottoms]
+        center_points_on_map = np.array([[p.x, p.y] for p in center_bottom_points], dtype='float32')
+        center_points_on_map = np.array([center_points_on_map])  # Ensure the shape is (1, N, 2)
+        to_map_coordinates = cv2.perspectiveTransform(center_points_on_map, homography_transform)[0]
+
+        player_indexes = [
+            n for n, selection_class in enumerate(classes_pred) if selection_class != PlayerClasses.Referee
+        ]
+        teams = [
+            (
+                player_index, predictor(
+                    cut_out_image_part(frame, bboxes[player_index])
+                )
+            ) for player_index in player_indexes
+        ]
+        print(teams)
+        map_img = cv2.imread("map.png")
+
+        # Visualize on video and map
+        for n, (player_class, bbox, map_coordinates, ids) in enumerate(zip(classes_pred, bboxes, to_map_coordinates, object_ids)):
+            text = f"{ids}: {player_class.name}"
+
+            for i, team in teams:
+                if i == n:
+                    text += f" {team.name}"
+                    break
+
+            point_on_map = Point(*map_coordinates)
+            out_map = point_on_map.visualize_point_on_image(map_img)
+            draw_text(out_map, text, (int(point_on_map.x), int(point_on_map.y-10)), (22, 99, 33))
+
+            out = bbox.visualize_bounding_box(frame)
+            draw_text(out, text, (int(bbox.min_point.x), int(bbox.min_point.y-10)), (90, 170, 80))
+
+        try:
+            cv2.imshow("Frame markup", out)
+            cv2.imshow("Map markup", out_map)
+
+            vis = Visualizer(
+                frame[:, :, ::-1],
+                metadata={
+                    "thing_classes": [
+                        "Player",
+                        "Referee",
+                        "Goalie"
+                    ]
+                },
+                scale=1,
+                instance_mode=ColorMode.IMAGE
+            )
+            out = vis.draw_instance_predictions(filtered_on_field)
+            out_mat = out.get_image()[:, :, ::-1]
+            cv2.imshow("Detectron2 out", out_mat)
+            cv2.waitKey()
+            cv2.destroyAllWindows()
+
+        except:
+            pass
+
         frame_n += 1
 
-        if frame_n == 1:
+        if frame_n == 6:
             break
 
 if __name__ == "__main__":
