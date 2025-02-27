@@ -96,7 +96,7 @@ class Line(NamedTuple):
                     Point(int(x0 - 1000 * (-b)), int(y0 - 1000 * a))
                 ])
 
-                return Line(point1, point2)
+                return cls(point1, point2)
 
         # Линия не найдена
         return None

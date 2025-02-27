@@ -1,7 +1,6 @@
 # DEMO FILE!
 import asyncio
 import dataclasses
-import math
 import pprint
 from pathlib import Path
 from typing import Optional
@@ -18,9 +17,9 @@ from server.algorithms.data_types.point import Point
 from server.algorithms.enums.coordinate_split import HorizontalPosition, VerticalPosition
 from server.algorithms.enums.field_classes_enum import FieldClasses
 from server.algorithms.enums.player_classes_enum import PlayerClasses
+from server.algorithms.field_predictor_service import FieldPredictorService
 # predicts teams based on reference images
 from server.algorithms.nn.team_detector import predictor
-from server.algorithms.field_predictor_service import FieldPredictorService
 from server.algorithms.player_predictor_service import PlayerPredictorService
 from server.utils.config.minimap_config import KeyPoint, MinimapKeyPointConfig
 
@@ -134,19 +133,6 @@ def match_points(
 
 def draw_text(img, text, pos, color):
     return cv2.putText(img, text, pos, cv2.FONT_HERSHEY_SIMPLEX, 1.2, color, 2, cv2.LINE_AA)
-
-def cut_out_image_part(image: np.ndarray, bbox: BoundingBox) -> np.ndarray:
-    """
-    Cuts out the part of the image defined by the bounding box.
-
-    :param image: The original image.
-    :param bbox: The bounding box defining the area to cut out.
-    :return: The cut-out part of the image.
-    """
-    return image[
-           int(bbox.min_point.y):int(bbox.max_point.y),
-           int(bbox.min_point.x):int(bbox.max_point.x)
-       ]
 
 async def main(video_path: Path):
     TRACKER = SortTracker(2)
@@ -547,7 +533,7 @@ async def main(video_path: Path):
         teams = [
             (
                 player_index, predictor(
-                    cut_out_image_part(frame, bboxes[player_index])
+                    bboxes[player_index].cut_out_image_part(frame)
                 )
             ) for player_index in player_indexes
         ]
