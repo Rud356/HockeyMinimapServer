@@ -185,9 +185,12 @@ async def main(video_path: Path):
 
     while cap.isOpened():
         ret, frame = cap.read()
-        cv2.imwrite("test.png", frame)
+
         if not ret:
             break
+
+        if frame_n == 0:
+            cv2.imwrite("test.png", frame)
 
         frame_copy = frame.copy()
         if frame_n == 0:
