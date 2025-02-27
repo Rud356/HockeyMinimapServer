@@ -62,13 +62,13 @@ MINIMAP_KEY_POINTS = MinimapKeyPointConfig(**
 
 
 @dataclasses.dataclass
-class CameraPosition:
+class CameraPositionTest:
     pos_id: int
     x: int
     y: int
 
 # Сектора с 1 до 6 слева-направо сверху-вниз нумеруются относительно мини-карты
-CAMERA_POSITION = CameraPosition(2, 631, 68)
+CAMERA_POSITION = CameraPositionTest(2, 631, 68)
 
 
 # TODO: WRITE WRAPPER CODE FOR WORKING WITH LINES EASIER
