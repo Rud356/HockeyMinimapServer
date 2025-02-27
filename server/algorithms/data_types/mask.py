@@ -1,9 +1,12 @@
 from __future__ import annotations
-from typing import Optional
+
 from dataclasses import dataclass
+from typing import Optional
 
 import cv2
 import numpy
+
+from server.algorithms.data_types.point import Point
 
 
 @dataclass
@@ -35,6 +38,18 @@ class Mask:
 
         new_mask = cv2.dilate(self.mask, kernel, iterations=1)
         return Mask(mask=new_mask)
+
+    def check_points_are_in_mask_area(self, *points: Point) -> list[bool]:
+        """
+        Проверяет, находятся ли точки на маске, или нет.
+
+        :param points: Точки в абсолютных координатах маски.
+        :return: Список точек, находящихся в маске.
+        """
+        keep_list = [
+            bool(self.mask[int(p.y)-1, int(p.x)-1] > 0) for p in points
+        ]
+        return keep_list
 
     @classmethod
     def from_multiple_masks(cls, *masks: numpy.ndarray) -> Mask:

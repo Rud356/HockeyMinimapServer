@@ -34,7 +34,7 @@ class PlayerTracker:
     ...
 
 mask = cv2.imread(str(Path(r"mask.png")), 0)
-image = cv2.imread(str(Path(r"out.png")))
+image = cv2.imread(str(Path(r"../../test.png")))
 
 image = cv2.resize(image, (1280, 720))
 vis = Visualizer(
@@ -64,8 +64,9 @@ classes_pred: list[PlayerClasses] = [
 
 
 # Additional filtering based on field position
-keep = [mask[int(y)-1, int(x)-1] > 0 for x, y in centers_bottoms]
-keep_tensor = torch.tensor(keep, dtype=torch.bool)
+keep = [bool(mask[int(y)-1, int(x)-1] > 0) for x, y in centers_bottoms]
+# keep = np.asarray(keep, dtype=bool)
+keep_tensor = torch.as_tensor(keep, dtype=torch.bool)
 
 filtered_on_field = filtered_instances[keep_tensor]
 

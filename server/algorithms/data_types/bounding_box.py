@@ -41,6 +41,19 @@ class BoundingBox(NamedTuple):
             self.max_point.y
         )
 
+    def intersects_with(self, bbox: BoundingBox) -> bool:
+        """
+        Проверяет пересечение ограничивающего прямоугольника с другим прямоугольником.
+
+        :return: Есть ли пересечение.
+        """
+        return not (
+            self.min_point.x > bbox.max_point.x or
+            self.max_point.x < bbox.min_point.x or
+            self.min_point.y > bbox.max_point.y or
+            self.max_point.y < bbox.min_point.y
+        )
+
     def visualize_bounding_box(
         self,
         image: numpy.ndarray,
