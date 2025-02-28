@@ -78,7 +78,6 @@ class VideoProcessing:
 
         return frame, video_info
 
-    # TODO: Add method for picking correction using lenscorrect and for converting video
     def render_correction_sample(
         self, source_file: Path,
         k1: float = 0.0,
