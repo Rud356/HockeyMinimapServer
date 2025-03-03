@@ -47,7 +47,9 @@ class PlayerPredictorService(PredictorService):
 
         self.predictor = BatchPredictor(cfg)
         self.image_queue = image_queue
-        self.device_lock = device_lock
 
         if self.device_lock is None:
             self.device_lock = asyncio.Lock()
+
+        else:
+            self.device_lock = device_lock

@@ -26,7 +26,7 @@ class VideoProcessing:
 
     def get_sample_from_video(
         self, file: Path, *, frame_timestamp: Optional[float] = None, frame_index: Optional[int] = None
-    ) -> tuple[numpy.ndarray, dict[str, Any]]:
+    ) -> tuple[numpy.ndarray | None, dict[str, Any]]:
         """
         Получает один кадр из видео.
 

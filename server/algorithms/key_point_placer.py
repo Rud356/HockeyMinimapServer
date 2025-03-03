@@ -53,7 +53,7 @@ class KeyPointPlacer:
         *quadrants: tuple[HorizontalPosition, VerticalPosition]
     ) -> list[tuple[HorizontalPosition, VerticalPosition]]:
         """
-        Меняет местами левые и верхние квадранты в пространстве для маппинга.
+        Меняет местами левые и верхние квадранты в пространстве для маппинга на мини-карту из пространства камеры.
 
         :param quadrants: Квадранты для смены левой и правой стороны.
         :return: Обновленные квадранты.
@@ -66,4 +66,54 @@ class KeyPointPlacer:
 
         return [
             (quadrant[0], quadrants_match[quadrant[1]]) for quadrant in quadrants
+        ]
+
+    @staticmethod
+    def rotate_quadrants_left(
+        *quadrants: tuple[HorizontalPosition, VerticalPosition]
+    ):
+        """
+        Поворачивает квадранты влево относительно камеры в пространство мини-карты.
+
+        :param quadrants: Квадранты для поворота.
+        :return: Обновленные квадранты.
+        """
+        quadrants_match: dict[
+            tuple[HorizontalPosition, VerticalPosition],
+            tuple[HorizontalPosition, VerticalPosition]
+        ] = {
+            (HorizontalPosition.center, VerticalPosition.center): (HorizontalPosition.center, VerticalPosition.center),
+            (HorizontalPosition.top, VerticalPosition.right): (HorizontalPosition.top, VerticalPosition.left),
+            (HorizontalPosition.top, VerticalPosition.left): (HorizontalPosition.bottom, VerticalPosition.right),
+            (HorizontalPosition.bottom, VerticalPosition.right): (HorizontalPosition.top, VerticalPosition.right),
+            (HorizontalPosition.bottom, VerticalPosition.left): (HorizontalPosition.bottom, VerticalPosition.right)
+        }
+
+        return [
+            quadrants_match[quadrant[0], quadrant[1]] for quadrant in quadrants
+        ]
+
+    @staticmethod
+    def rotate_quadrants_right(
+        *quadrants: tuple[HorizontalPosition, VerticalPosition]
+    ):
+        """
+        Поворачивает квадранты вправо относительно камеры в пространство мини-карты.
+
+        :param quadrants: Квадранты для поворота.
+        :return: Обновленные квадранты.
+        """
+        quadrants_match: dict[
+            tuple[HorizontalPosition, VerticalPosition],
+            tuple[HorizontalPosition, VerticalPosition]
+        ] = {
+            (HorizontalPosition.center, VerticalPosition.center): (HorizontalPosition.center, VerticalPosition.center),
+            (HorizontalPosition.top, VerticalPosition.right): (HorizontalPosition.bottom, VerticalPosition.right),
+            (HorizontalPosition.top, VerticalPosition.left): (HorizontalPosition.top, VerticalPosition.right),
+            (HorizontalPosition.bottom, VerticalPosition.right): (HorizontalPosition.bottom, VerticalPosition.left),
+            (HorizontalPosition.bottom, VerticalPosition.left): (HorizontalPosition.top, VerticalPosition.left)
+        }
+
+        return [
+            quadrants_match[quadrant[0], quadrant[1]] for quadrant in quadrants
         ]
