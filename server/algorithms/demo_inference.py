@@ -375,10 +375,10 @@ async def main(video_path: Path):
                 (HorizontalPosition.bottom, VerticalPosition.right),
             ]
             key_points_of_red_circles = {
-                (HorizontalPosition.top, VerticalPosition.left): MINIMAP_KEY_POINTS.blue_circle_top_left,
-                (HorizontalPosition.top, VerticalPosition.right): MINIMAP_KEY_POINTS.blue_circle_top_right,
-                (HorizontalPosition.bottom, VerticalPosition.left): MINIMAP_KEY_POINTS.blue_circle_bottom_left,
-                (HorizontalPosition.bottom, VerticalPosition.right): MINIMAP_KEY_POINTS.blue_circle_bottom_right
+                (HorizontalPosition.top, VerticalPosition.left): MINIMAP_KEY_POINTS.red_circle_top_left,
+                (HorizontalPosition.top, VerticalPosition.right): MINIMAP_KEY_POINTS.red_circle_top_right,
+                (HorizontalPosition.bottom, VerticalPosition.left): MINIMAP_KEY_POINTS.red_circle_bottom_left,
+                (HorizontalPosition.bottom, VerticalPosition.right): MINIMAP_KEY_POINTS.red_circle_bottom_right
             }
 
             matched_blue_circle_points = match_points(

@@ -30,17 +30,17 @@ class MinimapKeyPointConfig(BaseModel):
     left_goal_line_after_zone_top: KeyPoint
     left_goal_line_after_zone_bottom: KeyPoint
 
-    # Левая линия гола
+    # Правая линия гола
     right_goal_line_top: KeyPoint
     right_goal_line_bottom: KeyPoint
     right_goal_line_after_zone_top: KeyPoint
     right_goal_line_after_zone_bottom: KeyPoint
 
-    # Синие круги
-    blue_circle_top_left: KeyPoint
-    blue_circle_top_right: KeyPoint
-    blue_circle_bottom_left: KeyPoint
-    blue_circle_bottom_right: KeyPoint
+    # Красные круги
+    red_circle_top_left: KeyPoint
+    red_circle_top_right: KeyPoint
+    red_circle_bottom_left: KeyPoint
+    red_circle_bottom_right: KeyPoint
 
     # Центральный круг
     center_circle: KeyPoint

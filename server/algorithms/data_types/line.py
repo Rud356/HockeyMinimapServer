@@ -72,6 +72,7 @@ class Line(NamedTuple):
         assert min_threshold > 0, ("Минимальное пороговое значение алгоритма преобразования Хафа "
                                    "должно быть не меньше 1")
 
+        # TODO: try cv2.fitLine
         while min_threshold <= max_threshold:
             base_threshold = (min_threshold + max_threshold) // 2
             lines = cv2.HoughLines(image, 1., numpy.pi / 180, base_threshold, None, 0)
