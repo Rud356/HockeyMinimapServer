@@ -1,6 +1,7 @@
+import math
 from typing import TypeAlias
 
-from server.algorithms.data_types import Point
+from server.algorithms.data_types import Point, Line
 from server.algorithms.enums.camera_position import CameraPosition
 from server.algorithms.enums.coordinate_split import HorizontalPosition, VerticalPosition
 from server.utils.config.key_point import KeyPoint
@@ -22,7 +23,7 @@ class KeyPointPlacer:
             resolution is None or
             len(resolution) != 2 or
                 (resolution[0] < 0 or resolution[1] < 0) or
-            any(map(lambda v: not isinstance(resolution, int), resolution))
+            not all(map(lambda v: not isinstance(resolution, int), resolution))
         ):
             raise ValueError("Must provide valid resolution")
 
@@ -30,36 +31,36 @@ class KeyPointPlacer:
 
         # Mapping for center line points (in map space)
         self.center_line_points: dict[PointQuadrant, KeyPoint] = {
-            (HorizontalPosition.top, VerticalPosition.left): MinimapKeyPointConfig.center_line_top,
-            (HorizontalPosition.top, VerticalPosition.right): MinimapKeyPointConfig.center_line_top,
-            (HorizontalPosition.bottom, VerticalPosition.left): MinimapKeyPointConfig.center_line_bottom,
-            (HorizontalPosition.bottom, VerticalPosition.right): MinimapKeyPointConfig.center_line_bottom
+            (HorizontalPosition.top, VerticalPosition.left): key_points.center_line_top,
+            (HorizontalPosition.top, VerticalPosition.right): key_points.center_line_top,
+            (HorizontalPosition.bottom, VerticalPosition.left): key_points.center_line_bottom,
+            (HorizontalPosition.bottom, VerticalPosition.right): key_points.center_line_bottom
         }
 
         # Mapping by default work for top points of lines in camera space, other points figured out by relating to the
         # top point of it according to bottom point
         # Mapping for blue lines
         self.blue_lines_points: dict[PointQuadrant, KeyPoint] = {
-            (HorizontalPosition.top, VerticalPosition.left): MinimapKeyPointConfig.left_blue_line_top,
-            (HorizontalPosition.top, VerticalPosition.right): MinimapKeyPointConfig.right_blue_line_top,
-            (HorizontalPosition.bottom, VerticalPosition.left): MinimapKeyPointConfig.left_blue_line_bottom,
-            (HorizontalPosition.bottom, VerticalPosition.right): MinimapKeyPointConfig.right_blue_line_bottom
+            (HorizontalPosition.top, VerticalPosition.left): key_points.left_blue_line_top,
+            (HorizontalPosition.top, VerticalPosition.right): key_points.right_blue_line_top,
+            (HorizontalPosition.bottom, VerticalPosition.left): key_points.left_blue_line_bottom,
+            (HorizontalPosition.bottom, VerticalPosition.right): key_points.right_blue_line_bottom
         }
 
         # Mapping for red circles
         self.red_circles_points: dict[PointQuadrant, KeyPoint] = {
-            (HorizontalPosition.top, VerticalPosition.left): MinimapKeyPointConfig.red_circle_top_left,
-            (HorizontalPosition.top, VerticalPosition.right): MinimapKeyPointConfig.red_circle_top_right,
-            (HorizontalPosition.bottom, VerticalPosition.left): MinimapKeyPointConfig.red_circle_bottom_left,
-            (HorizontalPosition.bottom, VerticalPosition.right): MinimapKeyPointConfig.red_circle_bottom_right
+            (HorizontalPosition.top, VerticalPosition.left): key_points.red_circle_top_left,
+            (HorizontalPosition.top, VerticalPosition.right): key_points.red_circle_top_right,
+            (HorizontalPosition.bottom, VerticalPosition.left): key_points.red_circle_bottom_left,
+            (HorizontalPosition.bottom, VerticalPosition.right): key_points.red_circle_bottom_right
         }
 
         # Mapping goal zones
         self.goal_zones_points: dict[PointQuadrant, KeyPoint] = {
-            (HorizontalPosition.top, VerticalPosition.left): MinimapKeyPointConfig.left_goal_zone,
-            (HorizontalPosition.top, VerticalPosition.right): MinimapKeyPointConfig.right_goal_zone,
-            (HorizontalPosition.bottom, VerticalPosition.left): MinimapKeyPointConfig.left_goal_zone,
-            (HorizontalPosition.bottom, VerticalPosition.right): MinimapKeyPointConfig.right_goal_zone
+            (HorizontalPosition.top, VerticalPosition.left): key_points.left_goal_zone,
+            (HorizontalPosition.top, VerticalPosition.right): key_points.right_goal_zone,
+            (HorizontalPosition.bottom, VerticalPosition.left): key_points.left_goal_zone,
+            (HorizontalPosition.bottom, VerticalPosition.right): key_points.right_goal_zone
         }
 
     def set_camera_position(self, camera_position: CameraPosition):
@@ -85,13 +86,7 @@ class KeyPointPlacer:
         quadrants: list[PointQuadrant] = [
             self.determine_quadrant(blue_circle, center_point) for blue_circle in blue_circles
         ]
-
-        if self.camera_position in {
-            CameraPosition.top_left_corner,
-            CameraPosition.top_middle_point,
-            CameraPosition.top_right_corner
-        }:
-            quadrants = list(self.flip_quadrant_horizontally(*quadrants))
+        quadrants = self.apply_camera_rotation_on_quadrants(*quadrants)
 
         # TODO: add rotations for camera positions on sides of field
         mapped_points: dict[KeyPoint, Point] = {
@@ -111,6 +106,7 @@ class KeyPointPlacer:
         quadrants: list[PointQuadrant] = [
             self.determine_quadrant(goal_zone, center_point) for goal_zone in goal_zones
         ]
+        quadrants = self.apply_camera_rotation_on_quadrants(*quadrants)
 
         mapped_to: dict[KeyPoint, Point] = {
             self.goal_zones_points[quadrant]: point for quadrant, point in zip(quadrants, goal_zones)
@@ -119,8 +115,132 @@ class KeyPointPlacer:
         return mapped_to
 
     # TODO: add mapping for blue lines and for goal zones lines
+    def map_blue_lines_to_key_points(self, *blue_lines: Line, center_point: Point) -> dict[KeyPoint, Point]:
+        quadrants: list[PointQuadrant] = [
+            # Determines the upper left points quadrant of a whole line
+            self.determine_quadrant(blue_line.min_point, center_point) for blue_line in blue_lines
+        ]
+        quadrants = self.apply_camera_rotation_on_quadrants(*quadrants)
+
+        mapped_points: dict[KeyPoint, Point] = {}
+
+        for line, quadrant in zip(blue_lines, quadrants):
+            mapped_points[self.blue_lines_points[quadrant]] = line.min_point
+            opposite_point_quadrant, *_ = self.flip_quadrant_horizontally(quadrant)
+
+            mapped_points[
+                self.blue_lines_points[opposite_point_quadrant]
+            ] = line.max_point
+
+        return mapped_points
+
+    def map_goal_lines(self, *goal_lines: Line, center_point: Point) -> dict[KeyPoint, Point]:
+        """
+        Распределяет линии зоны гола по полю.
+
+        :param goal_lines: Линии зоны гола.
+        :param center_point: Центральная опорная точка для алгоритма.
+        :return: Соотнесения точек.
+        """
+        quadrants_min: list[PointQuadrant] = [
+            # Determines the upper left points quadrant of a whole line
+            self.determine_quadrant(goal_line.min_point, center_point) for goal_line in goal_lines
+        ]
+        quadrants_min = self.apply_camera_rotation_on_quadrants(*quadrants_min)
+
+        quadrants_max: list[PointQuadrant] = [
+            # Determines the upper left points quadrant of a whole line
+            self.determine_quadrant(goal_line.max_point, center_point) for goal_line in goal_lines
+        ]
+        quadrants_max = self.apply_camera_rotation_on_quadrants(*quadrants_max)
+
+        points_to_map: list[tuple[Line, PointQuadrant, PointQuadrant]] = [
+            (line, max_point_quadrant, min_point_quadrant)
+            for line, max_point_quadrant, min_point_quadrant in
+                zip(goal_lines, quadrants_max, quadrants_min)
+        ]
+        points_to_map.sort(
+            key=lambda v: math.sqrt(v[0].min_point.x ** 2 + v[0].min_point.y ** 2)
+        )
+
+        left_lines: list[tuple[Line, PointQuadrant, PointQuadrant]] = [
+            (line, max_point_quadrant, min_point_quadrant)
+            for line, max_point_quadrant, min_point_quadrant in points_to_map
+                if min_point_quadrant[1] == VerticalPosition.left
+        ]
+        right_lines: list[tuple[Line, PointQuadrant, PointQuadrant]] = [
+            (line, max_point_quadrant, min_point_quadrant)
+            for line, max_point_quadrant, min_point_quadrant in points_to_map
+                if min_point_quadrant[1] == VerticalPosition.right
+        ]
+
+        left_line: Line = self.combine_points_to_line(left_lines)
+        right_line: Line = self.combine_points_to_line(right_lines)
+
+        key_points_mapping = {
+            (HorizontalPosition.top, VerticalPosition.left): self.minimap_key_points.left_goal_line_top,
+            (HorizontalPosition.bottom, VerticalPosition.left): self.minimap_key_points.left_goal_line_after_zone_bottom,
+            (HorizontalPosition.top, VerticalPosition.right): self.minimap_key_points.right_goal_line_top,
+            (HorizontalPosition.bottom, VerticalPosition.right): self.minimap_key_points.right_goal_line_after_zone_bottom
+        }
+
+        unused_line_points_mapping = {
+            self.minimap_key_points.left_goal_line_top: self.minimap_key_points.left_goal_line_bottom,
+            self.minimap_key_points.left_goal_line_after_zone_bottom: self.minimap_key_points.left_goal_line_after_zone_top,
+            self.minimap_key_points.right_goal_line_top: self.minimap_key_points.right_goal_line_bottom,
+            self.minimap_key_points.right_goal_line_after_zone_bottom: self.minimap_key_points.right_goal_line_after_zone_top
+        }
+
+        mapped_points: dict[KeyPoint, Point] = {
+            key_points_mapping[self.determine_quadrant(left_line.min_point, center_point)]: left_line.min_point,
+            key_points_mapping[self.determine_quadrant(left_line.max_point, center_point)]: left_line.max_point,
+
+            key_points_mapping[self.determine_quadrant(right_line.min_point, center_point)]: right_line.min_point,
+            key_points_mapping[self.determine_quadrant(right_line.max_point, center_point)]: right_line.max_point,
+        }
+
+        # Map unused line points
+        for line in (left_line, right_line):
+            for point in (line.min_point, line.max_point):
+                if point not in mapped_points.values():
+                    # Find the already mapped point in the same line
+                    for key_point, mapped_point in mapped_points.items():
+                        if mapped_point in (line.min_point, line.max_point):
+                            unused_key_point = unused_line_points_mapping[key_point]
+                            mapped_points[unused_key_point] = point
+                            break
+
+        return mapped_points
 
     # TODO: add generating fake key points from resolution and camera and between points
+
+    def apply_camera_rotation_on_quadrants(self, *quadrants: PointQuadrant) -> list[PointQuadrant]:
+        """
+        Применяет трансформацию к квадрантам для перевода из квадрантов камеры в квадранты мини-карты.
+
+        :param quadrants: Квадранты для приведения.
+        :return: Приведенные квадранты.
+        """
+        modified_quadrants = list(quadrants)
+
+        if self.camera_position in {
+            CameraPosition.top_left_corner,
+            CameraPosition.top_middle_point,
+            CameraPosition.top_right_corner
+        }:
+            modified_quadrants = list(
+                self.flip_quadrant_vertically(
+                    *self.flip_quadrant_horizontally(*quadrants)
+                )
+            )
+
+        if self.camera_position == CameraPosition.right_side_camera:
+            modified_quadrants = list(self.rotate_quadrants_left(*quadrants))
+
+        elif self.camera_position == CameraPosition.left_side_camera:
+            modified_quadrants = list(self.rotate_quadrants_right(*quadrants))
+
+        return modified_quadrants
 
     @staticmethod
     def determine_quadrant(point: Point, center_point: Point) -> PointQuadrant:
@@ -224,3 +344,19 @@ class KeyPointPlacer:
         return [
             quadrants_match[quadrant[0], quadrant[1]] for quadrant in quadrants
         ]
+
+    @staticmethod
+    def combine_points_to_line(lines: list[tuple[Line, PointQuadrant, PointQuadrant]]) -> Line:
+        """
+        Combines points from lines to create a new line.
+
+        :param lines: Lines to combine.
+        :return: Combined line.
+        """
+        min_points = [line.min_point for line, _, _ in lines]
+        max_points = [line.max_point for line, _, _ in lines]
+
+        combined_min_point = min(min_points, key=lambda p: math.sqrt(p.x ** 2 + p.y ** 2))
+        combined_max_point = max(max_points, key=lambda p: math.sqrt(p.x ** 2 + p.y ** 2))
+
+        return Line(combined_min_point, combined_max_point)

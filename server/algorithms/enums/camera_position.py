@@ -9,3 +9,6 @@ class CameraPosition(IntEnum):
     bottom_left_corner = auto()
     bottom_middle_point = auto()
     bottom_right_corner = auto()
+
+    right_side_camera = auto()
+    left_side_camera = auto()

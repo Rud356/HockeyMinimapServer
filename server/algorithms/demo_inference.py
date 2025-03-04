@@ -24,41 +24,41 @@ from server.algorithms.player_predictor_service import PlayerPredictorService
 from server.utils.config.minimap_config import KeyPoint, MinimapKeyPointConfig
 
 MINIMAP_KEY_POINTS = MinimapKeyPointConfig(**
-    {
-        "top_left_field_point": {"x": 16, "y": 88},
-        "bottom_right_field_point": {"x": 1247, "y": 704},
+        {
+            "top_left_field_point": {"x": 16, "y": 88},
+            "bottom_right_field_point": {"x": 1247, "y": 704},
 
-        "left_goal_zone": {"x": 116, "y": 396},
-        "right_goal_zone": {"x": 1144, "y": 396},
+            "left_goal_zone": {"x": 116, "y": 396},
+            "right_goal_zone": {"x": 1144, "y": 396},
 
-        "center_line_top": {"x": 630, "y": 92},
-        "center_line_bottom": {"x": 630, "y": 700},
+            "center_line_top": {"x": 630, "y": 92},
+            "center_line_bottom": {"x": 630, "y": 700},
 
-        "left_blue_line_top": {"x": 423, "y": 92},
-        "left_blue_line_bottom": {"x": 423, "y": 700},
+            "left_blue_line_top": {"x": 423, "y": 92},
+            "left_blue_line_bottom": {"x": 423, "y": 700},
 
-        "right_blue_line_top": {"x": 838, "y": 92},
-        "right_blue_line_bottom": {"x": 838, "y": 700},
+            "right_blue_line_top": {"x": 838, "y": 92},
+            "right_blue_line_bottom": {"x": 838, "y": 700},
 
-        "left_goal_line_top": {"x": 99, "y": 105},
-        "left_goal_line_bottom": {"x": 99, "y": 360},
+            "left_goal_line_top": {"x": 99, "y": 105},
+            "left_goal_line_bottom": {"x": 99, "y": 360},
 
-        "left_goal_line_after_zone_top": {"x": 99, "y": 433},
-        "left_goal_line_after_zone_bottom": {"x": 99, "y": 688},
+            "left_goal_line_after_zone_top": {"x": 99, "y": 433},
+            "left_goal_line_after_zone_bottom": {"x": 99, "y": 688},
 
-        "right_goal_line_top": {"x": 1162, "y": 105},
-        "right_goal_line_bottom": {"x": 1162, "y": 360},
+            "right_goal_line_top": {"x": 1162, "y": 105},
+            "right_goal_line_bottom": {"x": 1162, "y": 360},
 
-        "right_goal_line_after_zone_top": {"x": 1162, "y": 433},
-        "right_goal_line_after_zone_bottom": {"x": 1162, "y": 688},
+            "right_goal_line_after_zone_top": {"x": 1162, "y": 433},
+            "right_goal_line_after_zone_bottom": {"x": 1162, "y": 688},
 
-        "center_circle": {"x": 630, "y": 396},
-        "blue_circle_top_left": {"x": 241, "y": 243},
-        "blue_circle_top_right": {"x": 1020, "y": 243},
-        "blue_circle_bottom_left": {"x": 241, "y": 550},
-        "blue_circle_bottom_right": {"x": 1020, "y": 550}
-    }
-)
+            "center_circle": {"x": 630, "y": 396},
+            "red_circle_top_left": {"x": 241, "y": 243},
+            "red_circle_top_right": {"x": 1020, "y": 243},
+            "red_circle_bottom_left": {"x": 241, "y": 550},
+            "red_circle_bottom_right": {"x": 1020, "y": 550}
+        }
+    )
 
 
 @dataclasses.dataclass

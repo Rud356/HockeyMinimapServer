@@ -42,7 +42,7 @@ classes = [
     {"id":8,"name":"BlueCircle","supercategory":""}
 ]
 
-image = cv2.imread(str(Path(r"../../test.png")))
+image = cv2.imread(str(Path(r"../../static/projects/1234.png")))
 image = cv2.resize(image, (1280, 720))
 
 # Set the threshold
@@ -136,7 +136,25 @@ x_min, y_min, x_max, y_max = map(int, combined_bbox)
 # Useless for just polygon lines
 edge_detected = cv2.Canny(result_center_line, 0, 128)
 # edge_detected = result_center_line
-cv2.imwrite("center_line_img.png", edge_detected)
+
+contours, hierarchy = cv2.findContours(edge_detected, cv2.RETR_CCOMP, cv2.CHAIN_APPROX_SIMPLE)
+cnt = contours[0]
+# cv2.imwrite("center_line_img.png", cnt)
+
+# Fit line to the points
+img = edge_detected
+rows,cols = img.shape[:2]
+[vx,vy,x,y] = cv2.fitLine(cnt, cv2.DIST_L2,0,0.01,0.01)
+lefty = int((-x*vy/vx) + y)
+righty = int(((cols-x)*vy/vx)+y)
+img = cv2.line(img,(cols-1,righty),(0,lefty),(130,255,130),2)
+
+output_img = img
+print((cols - 1, righty), (0, lefty))
+cv2.imwrite("fitted_line_mask.png", output_img)
+cv2.imshow("Fitted Line", output_img)
+cv2.waitKey(0)
+cv2.destroyAllWindows()
 
 if result_center_line.any():
     # Iteratively make threshold to give only 1 line?
@@ -157,7 +175,7 @@ if result_center_line.any():
         output = cv2.line(img, pt1, pt2, (0, 0, 255), 3, cv2.LINE_AA)
         output = cv2.rectangle(output, (x_min, y_min), (x_max, y_max), (0, 255, 0), 2)
 
-        cv2.imwrite(f"out_line.png", img=output)
+    cv2.imwrite(f"out_line.png", img=output)
 
 out = vis.draw_instance_predictions(filtered_instances.to("cpu"))
 out_mat = out.get_image()[:, :, ::-1]
