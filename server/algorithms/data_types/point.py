@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import math
 from typing import NamedTuple, TYPE_CHECKING
 
 import cv2
@@ -75,6 +76,18 @@ class Point(NamedTuple):
             color=color,
             thickness=-1
         )
+
+    def find_distance_from_point(self, other_point: tuple[float, float]) -> float:
+        """
+        Находит расстояние от определенной точки до текущей точки.
+
+        :param other_point: Точка, от которой ищем расстояние до текущей точки.
+        :return: Расстояние до точки.
+        """
+        x1, y1 = self
+        x2, y2 = other_point
+        distance = math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2)
+        return distance
 
     @classmethod
     def from_relative_coordinates(cls, point: RelativePoint, resolution: tuple[int, int]) -> Point:
