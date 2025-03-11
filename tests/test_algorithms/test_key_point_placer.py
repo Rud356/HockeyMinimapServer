@@ -295,7 +295,10 @@ def test_goal_lines_key_points_on_position_7_4_lines(key_points):
 
 
 def test_goal_lines_key_points_on_position_7_3_lines(key_points):
-    key_points_placer = key_points_placer_factory(key_points, CameraPosition.left_side_camera)
+    key_points_placer = key_points_placer_factory(
+        key_points, CameraPosition.left_side_camera,
+        resolution=(1920, 1080)
+    )
     center_point = Point(992, 475)
 
     top_left_line = Line(Point(463, 743), Point(860, 793))
@@ -339,6 +342,24 @@ def test_goal_lines_key_points_on_position_7_3_lines(key_points):
 
     assert result == example_result
 
+    example_result = {
+        key_points.left_goal_line_after_zone_top: bottom_left_line.min_point,
+        key_points.left_goal_line_after_zone_bottom: bottom_left_line.max_point,
+
+        key_points.right_goal_line_top: top_right_line.min_point,
+        key_points.right_goal_line_bottom: top_right_line.max_point,
+
+        key_points.right_goal_line_after_zone_top: bottom_right_line.min_point,
+        key_points.right_goal_line_after_zone_bottom: bottom_right_line.max_point
+    }
+
+    result = key_points_placer.map_goal_lines(
+        top_right_line, bottom_right_line, bottom_left_line,
+        center_point=center_point
+    )
+
+    assert result == example_result
+
 
 def test_goal_lines_key_points_on_position_7_2_lines(key_points):
     key_points_placer = key_points_placer_factory(key_points, CameraPosition.left_side_camera)
@@ -367,6 +388,8 @@ def test_goal_lines_key_points_on_position_7_1_line(key_points):
     key_points_placer = key_points_placer_factory(key_points, CameraPosition.left_side_camera)
     center_point = Point(992, 475)
 
+    top_left_line = Line(Point(463, 743), Point(860, 793))
+    bottom_left_line = Line(Point(1020, 794), Point(1409, 836))
     top_right_line = Line(Point(850, 353), Point(986, 373))
     bottom_right_line = Line(Point(1039, 372), Point(1196, 367))
 
@@ -389,6 +412,30 @@ def test_goal_lines_key_points_on_position_7_1_line(key_points):
 
     result = key_points_placer.map_goal_lines(
         top_right_line,
+        center_point=center_point
+    )
+
+    assert result == example_result
+
+    example_result = {
+        key_points.left_goal_line_top: top_left_line.min_point,
+        key_points.left_goal_line_bottom: top_left_line.max_point,
+    }
+
+    result = key_points_placer.map_goal_lines(
+        top_left_line,
+        center_point=center_point
+    )
+
+    assert result == example_result
+
+    example_result = {
+        key_points.left_goal_line_after_zone_top: bottom_left_line.min_point,
+        key_points.left_goal_line_after_zone_bottom: bottom_left_line.max_point,
+    }
+
+    result = key_points_placer.map_goal_lines(
+        bottom_left_line,
         center_point=center_point
     )
 

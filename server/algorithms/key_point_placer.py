@@ -153,7 +153,7 @@ class KeyPointPlacer:
         quadrants_min = self.apply_camera_rotation_on_quadrants(*quadrants_min)
 
         quadrants_max: list[PointQuadrant] = [
-            # Determines the upper left points quadrant of a whole line
+            # Determines the bottom right points quadrant of a whole line
             self.determine_quadrant(goal_line.max_point, center_point) for goal_line in goal_lines
         ]
         quadrants_max = self.apply_camera_rotation_on_quadrants(*quadrants_max)
@@ -219,37 +219,13 @@ class KeyPointPlacer:
         ] = (set(left_lines) | set(right_lines)) - set(used_lines)
 
         for leftover_line, min_quadrant, max_quadrant in leftover_lines:
-            tmp_line: Line
-
-
-            if left_line:
-                tmp_line = Line(
-                    line_points_quadrants[HorizontalPosition.top, VerticalPosition.left],
-                    line_points_quadrants[HorizontalPosition.bottom, VerticalPosition.left]
-                )
-
-            elif right_line:
-                tmp_line = Line(
-                    line_points_quadrants[HorizontalPosition.top, VerticalPosition.right],
-                    line_points_quadrants[HorizontalPosition.bottom, VerticalPosition.right]
-                )
-
-            else:
-                bottom_point, upper_point = sorted(
-                    [leftover_line.min_point, leftover_line.max_point],
-                    key=lambda p: p.find_distance_from_point(center_point)
-                )
-                tmp_line = Line(upper_point, bottom_point)
-
-            l1, l2 = leftover_line, tmp_line
-            (x1, y1), (x2, y2) = l1[0], l1[1]
-            (u1, v1), (u2, v2) = l2[0], l2[1]
-            vec1 = numpy.array([x2 - x1, y2 - y1])
-            vec2 = numpy.array([u2 - u1, v2 - v1])
-            dot_product = numpy.dot(vec1, vec2)
-
-            if dot_product >= 0:
+            if leftover_line.min_point.find_distance_from_point(
+                    (center_point.x, center_point.y)
+            ) > leftover_line.max_point.find_distance_from_point(
+                (center_point.x, center_point.y)
+            ):
                 mapped_points[key_points_mapping[min_quadrant]] = leftover_line.min_point
+
             else:
                 mapped_points[key_points_mapping[max_quadrant]] = leftover_line.max_point
 
