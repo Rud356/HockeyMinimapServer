@@ -77,7 +77,7 @@ class Point(NamedTuple):
             thickness=-1
         )
 
-    def find_distance_from_point(self, other_point: tuple[float, float]) -> float:
+    def find_distance_from_point(self, other_point: tuple[float, float] | Point) -> float:
         """
         Находит расстояние от определенной точки до текущей точки.
 

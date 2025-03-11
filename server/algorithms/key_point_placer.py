@@ -270,7 +270,7 @@ class KeyPointPlacer:
 
         :param goal_lines: Линии зоны гола.
         :param mapped_points: Соотнесенные точки.
-        :return: Новый словарь дополнительно соотнесенных точек.
+        :return: Новый словарь, дополненный соотнесенными точек.
         """
         unused_line_points_mapping = {
             self.minimap_key_points.left_goal_line_top: self.minimap_key_points.left_goal_line_bottom,
@@ -280,7 +280,7 @@ class KeyPointPlacer:
             self.minimap_key_points.right_goal_line_after_zone_top: self.minimap_key_points.right_goal_line_after_zone_bottom,
             self.minimap_key_points.right_goal_line_after_zone_bottom: self.minimap_key_points.right_goal_line_after_zone_top
         }
-        mapped_new_points: dict[KeyPoint, Point] = {}
+        mapped_new_points: dict[KeyPoint, Point] = mapped_points.copy()
 
         # Map unused line points
         for line in goal_lines:
@@ -288,23 +288,25 @@ class KeyPointPlacer:
             used_point: Point
             unused_point: Point
 
-            if line.min_point not in mapped_points.values():
+            if line.min_point not in mapped_new_points.values():
                 used_point = line.max_point
                 unused_point = line.min_point
 
-            elif line.max_point not in mapped_points.values():
+                for key_point, point in mapped_new_points.items():
+                    if point == used_point:
+                        new_key_point = unused_line_points_mapping[key_point]
+                        mapped_new_points[new_key_point] = unused_point
+                        break
+
+            if line.max_point not in mapped_new_points.values():
                 used_point = line.min_point
                 unused_point = line.max_point
 
-            else:
-                # Can't map, something gone wrong
-                continue
-
-            for key_point, point in mapped_points.items():
-                if point == used_point:
-                    new_key_point = unused_line_points_mapping[key_point]
-                    mapped_new_points[new_key_point] = unused_point
-                    break
+                for key_point, point in mapped_new_points.items():
+                    if point == used_point:
+                        new_key_point = unused_line_points_mapping[key_point]
+                        mapped_new_points[new_key_point] = unused_point
+                        break
 
         return mapped_new_points
 
@@ -414,15 +416,16 @@ class KeyPointPlacer:
     @staticmethod
     def combine_points_to_line(lines: list[tuple[Line, PointQuadrant, PointQuadrant]]) -> Line:
         """
-        Combines points from lines to create a new line.
+        Соединяет две линии по расстоянию от точек.
 
-        :param lines: Lines to combine.
-        :return: Combined line.
+        :param lines: Линии для объединения.
+        :param from_point: Относительно какой точки объединять линии.
+        :return: Комбинированная линия.
         """
-        min_points = [line.min_point for line, _, _ in lines]
-        max_points = [line.max_point for line, _, _ in lines]
+        min_points: list[Point] = [line.min_point for line, _, _ in lines]
+        max_points: list[Point] = [line.max_point for line, _, _ in lines]
 
-        combined_min_point = min(min_points, key=lambda p: math.sqrt(p.x ** 2 + p.y ** 2))
-        combined_max_point = max(max_points, key=lambda p: math.sqrt(p.x ** 2 + p.y ** 2))
+        combined_min_point = min(min_points, key=lambda p: p.find_distance_from_point((0, 0)))
+        combined_max_point = max(max_points, key=lambda p: p.find_distance_from_point((0, 0)))
 
         return Line(combined_min_point, combined_max_point)
