@@ -461,8 +461,3 @@ class KeyPointPlacer:
 
         else:
             return Line(p2, p1)
-
-        combined_min_point = min(min_points, key=lambda p: p.find_distance_from_point((0, 0)))
-        combined_max_point = max(max_points, key=lambda p: p.find_distance_from_point((0, 0)))
-
-        return Line(combined_min_point, combined_max_point)
