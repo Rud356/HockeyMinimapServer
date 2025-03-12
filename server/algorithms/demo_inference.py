@@ -583,6 +583,22 @@ async def main(video_path: Path):
 
         frame_n += 1
 
+
+# Key points visualization
+#
+#    import cv2
+#
+#    map_img = cv2.imread("../../map.png")
+#    input_img = cv2.imread("../../static/projects/1234.png")
+#    for color, map, mapped in zip([1, 56, 95, 180], result.keys(), result.values()):
+#        map_img = Point(map.x, map.y).visualize_point_on_image(map_img, (80, color, 90))
+#        input_img = mapped.visualize_point_on_image(input_img, (80, color, 90))
+#
+#    cv2.imshow("Map", map_img)
+#    cv2.imshow("Img", input_img)
+#    cv2.waitKey()
+#    cv2.destroyAllWindows()
+
 if __name__ == "__main__":
     asyncio.run(
         main(

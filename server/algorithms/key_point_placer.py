@@ -1,13 +1,12 @@
+import itertools
 import math
-import numpy
 from typing import Optional, TypeAlias
 
-from server.algorithms.data_types import Point, Line
+from server.algorithms.data_types import Line, Point
 from server.algorithms.enums.camera_position import CameraPosition
 from server.algorithms.enums.coordinate_split import HorizontalPosition, VerticalPosition
 from server.utils.config.key_point import KeyPoint
 from server.utils.config.minimap_config import MinimapKeyPointConfig
-
 
 PointQuadrant: TypeAlias = tuple[HorizontalPosition, VerticalPosition]
 
@@ -433,8 +432,35 @@ class KeyPointPlacer:
         :param from_point: Относительно какой точки объединять линии.
         :return: Комбинированная линия.
         """
+        reverse_quadrant_lookup: dict[Point, PointQuadrant] = {}
+
+        for line in lines:
+            reverse_quadrant_lookup[line[0].min_point] = line[1]
+            reverse_quadrant_lookup[line[0].max_point] = line[2]
+
+        lines_data: list[Line] = [line for line, _, _ in lines]
         min_points: list[Point] = [line.min_point for line, _, _ in lines]
         max_points: list[Point] = [line.max_point for line, _, _ in lines]
+
+        points: list[Point] = min_points + max_points
+        points_distances: list[tuple[Point, Point, float]] = []
+
+        for (p1, p2) in itertools.combinations(points, 2):
+            if p1 == p2 or Line(p1, p2) in lines_data or Line(p2, p1) in lines_data:
+                continue
+
+            points_distances.append((p1, p2, p1.find_distance_from_point(p2)))
+
+        points_distances.sort(key=lambda point_distance: point_distance[2])
+
+        # Find one with highes distance from each other
+        p1, p2, distance = max(points_distances, key=lambda pd: pd[2])
+
+        if reverse_quadrant_lookup[p1][0] == HorizontalPosition.top:
+            return Line(p1, p2)
+
+        else:
+            return Line(p2, p1)
 
         combined_min_point = min(min_points, key=lambda p: p.find_distance_from_point((0, 0)))
         combined_max_point = max(max_points, key=lambda p: p.find_distance_from_point((0, 0)))

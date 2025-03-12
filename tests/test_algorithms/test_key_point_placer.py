@@ -440,3 +440,26 @@ def test_goal_lines_key_points_on_position_7_1_line(key_points):
     )
 
     assert result == example_result
+
+
+def test_goal_lines_key_points_on_position_4_2_lines(key_points):
+    key_points_placer = key_points_placer_factory(key_points, CameraPosition.top_right_corner)
+    center_point = Point(976, 242)
+
+    top_right_line = Line(Point(119, 222), Point(2, 363))
+    bottom_right_line = Line(Point(277, 46), Point(151, 184))
+
+    example_result = {
+        key_points.right_goal_line_top: top_right_line.max_point,
+        key_points.right_goal_line_bottom: top_right_line.min_point,
+
+        key_points.right_goal_line_after_zone_top: bottom_right_line.max_point,
+        key_points.right_goal_line_after_zone_bottom: bottom_right_line.min_point
+    }
+
+    result = key_points_placer.map_goal_lines(
+        top_right_line, bottom_right_line,
+        center_point=center_point
+    )
+
+    assert result == example_result
