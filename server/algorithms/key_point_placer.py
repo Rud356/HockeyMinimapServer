@@ -240,6 +240,63 @@ class KeyPointPlacer:
 
         return mapped_points
 
+    def map_blue_circle_point(self, circle_point: Point) -> dict[KeyPoint, Point]:
+        """
+        Соотносит точку центрального круга с точкой на мини-карте.
+
+        :param circle_point: Точка центра круга.
+        :return: Соотнесение центральной точки круга на мини-карте и на камере.
+        """
+        return {self.minimap_key_points.center_circle: circle_point}
+
+    def map_red_line_to_key_points(self, red_line: Line, center_point: Point) -> dict[KeyPoint, Point]:
+        """
+        Соотносит точки центральной линии с точками на мини-карте.
+
+        :param red_line: Красная линия.
+        :param center_point: Точка центра.
+        :return: Соотнесение точек красной линии к точкам мини-карты.
+        """
+        quadrants: list[tuple[PointQuadrant, Point]] = [
+            (self.apply_camera_rotation_on_quadrants(self.determine_quadrant(p, center_point))[0], p)
+            for p in (red_line.max_point, red_line.min_point)
+        ]
+
+        quadrants_mapping: dict[HorizontalPosition, KeyPoint] = {
+            HorizontalPosition.top: self.minimap_key_points.center_line_top,
+            HorizontalPosition.bottom: self.minimap_key_points.center_line_bottom
+        }
+
+        for n, quadrant in enumerate(quadrants):
+            # Check if both points on opposite sides
+            if quadrant[0] in map(lambda q: q[0][0], quadrants[:n] + quadrants[n+1:]):
+                break
+
+        else:
+            # Points are on opposite sides
+            return {
+                quadrants_mapping[quadrant[0]]: p for quadrant, p in quadrants
+            }
+
+        if self.camera_position not in {
+            CameraPosition.right_side_camera,
+            CameraPosition.top_left_corner,
+            CameraPosition.top_middle_point,
+            CameraPosition.top_right_corner
+        }:
+            # Not flipped orientation since in those - the points that are close to center are closer to 0, 0 as well
+            return {
+                quadrants_mapping[HorizontalPosition.top]: red_line.min_point,
+                quadrants_mapping[HorizontalPosition.bottom]: red_line.max_point
+            }
+
+        else:
+            # Flipped since points are on opposite side of field when counted from 0, 0 to the minimap coordinates
+            return {
+                quadrants_mapping[HorizontalPosition.bottom]: red_line.min_point,
+                quadrants_mapping[HorizontalPosition.top]: red_line.max_point
+            }
+
     def apply_camera_rotation_on_quadrants(self, *quadrants: PointQuadrant) -> list[PointQuadrant]:
         """
         Применяет трансформацию к квадрантам для перевода из квадрантов камеры в квадранты мини-карты.
