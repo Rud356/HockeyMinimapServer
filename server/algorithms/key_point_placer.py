@@ -2,9 +2,10 @@ import itertools
 import math
 from typing import Optional, TypeAlias
 
-from server.algorithms.data_types import Line, Point
+from server.algorithms.data_types import BoundingBox, Line, Point
 from server.algorithms.enums.camera_position import CameraPosition
 from server.algorithms.enums.coordinate_split import HorizontalPosition, VerticalPosition
+from server.algorithms.exceptions.anchor_point_required import AnchorPointRequired
 from server.utils.config.key_point import KeyPoint
 from server.utils.config.minimap_config import MinimapKeyPointConfig
 
@@ -112,6 +113,13 @@ class KeyPointPlacer:
         return mapped_to
 
     def map_blue_lines_to_key_points(self, *blue_lines: Line, center_point: Point) -> dict[KeyPoint, Point]:
+        """
+        Соотносит точки синих линий с точками на карте.
+
+        :param blue_lines: Синие линии.
+        :param center_point: Центральная точка.
+        :return: Соотнесение синих линий с точками на мини-карте.
+        """
         quadrants: list[PointQuadrant] = [
             # Determines the upper left points quadrant of a whole line
             self.determine_quadrant(blue_line.min_point, center_point) for blue_line in blue_lines
@@ -296,6 +304,86 @@ class KeyPointPlacer:
                 quadrants_mapping[HorizontalPosition.bottom]: red_line.min_point,
                 quadrants_mapping[HorizontalPosition.top]: red_line.max_point
             }
+
+    def map_to_key_points(
+        self,
+        field: BoundingBox,
+        anchor_center_point: Optional[Point] = None,
+        blue_circle_center: Optional[Point] = None,
+        blue_circle_bbox: Optional[BoundingBox] = None,
+        center_line: Optional[Line] = None,
+        red_circle_centers: Optional[tuple[Point, ...]] = None,
+        blue_lines: Optional[tuple[Line, ...]] = None,
+        goal_zones_centers: Optional[tuple[Point, ...]] = None,
+        goal_lines: Optional[tuple[Line, ...]] = None
+    ) -> dict[KeyPoint, Point]:
+        """
+        Соотносит переданные точки и линии в координаты мини-карты.
+
+        :param field: Охватывающий прямоугольник поля.
+        :param anchor_center_point: Пользовательская поддерживающая центральная точка.
+        :param blue_circle_center: Точка центра от синего центрального круга.
+        :param blue_circle_bbox: Охватывающий прямоугольник центрального круга.
+        :param center_line: Центральная линия.
+        :param red_circle_centers: Точки центров красных кругов.
+        :param blue_lines: Синие линии.
+        :param goal_zones_centers: Точки центров зон гола.
+        :param goal_lines: Линии от зоны гола.
+        :return: Соотнесение ключевых точек на мини-карте к точкам с камеры.
+        :raise AnchorPointRequired: Если не была передана точка, являющаяся центральной для поля,
+            и не удалось её вычислить.
+        """
+
+        # Calculating alternatively
+        resulting_mapping: dict[KeyPoint, Point] = {}
+        final_anchor_point: Optional[Point] = None
+
+        if blue_circle_center is not None:
+            final_anchor_point = blue_circle_center
+            # TODO: Check if point needs to be dropped because of touching side of field
+            resulting_mapping[self.minimap_key_points.center_circle] = blue_circle_center
+
+        if anchor_center_point is not None:
+            final_anchor_point = anchor_center_point
+
+        if final_anchor_point is None:
+            # TODO: Calculate fake center point
+            pass
+
+        if final_anchor_point is None:
+            raise AnchorPointRequired("The anchor point is required to keep algorithm working")
+
+        if center_line is not None:
+            # TODO: Check if some points needs to be dropped because of touching side of field
+            resulting_mapping |= self.map_red_line_to_key_points(center_line, final_anchor_point)
+
+        if red_circle_centers is not None:
+            # TODO: Check if some of those need to be dropped
+            resulting_mapping |= self.map_red_circles_to_key_points(
+                *red_circle_centers,
+                center_point=final_anchor_point
+            )
+
+        if blue_lines is not None:
+            # TODO: Check if some of those need to be dropped
+            resulting_mapping |= self.map_blue_lines_to_key_points(
+                *blue_lines,
+                center_point=final_anchor_point
+            )
+
+        if goal_zones_centers is not None:
+            resulting_mapping |= self.map_goal_zones_to_key_points(
+                *goal_zones_centers,
+                center_point=final_anchor_point
+            )
+
+        if goal_lines is not None:
+            resulting_mapping |= self.map_goal_lines(
+                *goal_lines,
+                center_point=final_anchor_point
+            )
+
+        return resulting_mapping
 
     def apply_camera_rotation_on_quadrants(self, *quadrants: PointQuadrant) -> list[PointQuadrant]:
         """
