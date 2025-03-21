@@ -9,6 +9,9 @@ from server.utils.config.key_point import KeyPoint
 
 
 class PlayersMapper:
+    """
+    Класс для реализации алгоритма соотнесения координат игроков из видео с координатами игроков на мини-карте.
+    """
     map_bbox: BoundingBox
     field_transform: numpy.ndarray
 

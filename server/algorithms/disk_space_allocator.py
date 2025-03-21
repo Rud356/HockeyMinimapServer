@@ -73,8 +73,11 @@ class DiskSpaceAllocator:
         :param preallocate_space: Количество предварительно выделенного места для проекта.
         :param over_proposition_factor: Коэффициент прозапаса места для работы с проектом.
         :return: Генератор выделенного объема на диске.
+        :raise InvalidAllocationSize: Когда объем выделяемого места меньше 1 байта или не является целым числом.
+        :raise InvalidAllocationOverPropositionFactor: Когда коэффициент прозапаса места меньше 1 или больше 1000.
+        :raise MemoryError: Когда недостаточно места для сохранения данных на диск.
         """
-        if preallocate_space < 1:
+        if not isinstance(preallocate_space, int) or preallocate_space < 1:
             raise InvalidAllocationSize(
                 f"Too small allocation size: got {preallocate_space}b pre-allocation"
             )
