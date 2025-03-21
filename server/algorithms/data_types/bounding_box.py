@@ -133,3 +133,5 @@ class BoundingBox(NamedTuple):
             Point.from_relative_coordinates(bbox.min_point, resolution),
             Point.from_relative_coordinates(bbox.max_point, resolution)
         )
+
+    # TODO: Add intersections percentage, add check if point is inside or outside and bbox diff

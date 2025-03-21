@@ -11,6 +11,8 @@ from detectron2.engine import DefaultPredictor
 from detectron2.structures import Instances
 from detectron2.utils.visualizer import ColorMode, Visualizer
 
+from server.algorithms.data_types import BoundingBox, Line
+
 device = "cuda" if torch.cuda.is_available() else "cpu"
 
 from server.algorithms.enums.field_classes_enum import FieldClasses
@@ -139,18 +141,16 @@ edge_detected = cv2.Canny(result_center_line, 0, 128)
 
 contours, hierarchy = cv2.findContours(edge_detected, cv2.RETR_CCOMP, cv2.CHAIN_APPROX_SIMPLE)
 cnt = contours[0]
-# cv2.imwrite("center_line_img.png", cnt)
+cv2.imwrite("center_line_img.png", result_center_line)
+
 
 # Fit line to the points
-img = edge_detected
-rows,cols = img.shape[:2]
-[vx,vy,x,y] = cv2.fitLine(cnt, cv2.DIST_L2,0,0.01,0.01)
-lefty = int((-x*vy/vx) + y)
-righty = int(((cols-x)*vy/vx)+y)
-img = cv2.line(img,(cols-1,righty),(0,lefty),(130,255,130),2)
+output_img = Line.find_lines(result_center_line)\
+    .clip_line_to_bounding_box(BoundingBox.calculate_combined_bbox(combined_bbox))\
+    .visualize_line_on_image(
+        image
+    )
 
-output_img = img
-print((cols - 1, righty), (0, lefty))
 cv2.imwrite("fitted_line_mask.png", output_img)
 cv2.imshow("Fitted Line", output_img)
 cv2.waitKey(0)

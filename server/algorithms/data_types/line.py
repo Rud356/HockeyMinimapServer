@@ -65,39 +65,17 @@ class Line(NamedTuple):
         :param min_threshold: Минимальный параметр границы.
         :param max_threshold: Максимальный параметр границы.
 
-        :return: Искомая линия, проходящая через точки на изображении.
+        :return: Искомая линия, проходящая через точки на изображении или ничего.
         """
-        image = cv2.Canny(image.copy(), 100, 200)
+        image = cv2.Canny(image.copy(), 50, 200)
+        contours, hierarchy = cv2.findContours(image, cv2.RETR_CCOMP, cv2.CHAIN_APPROX_SIMPLE)
 
-        assert min_threshold > 0, ("Минимальное пороговое значение алгоритма преобразования Хафа "
-                                   "должно быть не меньше 1")
+        if len(contours) < 1:
+            return None
 
-        # TODO: try cv2.fitLine
-        while min_threshold <= max_threshold:
-            base_threshold = (min_threshold + max_threshold) // 2
-            lines = cv2.HoughLines(image, 1., numpy.pi / 180, base_threshold, None, 0)
-
-            if lines is None:
-                max_threshold = base_threshold - 1
-
-            elif len(lines) > 2:
-                min_threshold = base_threshold + 1
-
-            else:
-                # Выделена единственная линия
-                (r, theta) = lines[:, 0][0]
-                a = numpy.cos(theta)
-                b = numpy.sin(theta)
-
-                x0 = a * r
-                y0 = b * r
-
-                point1, point2 = sorted([
-                    Point(int(x0 + 1000 * (-b)), int(y0 + 1000 * a)),
-                    Point(int(x0 - 1000 * (-b)), int(y0 - 1000 * a))
-                ])
-
-                return cls(point1, point2)
-
-        # Линия не найдена
-        return None
+        cnt = contours[0]
+        rows, cols = image.shape[:2]
+        [vx, vy, x, y] = cv2.fitLine(cnt, cv2.DIST_L2, 0, 0.01, 0.01)
+        lefty = int((-x * vy / vx) + y)
+        righty = int(((cols - x) * vy / vx) + y)
+        return cls(Point(cols-1, righty), Point(0, lefty))
