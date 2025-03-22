@@ -36,3 +36,6 @@ class UserRepo(Protocol):
 
     async def change_user_permissions(self, user_id: int, new_permissions: UserPermissionsData) -> UserPermissionsData:
         ...
+
+    async def authenticate_user(self, username: str, password: str) -> UserDTO:
+        ...
