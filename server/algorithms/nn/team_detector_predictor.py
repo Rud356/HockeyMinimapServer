@@ -6,7 +6,7 @@ import numpy
 import torch
 from PIL import Image
 
-from server.algorithms.enums.teams import Team
+from server.algorithms.enums.team import Team
 from server.algorithms.nn.team_detector_teacher import team_detector_transform
 
 if TYPE_CHECKING:

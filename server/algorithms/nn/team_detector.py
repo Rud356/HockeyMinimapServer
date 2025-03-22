@@ -5,7 +5,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torchvision.datasets as datasets
 
-from server.algorithms.enums.teams import Team
+from server.algorithms.enums.team import Team
 from server.algorithms.nn.team_detector_predictor import TeamDetectionPredictor
 from server.algorithms.nn.team_detector_teacher import TeamDetectorTeacher, team_detector_transform
 
