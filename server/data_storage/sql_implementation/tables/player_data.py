@@ -22,6 +22,7 @@ class PlayerData(Base):
         primary_key=True
     )
     video_id: Mapped[int] = mapped_column(
+        ForeignKey("video.video_id"),
         primary_key=True
     )
     frame_id: Mapped[int] = mapped_column(
