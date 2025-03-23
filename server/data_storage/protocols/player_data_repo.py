@@ -82,3 +82,19 @@ class PlayerDataRepo(Protocol):
         :param offset: С какого кадра начинать получение.
         :return: Данные о кадрах.
         """
+
+    async def get_all_tracking_data(self, video_id: int) -> FrameDataDTO:
+        """
+        Получает информацию об игроках со всех кадров в видео.
+
+        :param video_id: Идентификатор видео.
+        :return: Информация о всех кадрах в видео.
+        """
+
+    async def get_frames_min_and_max_ids_in_video(self, video_id: int) -> tuple[int, int]:
+        """
+        Идентификатор первого и последнего кадра видео.
+
+        :param video_id: Идентификатор видео.
+        :return: Минимальный и максимальный номер кадра в видео.
+        """

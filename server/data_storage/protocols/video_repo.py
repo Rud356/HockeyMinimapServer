@@ -1,5 +1,6 @@
 from typing import Optional, Protocol, runtime_checkable
 
+from server.algorithms.enums.camera_position import CameraPosition
 from server.data_storage.dto.video_dto import VideoDTO
 from server.data_storage.protocols.transaction_manager import TransactionManager
 
@@ -9,7 +10,6 @@ class VideoRepo(Protocol):
     """
     Управляет данными о видео.
     """
-
     transaction: TransactionManager
 
     async def list_all_uploaded_videos_names(self) -> list[str]:
@@ -64,3 +64,12 @@ class VideoRepo(Protocol):
         :return: Ничего.
         """
         ...
+
+    async def set_camera_position(self, video_id: int, camera_position: CameraPosition) -> bool:
+        """
+        Изменяет положение камеры.
+
+        :param video_id: Идентификатор видео.
+        :param camera_position: Позиция камеры в пространстве.
+        :return: Внесены ли изменения.
+        """

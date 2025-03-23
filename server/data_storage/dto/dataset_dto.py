@@ -7,4 +7,4 @@ class DatasetDTO(BaseModel):
     dataset_id: int
     video_id: int
 
-    subsets: TeamsSubsetDTO
+    subsets: list[TeamsSubsetDTO]
