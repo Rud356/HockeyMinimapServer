@@ -1,6 +1,6 @@
 from typing import Optional, TYPE_CHECKING
 
-from sqlalchemy import CheckConstraint, ForeignKey, ForeignKeyConstraint
+from sqlalchemy import ForeignKey, ForeignKeyConstraint
 from sqlalchemy.orm import Mapped, relationship
 from sqlalchemy.orm import mapped_column
 
@@ -48,7 +48,6 @@ class SubsetData(Base):
         ForeignKeyConstraint(
             ["video_id", "frame_id"], ["frame.video_id", "frame.frame_id"]
         ),
-        CheckConstraint("frame_id"),
         {}
     )
     __tablename__ = "subset_data"

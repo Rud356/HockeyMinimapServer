@@ -1,5 +1,7 @@
 from typing import Protocol, runtime_checkable
 
+from server.algorithms.enums.player_classes_enum import PlayerClasses
+from server.algorithms.enums.team import Team
 from server.data_storage.dto.frame_data_dto import FrameDataDTO
 from server.data_storage.dto.player_data_dto import PlayerDataDTO
 from server.data_storage.protocols.transaction_manager import TransactionManager
@@ -54,6 +56,30 @@ class PlayerDataRepo(Protocol):
         :param tracking_id: Идентификатор отслеживания.
         :param player_id: Внутренний идентификатор пользовательского назначения.
         :return: Количество изменённых записей.
+        """
+
+    async def set_team_to_tracking_id(self, video_id: int, frame_id: int, tracking_id: int, team: Team) -> int:
+        """
+        Устанавливает команду для отслеживания игрока, если не было назначений до этого.
+
+        :param video_id: Идентификатор видео.
+        :param frame_id: Номер кадра в видео, на котором игроку назначена команда.
+        :param tracking_id: Номер отслеживания.
+        :param team: Команда для назначения.
+        :return: Количество измененных записей.
+        """
+
+    async def set_player_class_to_tracking_id(
+        self, video_id: int, frame_id: int, tracking_id: int, class_id: PlayerClasses
+    ) -> int:
+        """
+        Устанавливает класс игрока для отслеживания, если не было назначений до этого.
+
+        :param video_id: Идентификатор видео.
+        :param frame_id: Номер кадра в видео, на котором игроку назначена команда.
+        :param tracking_id: Номер отслеживания.
+        :param class_id: Идентификатор класса игрока.
+        :return: Количество измененных записей.
         """
 
     async def get_user_ids_for_players(self, video_id: int) -> dict[int, str]:
