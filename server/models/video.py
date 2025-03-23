@@ -3,7 +3,7 @@ from typing import Optional
 
 from server.algorithms.field_detection import FieldDetection
 from server.algorithms.player_tracking_test import PlayerTracker
-from server.data_storage.repository import Repository
+from server.data_storage.protocols.repository import Repository
 from server.models.frame import Frame
 from server.models.field_data import FieldData
 from server.views.dto.frame_dto import FrameDTO

@@ -1,7 +1,7 @@
 from typing import Optional, TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from server.data_storage.repository import Repository
+    from server.data_storage.protocols.repository import Repository
     from server.models.coordinates import Coordinates
 
 

@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING
+from typing import Optional, TYPE_CHECKING
 
 from sqlalchemy import ForeignKey
 from sqlalchemy.orm import Mapped, relationship
@@ -28,7 +28,7 @@ class PlayerData(Base):
     frame_id: Mapped[int] = mapped_column(
         primary_key=True
     )
-    player_id: Mapped[int] = mapped_column(
+    player_id: Mapped[Optional[int]] = mapped_column(
         ForeignKey("player.player_id")
     )
 
@@ -43,10 +43,15 @@ class PlayerData(Base):
     box: Mapped["Box"] = relationship(
         lazy="joined"
     )
-    player: Mapped["Player"] = relationship(
+    player: Mapped[Optional["Player"]] = relationship(
         lazy="joined"
     )
-    team: Mapped["TeamAssignment"] = relationship(
+    team: Mapped[Optional["TeamAssignment"]] = relationship(
+        primaryjoin="and_("
+                    "TeamAssignment.tracking_id == PlayerData.tracking_id, "
+                    "TeamAssignment.video_id == PlayerData.video_id, "
+                    "TeamAssignment.team_id.isnot(None)"
+                    ")",
         lazy="joined"
     )
     point_on_minimap: Mapped["Point"] = relationship(

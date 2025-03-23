@@ -1,4 +1,4 @@
-from server.data_storage.repository import Repository
+from server.data_storage.protocols.repository import Repository
 from server.models.user_permissions import UserPermissions
 
 

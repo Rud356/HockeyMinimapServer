@@ -6,7 +6,7 @@ if TYPE_CHECKING:
     from server.algorithms.field_detection import FieldDetection
     from server.algorithms.player_tracking_test import PlayerTracker
     from server.models.user import User
-    from server.data_storage.repository import Repository
+    from server.data_storage.protocols.repository import Repository
 
 
 class Project:

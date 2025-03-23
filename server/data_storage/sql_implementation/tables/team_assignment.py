@@ -21,8 +21,7 @@ class TeamAssignment(Base):
         primary_key=True
     )
     frame_id: Mapped[int] = mapped_column(
-        ForeignKey("player_data.frame_id"),
-        primary_key=True
+        ForeignKey("player_data.frame_id")
     )
     team_id: Mapped[Optional[Team]]
 

@@ -5,12 +5,14 @@ from pydantic import BaseModel
 from server.algorithms.enums.player_classes_enum import PlayerClasses
 from server.algorithms.enums.team import Team
 from server.data_storage.dto.box_dto import BoxDTO
+from server.data_storage.dto.point_dto import PointDTO
 
 
-class SubsetDataDTO(BaseModel):
+class PlayerDataDTO(BaseModel):
     tracking_id: int
-    subset_id: int
-    frame_id: int
-    class_id: PlayerClasses
+    player_id: Optional[int]
+    player_name: Optional[str]
     team_id: Optional[Team]
-    box: BoxDTO
+    class_id: PlayerClasses
+    player_on_camera: BoxDTO
+    player_on_minimap: PointDTO
