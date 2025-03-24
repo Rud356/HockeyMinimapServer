@@ -57,7 +57,8 @@ class MapDataRepo(Protocol):
         self,
         map_data_id: int,
         point_on_camera: Optional[PointDTO] = None,
-        point_on_minimap: Optional[PointDTO] = None
+        point_on_minimap: Optional[PointDTO] = None,
+        is_used: Optional[bool] = None
     ) -> bool:
         """
         Изменяет информацию о точках соотнесения.
@@ -65,5 +66,6 @@ class MapDataRepo(Protocol):
         :param map_data_id: Идентификатор соотнесения.
         :param point_on_camera: Точка из камеры (при значении None - не изменяется).
         :param point_on_minimap: Точка из мини-карты (при значении None - не изменяется).
+        :param is_used: Используется ли точка в построении карты (при значении None - не изменяется).
         :return: Изменена ли точка.
         """

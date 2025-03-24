@@ -17,10 +17,10 @@ from server.algorithms.data_types.point import Point
 from server.algorithms.enums.coordinate_split import HorizontalPosition, VerticalPosition
 from server.algorithms.enums.field_classes_enum import FieldClasses
 from server.algorithms.enums.player_classes_enum import PlayerClasses
-from server.algorithms.field_predictor_service import FieldPredictorService
+from server.algorithms.services.field_predictor_service import FieldPredictorService
 # predicts teams based on reference images
 from server.algorithms.nn.team_detector import predictor
-from server.algorithms.player_predictor_service import PlayerPredictorService
+from server.algorithms.services.player_predictor_service import PlayerPredictorService
 from server.utils.config.minimap_config import KeyPoint, MinimapKeyPointConfig
 
 MINIMAP_KEY_POINTS = MinimapKeyPointConfig(**

@@ -7,3 +7,4 @@ class MinimapDataDTO(BaseModel):
     map_data_id: int
     point_on_camera: PointDTO
     point_on_minimap: PointDTO
+    is_used: bool
