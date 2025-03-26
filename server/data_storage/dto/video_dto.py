@@ -15,4 +15,4 @@ class VideoDTO(BaseModel):
     is_processed: bool
     source_video_path: Path
     converted_video_path: Optional[Path]
-    dataset_id: int
+    dataset_id: Optional[int]

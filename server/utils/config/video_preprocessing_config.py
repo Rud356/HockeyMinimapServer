@@ -7,7 +7,6 @@ class VideoPreprocessingConfig(BaseModel):
     """
     Конфигурация параметров для конвертации видео с помощью FFmpeg.
     """
-    fps: Optional[int] = Field(default=None)
     hwaccel: str = Field(default="auto")
     video_width: int = Field(default=1280)
     video_height: int = Field(default=720)

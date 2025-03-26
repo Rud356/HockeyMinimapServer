@@ -1,7 +1,7 @@
 from pydantic import BaseModel, Field
 
 
-class ServerConfig(BaseModel):
+class ServerSettings(BaseModel):
     """
     Конфигурация серверной части приложения для вывода в сеть.
     """

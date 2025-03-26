@@ -64,7 +64,7 @@ class DiskSpaceAllocator:
 
     @contextlib.asynccontextmanager
     async def preallocate_disk_space(
-        self, preallocate_space: int, over_proposition_factor: float = 1.3
+        self, preallocate_space: int, over_proposition_factor: float = 1.1
     ) -> AsyncGenerator[int, Any]:
         """
         Предварительно выделяет место на диске для использования, и по закрытию контекстного менеджера
@@ -96,6 +96,7 @@ class DiskSpaceAllocator:
                 self.active_space_reservations_bins[bin_id] = preallocate_space
 
             else:
+                # TODO: Add more info to exception via custom one
                 raise MemoryError(
                     f"Not enough memory to store project: tried to allocate"
                     f" {round(preallocate_space / (1024**3), 2)}GiB"
@@ -112,19 +113,35 @@ class DiskSpaceAllocator:
 if __name__ == "__main__":
     async def demo_alloc(alloc, size):
         async with alloc.preallocate_disk_space(size*(1024**3)) as data:
-            await asyncio.sleep(2)
+            await asyncio.sleep(10)
 
 
     async def main():
         alloc = DiskSpaceAllocator()
+        print("Allocating 10G * 1.1")
         asyncio.create_task(demo_alloc(alloc, 10))
-        asyncio.create_task(demo_alloc(alloc, 12))
-        await asyncio.sleep(1)
-        asyncio.create_task(demo_alloc(alloc, 50))
-        asyncio.create_task(demo_alloc(alloc, 60))
         print(DiskUsage(alloc.current_disk_usage.total, alloc.total_reserved_space, alloc.total_free_space))
-        await demo_alloc(alloc, 10)
+        await asyncio.sleep(0.2)
+        print("Allocating 12G * 1.1")
+        asyncio.create_task(demo_alloc(alloc, 12))
+        print(DiskUsage(alloc.current_disk_usage.total, alloc.total_reserved_space, alloc.total_free_space))
+        await asyncio.sleep(0.2)
+        print("Allocating 50G * 1.1")
+        asyncio.create_task(demo_alloc(alloc, 50))
+        await asyncio.sleep(0.2)
         print(DiskUsage(alloc.current_disk_usage.total, alloc.total_reserved_space, alloc.total_free_space))
 
+        print("Allocating 80G * 1.1, excepting error")
+        try:
+            exc = asyncio.create_task(demo_alloc(alloc, 80))
+            await asyncio.sleep(0.1)
+            await exc
+            print(DiskUsage(alloc.current_disk_usage.total, alloc.total_reserved_space, alloc.total_free_space))
+        except MemoryError as e:
+            print(f"Allocation error, took too much disk space: {e}")
+
+        print("Allocating 20G * 1.1")
+        await demo_alloc(alloc, 20)
+        print(DiskUsage(alloc.current_disk_usage.total, alloc.total_reserved_space, alloc.total_free_space))
 
     asyncio.run(main())

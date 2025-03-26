@@ -2,8 +2,8 @@ sqlalchemy[asyncio]~=2.0.36
 aiosqlite~=0.20.0
 opencv-python~=4.10.0.84
 ffmpeg-python~=0.2.0
-fastapi
-uvicorn
+fastapi~=0.115.12
+uvicorn~=0.34.0
 dishka~=1.4.2
 cython~=3.0.11
 torch~=2.5.1
@@ -11,3 +11,5 @@ torchvision~=0.20.1
 torchaudio~=2.5.1
 scikit-learn~=1.6.1
 sort-track~=0.0.8
+python-multipart~=0.0.20
+aiofiles~=0.8.0

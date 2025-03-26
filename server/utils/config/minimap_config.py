@@ -1,4 +1,5 @@
 from pydantic import BaseModel
+
 from server.utils.config.key_point import KeyPoint
 
 
