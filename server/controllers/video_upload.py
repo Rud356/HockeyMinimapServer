@@ -109,11 +109,11 @@ class VideoUploadEndpoint(APIEndpoint):
         except InvalidFileFormat:
             raise HTTPException(status_code=400, detail='Invalid file format, expecting video')
 
-        except Exception:
-            raise HTTPException(status_code=500, detail='Something went wrong')
-
         except MemoryError:
             raise HTTPException(status_code=507, detail="Not enough disk space")
+
+        except Exception:
+            raise HTTPException(status_code=500, detail='Something went wrong')
 
         finally:
             await video_upload.close()
