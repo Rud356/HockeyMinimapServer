@@ -1,3 +1,4 @@
+from __future__ import annotations
 from typing import Optional, TYPE_CHECKING
 
 from detectron2.structures import Instances
@@ -6,9 +7,8 @@ from server.algorithms.data_types.field_data import FieldData
 from server.algorithms.data_types.field_extracted_data import FieldExtractedData
 from server.algorithms.services.base.field_data_extraction_protocol import FieldDataExtractionProtocol
 
-if TYPE_CHECKING:
-    from server.algorithms.data_types import BoundingBox, Line, Point
-    from server.algorithms.key_point_placer import KeyPointPlacer
+from server.algorithms.data_types import BoundingBox, Line, Point
+from server.algorithms.key_point_placer import KeyPointPlacer
 
 
 class FieldDataExtractionService(FieldDataExtractionProtocol):
@@ -53,7 +53,9 @@ class FieldDataExtractionService(FieldDataExtractionProtocol):
             blue_circle_center = field_data.blue_circle.center_point
 
         if field_data.red_center_line:
-            center_line = Line.find_lines(field_data.red_center_line.polygon.mask)
+            center_line = Line.find_lines(field_data.red_center_line.polygon.mask).clip_line_to_bounding_box(
+                field_data.red_center_line.bbox
+            )
 
         if field_data.red_circles:
             red_circle_centers = tuple([
@@ -65,7 +67,9 @@ class FieldDataExtractionService(FieldDataExtractionProtocol):
 
         if field_data.blue_lines:
             blue_lines_param = tuple(filter(None, [
-                Line.find_lines(blue_line.polygon.mask) for blue_line in field_data.blue_lines
+                Line.find_lines(blue_line.polygon.mask).clip_line_to_bounding_box(
+                    blue_line.bbox
+                ) for blue_line in field_data.blue_lines
             ]))
 
             if len(blue_lines_param) == 0:
