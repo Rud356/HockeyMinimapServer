@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from functools import cached_property
 from typing import NamedTuple
 
 import cv2
@@ -17,7 +16,7 @@ class BoundingBox(NamedTuple):
     min_point: Point
     max_point: Point
 
-    @cached_property
+    @property
     def center_point(self) -> Point:
         """
         Центральная точка ограничивающего прямоугольника.
@@ -29,7 +28,7 @@ class BoundingBox(NamedTuple):
             (self.min_point.y + self.max_point.y) / 2
         )
 
-    @cached_property
+    @property
     def bottom_point(self) -> Point:
         """
         Возвращает точку ограничивающего прямоугольника в центре нижней линии прямоугольника.

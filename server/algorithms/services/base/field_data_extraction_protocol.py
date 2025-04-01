@@ -1,3 +1,4 @@
+from __future__ import annotations
 from typing import Optional, Protocol, TYPE_CHECKING, runtime_checkable
 
 from detectron2.structures import Instances

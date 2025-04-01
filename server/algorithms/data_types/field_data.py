@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 from typing import Optional
 
+import numpy
 from detectron2.structures import Instances
 
 from server.algorithms.data_types.bounding_box import BoundingBox
@@ -44,7 +45,7 @@ class FieldData:
         for mask, center, box, classified_as in zip(masks, boxes_centers, boxes, classes_predicted):
             instance_data: FieldInstance = FieldInstance(
                 BoundingBox.calculate_combined_bbox(box),
-                Mask(mask),
+                Mask((mask * 255).astype(numpy.uint8)),
                 Point(center[0], center[1]),
                 classified_as
             )
@@ -122,7 +123,7 @@ class FieldData:
 
                 case FieldClasses.GoalZone:
                     # Multiple zones
-                    if output.blue_lines is None:
+                    if output.goal_zones is None:
                         output.goal_zones = [instance_data]
 
                     # Intersects with other goal zone, need union of those
@@ -152,7 +153,7 @@ class FieldData:
                             output.goal_zones[matched_zone[0]] = instance_data
 
                     else:
-                        output.blue_lines.append(instance_data)
+                        output.goal_zones.append(instance_data)
 
                 case FieldClasses.GoalLine:
                     # Multiple lines

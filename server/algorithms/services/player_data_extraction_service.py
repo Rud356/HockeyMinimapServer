@@ -1,4 +1,5 @@
 # TODO: Implement service for fetching data from video about player movement
+from __future__ import annotations
 from typing import Optional, TYPE_CHECKING
 
 import numpy
@@ -29,7 +30,7 @@ class PlayerDataExtractionService:
         field_mask: Mask
     ):
         self.team_predictor: TeamDetectionPredictor = team_predictor
-        self.players_mapped: PlayersMapper = players_mapper
+        self.players_mapper: PlayersMapper = players_mapper
         self.player_tracker: PlayerTracker = player_tracker
         self.field_mask: numpy.ndarray = field_mask.mask
 
@@ -89,7 +90,7 @@ class PlayerDataExtractionService:
         players_bottom_points: list[Point] = [
             tracked_player.bounding_box.bottom_point for tracked_player in tracking_data
         ]
-        map_points: list[Point] = self.players_mapped.transform_point_to_minimap_coordinates(
+        map_points: list[Point] = self.players_mapper.transform_point_to_minimap_coordinates(
             *players_bottom_points
         )
 

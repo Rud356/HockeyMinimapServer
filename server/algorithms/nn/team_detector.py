@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 
 import cv2
 import torch.nn as nn
@@ -33,15 +34,16 @@ class TeamDetectorModel(nn.Module):
 
 
 classes_names = list(Team.__members__)
-test_dir = 'datasets/custom_validation'
-data_dir = 'datasets/custom_dataset'
+test_dir = '../datasets/custom_validation'
+data_dir = '../datasets/custom_dataset'
 
 train_dataset = datasets.ImageFolder(os.path.join(data_dir, 'train'), transform=team_detector_transform)
 val_dataset = datasets.ImageFolder(os.path.join(data_dir, 'val'), transform=team_detector_transform)
+print(Path(os.path.join(data_dir, 'train')).resolve(), Path(os.path.join(data_dir, 'val')).resolve())
 
 trainer = TeamDetectorTeacher(train_dataset, val_dataset, 8, TeamDetectorModel())
 model = trainer.train_nn()
-predictor = TeamDetectionPredictor(model, team_detector_transform)
+predictor: TeamDetectionPredictor = TeamDetectionPredictor(model, team_detector_transform)
 
 for image_name in os.listdir(test_dir):
     image_path = os.path.join(test_dir, image_name)

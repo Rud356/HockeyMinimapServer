@@ -33,6 +33,7 @@ class TeamDetectionPredictor:
         :param image: Изображение в формате OpenCV.
         :return: Определение команды.
         """
+
         image_converted: Image.Image = Image.fromarray(cv2.cvtColor(image, cv2.COLOR_BGR2RGB))
         image_eval: Tensor = self.transform(image_converted).unsqueeze(0)
 

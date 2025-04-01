@@ -67,7 +67,7 @@ class Line(NamedTuple):
 
         :return: Искомая линия, проходящая через точки на изображении или ничего.
         """
-        image = cv2.Canny(image.copy(), 50, 200)
+        image = cv2.Canny(image, 50.0, 200.0)
         contours, hierarchy = cv2.findContours(image, cv2.RETR_CCOMP, cv2.CHAIN_APPROX_SIMPLE)
 
         if len(contours) < 1:
