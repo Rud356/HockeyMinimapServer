@@ -80,7 +80,9 @@ class FieldDataExtractionService(FieldDataExtractionProtocol):
 
         if field_data.goal_lines:
             goal_lines_param = tuple(filter(None, [
-                Line.find_lines(goal_line.polygon.mask) for goal_line in field_data.goal_lines
+                Line.find_lines(goal_line.polygon.mask).clip_line_to_bounding_box(
+                    goal_line.bbox
+                ) for goal_line in field_data.goal_lines
             ]))
 
             if len(goal_lines_param) == 0:
