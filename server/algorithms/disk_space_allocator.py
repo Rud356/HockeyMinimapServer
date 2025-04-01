@@ -7,6 +7,7 @@ import uuid
 from typing import Any, AsyncGenerator
 
 from server.algorithms.data_types.disk_usage import DiskUsage
+from server.algorithms.exceptions.out_of_disk_space import OutOfDiskSpace
 
 
 class InvalidAllocationSize(ValueError):
@@ -96,11 +97,11 @@ class DiskSpaceAllocator:
                 self.active_space_reservations_bins[bin_id] = preallocate_space
 
             else:
-                # TODO: Add more info to exception via custom one
-                raise MemoryError(
-                    f"Not enough memory to store project: tried to allocate"
-                    f" {round(preallocate_space / (1024**3), 2)}GiB"
-                    f" but got only {round(self.total_free_space / (1024**3), 2)}GiB"
+                raise OutOfDiskSpace(
+                    self.directory,
+                    preallocate_space,
+                    self.current_disk_usage.free,
+                    self.total_free_space
                 )
 
         yield preallocate_space
