@@ -3,6 +3,7 @@ from typing import List, TYPE_CHECKING
 from sqlalchemy import ForeignKey, ForeignKeyConstraint
 from sqlalchemy.orm import Mapped, relationship
 from sqlalchemy.orm import mapped_column
+from sqlalchemy.sql.schema import ColumnCollectionConstraint
 
 from server.data_storage.sql_implementation.tables.base import Base
 
@@ -32,7 +33,7 @@ class TeamsSubset(Base):
         lazy="immediate"
     )
 
-    __table_args__ = (
+    __table_args__: tuple[ColumnCollectionConstraint | dict, ...] = (
         ForeignKeyConstraint(
             ["from_frame_id", "video_id"], ["frame.frame_id", "frame.video_id"]
         ),

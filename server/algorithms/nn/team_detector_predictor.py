@@ -1,10 +1,12 @@
 from __future__ import annotations
+
 from typing import TYPE_CHECKING
 
 import cv2
 import numpy
 import torch
 from PIL import Image
+from functorch.dim import Tensor
 
 from server.algorithms.enums.team import Team
 from server.algorithms.nn.team_detector_teacher import team_detector_transform
@@ -31,11 +33,11 @@ class TeamDetectionPredictor:
         :param image: Изображение в формате OpenCV.
         :return: Определение команды.
         """
-        image = Image.fromarray(cv2.cvtColor(image, cv2.COLOR_BGR2RGB))
-        image = self.transform(image).unsqueeze(0)
+        image_converted: Image.Image = Image.fromarray(cv2.cvtColor(image, cv2.COLOR_BGR2RGB))
+        image_eval: Tensor = self.transform(image_converted).unsqueeze(0)
 
         with torch.no_grad():
-            output = self.model(image)
+            output = self.model(image_eval)
             _, predicted = torch.max(output, 1)
 
             if predicted.item() == Team.Home:

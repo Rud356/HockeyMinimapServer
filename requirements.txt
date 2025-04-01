@@ -13,3 +13,4 @@ scikit-learn~=1.6.1
 sort-track~=0.0.8
 python-multipart~=0.0.20
 aiofiles~=0.8.0
+types-aiofiles~=0.8.11

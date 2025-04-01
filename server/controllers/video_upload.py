@@ -1,20 +1,14 @@
 import pathlib
 
 import aiofiles
-from dishka.integrations.fastapi import (
-    DishkaRoute,
-    FromDishka,
-    FastapiProvider,
-    inject,
-    setup_dishka,
-)
-from fastapi import APIRouter, File, Response, UploadFile, HTTPException
+from dishka.integrations.fastapi import FromDishka
+from fastapi import APIRouter, File, HTTPException, Response, UploadFile
 
 from server.algorithms.disk_space_allocator import DiskSpaceAllocator
 from server.algorithms.exceptions.invalid_file_format import InvalidFileFormat
+from server.algorithms.exceptions.out_of_disk_space import OutOfDiskSpace
 from server.algorithms.video_processing import VideoProcessing
 from server.controllers.endpoints_base import APIEndpoint
-from server.utils.config import AppConfig
 
 
 class VideoUploadEndpoint(APIEndpoint):
@@ -90,10 +84,16 @@ class VideoUploadEndpoint(APIEndpoint):
         disk_space_allocator: FromDishka[DiskSpaceAllocator],
         video_upload: UploadFile = File(...),
     ) -> dict[str, str]:
+        if video_upload.filename is None or video_upload.size is None:
+            raise HTTPException(
+                status_code=400,
+                detail='Invalid file name or file size is not found, expecting valid upload'
+            )
+
         try:
             async with (
                 aiofiles.tempfile.TemporaryDirectory(prefix="hmms_uploads_") as tmp_dir,
-                disk_space_allocator.preallocate_disk_space(video_upload.size)
+                disk_space_allocator.preallocate_disk_space(video_upload.size) as allocated_space
             ):
                 temp_file: pathlib.Path = pathlib.Path(tmp_dir) / video_upload.filename
                 async with aiofiles.open(temp_file, 'wb') as f:
@@ -109,7 +109,8 @@ class VideoUploadEndpoint(APIEndpoint):
         except InvalidFileFormat:
             raise HTTPException(status_code=400, detail='Invalid file format, expecting video')
 
-        except MemoryError:
+        except OutOfDiskSpace as ran_out_of_disk:
+            # TODO: add more details about error
             raise HTTPException(status_code=507, detail="Not enough disk space")
 
         except Exception:

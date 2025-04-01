@@ -3,6 +3,7 @@ from typing import Optional, TYPE_CHECKING
 from sqlalchemy import ForeignKey, ForeignKeyConstraint
 from sqlalchemy.orm import Mapped, relationship
 from sqlalchemy.orm import mapped_column
+from sqlalchemy.sql.schema import ColumnCollectionConstraint
 
 from server.algorithms.enums.player_classes_enum import PlayerClasses
 from server.algorithms.enums.team import Team
@@ -44,7 +45,7 @@ class SubsetData(Base):
         lazy="joined"
     )
 
-    __table_args__ = (
+    __table_args__: tuple[ColumnCollectionConstraint | dict, ...] = (
         ForeignKeyConstraint(
             ["video_id", "frame_id"], ["frame.video_id", "frame.frame_id"]
         ),

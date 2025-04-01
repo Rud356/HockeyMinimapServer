@@ -15,7 +15,7 @@ class UserPermissions(Base):
     """
     Описывает таблицу прав пользователей сервера.
     """
-    user_id: Mapped[ForeignKey[int]] = mapped_column(ForeignKey("users.user_id"), primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.user_id"), primary_key=True)
 
     can_administrate_users: Mapped[bool]
     can_create_projects: Mapped[bool]

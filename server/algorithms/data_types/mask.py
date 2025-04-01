@@ -65,7 +65,7 @@ class Mask:
 
         return Mask(
             numpy.sum(
-                numpy.ndarray[masks],
+                numpy.ndarray(masks),
                 axis=0
             ).astype(numpy.uint8)
         )
