@@ -7,6 +7,10 @@ from server.algorithms.data_types.detectron2_input import Detectron2Input
 
 
 class BatchPredictor(DefaultPredictor):
+    """
+    Предсказывает позиции игроков на видео и их класс.
+    """
+
     def batch_predict(self, *images: numpy.ndarray) -> list[dict[str, Instances]]:
         """
         Используется для получения выделений сразу на нескольких изображениях в BRG формате
@@ -19,7 +23,7 @@ class BatchPredictor(DefaultPredictor):
         with torch.no_grad():
             # Преобразование изображений в BGR
             if self.input_format == "RGB":
-                images = [image[:, :, ::-1] for image in images]
+                images = tuple([image[:, :, ::-1] for image in images])
 
             # Подготовка входных данных
             dimensions: list[tuple[int, ...]] = [image.shape[:2] for image in images]

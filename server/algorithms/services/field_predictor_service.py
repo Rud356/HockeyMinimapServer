@@ -8,8 +8,8 @@ from detectron2 import model_zoo
 from detectron2.config import get_cfg
 from detectron2.structures import Instances
 
-from server.algorithms.batch_predictor import BatchPredictor
-from server.algorithms.services.predictor_service import PredictorService
+from server.algorithms.nn.batch_predictor import BatchPredictor
+from server.algorithms.services.base.predictor_service import PredictorService
 
 
 class FieldPredictorService(PredictorService):

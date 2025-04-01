@@ -280,7 +280,7 @@ class KeyPointPlacer:
 
         for n, quadrant in enumerate(quadrants):
             # Check if both points on opposite sides
-            if quadrant[0] in map(lambda q: q[0][0], quadrants[:n] + quadrants[n+1:]):
+            if quadrant[0][0] in map(lambda q: q[0][0], quadrants[:n] + quadrants[n+1:]):
                 break
 
         else:
@@ -313,7 +313,6 @@ class KeyPointPlacer:
         field: BoundingBox,
         anchor_center_point: Optional[Point] = None,
         blue_circle_center: Optional[Point] = None,
-        blue_circle_bbox: Optional[BoundingBox] = None,
         center_line: Optional[Line] = None,
         red_circle_centers: Optional[tuple[Point, ...]] = None,
         blue_lines: Optional[tuple[Line, ...]] = None,
@@ -326,7 +325,6 @@ class KeyPointPlacer:
         :param field: Охватывающий прямоугольник поля.
         :param anchor_center_point: Пользовательская поддерживающая центральная точка.
         :param blue_circle_center: Точка центра от синего центрального круга.
-        :param blue_circle_bbox: Охватывающий прямоугольник центрального круга.
         :param center_line: Центральная линия.
         :param red_circle_centers: Точки центров красных кругов.
         :param blue_lines: Синие линии.

@@ -8,3 +8,17 @@ from .project_export_dto import ProjectExportDTO
 from .teams_subset_dto import SubsetDataDTO, TeamsSubsetDTO
 from .user_dto import UserDTO
 from .video_dto import VideoDTO
+
+__all__ = (
+    "BoxDTO",
+    "DatasetDTO",
+    "FrameDataDTO",
+    "MinimapDataDTO",
+    "PointDTO",
+    "ProjectDTO",
+    "ProjectExportDTO",
+    "SubsetDataDTO",
+    "TeamsSubsetDTO",
+    "UserDTO",
+    "VideoDTO"
+)

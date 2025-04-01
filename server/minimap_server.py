@@ -3,17 +3,18 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 
 import uvicorn
-from dishka import AsyncContainer, FromDishka, make_async_container
+from dishka import AsyncContainer, make_async_container
 from dishka.integrations.fastapi import (
     DishkaRoute,
     FastapiProvider,
     setup_dishka,
 )
-from starlette.middleware.base import BaseHTTPMiddleware
-from fastapi.middleware.gzip import GZipMiddleware
 from fastapi import APIRouter, FastAPI, Request, Response
+from fastapi.middleware.gzip import GZipMiddleware
+from starlette.middleware.base import BaseHTTPMiddleware
 
 from server.algorithms.disk_space_allocator import DiskSpaceAllocator
+from server.controllers.video_upload import VideoUploadEndpoint
 from server.utils.config import (
     AppConfig,
     MinimapKeyPointConfig,
@@ -22,7 +23,6 @@ from server.utils.config import (
     VideoPreprocessingConfig,
 )
 from server.utils.providers import ConfigProvider
-from server.controllers.video_upload import VideoUploadEndpoint
 from server.utils.providers.disk_space_allocator_provider import DiskSpaceAllocatorProvider
 
 

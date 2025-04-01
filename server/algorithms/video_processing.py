@@ -15,11 +15,8 @@ from server.utils.config import VideoPreprocessingConfig
 class VideoProcessing:
     """
     Отвечает за обработку видео и получение информации о видеофайле.
-
-    :param processing_config: Объект конфигурации обработки.
     """
     processing_config: VideoPreprocessingConfig
-
 
     def __init__(self, video_processing_config: VideoPreprocessingConfig):
         self.processing_config = video_processing_config
@@ -79,7 +76,8 @@ class VideoProcessing:
         return frame, video_info
 
     def render_correction_sample(
-        self, source_file: Path,
+        self,
+        source_file: Path,
         k1: float = 0.0,
         k2: float = 0.0,
         frame_timestamp: Optional[float] = None
@@ -138,7 +136,6 @@ class VideoProcessing:
                 raise InvalidFileFormat(
                     "Can't read the file, expected to have output from ffmpeg, but none received")
 
-
             frame = sample_frame
 
         return frame, video_info
@@ -149,7 +146,7 @@ class VideoProcessing:
         dest_file: Path,
         k1: float = 0.0,
         k2: float = 0.0
-    ):
+    ) -> dict[str, Any]:
         """
         Применяет фильтр коррекции искажений к видео и выводит его в новую папку.
 

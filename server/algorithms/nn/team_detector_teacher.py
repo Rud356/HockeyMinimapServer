@@ -21,6 +21,9 @@ team_detector_transform = transforms.Compose(
 
 
 class TeamDetectorTeacher:
+    """
+    Класс, занимающийся обучением нейросети на основе входных данных для подготовки нейросети, разделяющей на команды.
+    """
     def __init__(self, train_dataset: ImageFolder, val_dataset: ImageFolder, epochs: int, model: TeamDetectorModel):
         """
         Инициализирует класс для обучения модели.

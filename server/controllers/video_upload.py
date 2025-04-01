@@ -93,7 +93,7 @@ class VideoUploadEndpoint(APIEndpoint):
         try:
             async with (
                 aiofiles.tempfile.TemporaryDirectory(prefix="hmms_uploads_") as tmp_dir,
-                disk_space_allocator.preallocate_disk_space(video_upload.size) as allocated_space
+                disk_space_allocator.preallocate_disk_space(video_upload.size)
             ):
                 temp_file: pathlib.Path = pathlib.Path(tmp_dir) / video_upload.filename
                 async with aiofiles.open(temp_file, 'wb') as f:
@@ -111,7 +111,10 @@ class VideoUploadEndpoint(APIEndpoint):
 
         except OutOfDiskSpace as ran_out_of_disk:
             # TODO: add more details about error
-            raise HTTPException(status_code=507, detail="Not enough disk space")
+            raise HTTPException(
+                status_code=507,
+                detail=f"Not enough disk space, only {ran_out_of_disk.free_runtime_disk_space} is currently unreserved"
+            )
 
         except Exception:
             raise HTTPException(status_code=500, detail='Something went wrong')

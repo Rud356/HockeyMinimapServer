@@ -54,13 +54,18 @@ class DiskSpaceAllocator:
     @property
     def free_disk_space_ratio(self) -> float:
         """
-        Возвращает соотношение общего объема диска к
+        Возвращает соотношение общего объема диска к занятому и предварительно выделенному месту.
 
-        :return:
+        :return: Соотношение.
         """
         return self.total_free_space / self.current_disk_usage.total
 
     def get_disk_usage(self) -> DiskUsage:
+        """
+        Получает информацию о свободном дисковом пространстве.
+
+        :return: Информация о свободном пространстве на физическом накопителе.
+        """
         return DiskUsage(*shutil.disk_usage(self.directory))
 
     @contextlib.asynccontextmanager

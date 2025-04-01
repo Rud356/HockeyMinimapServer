@@ -7,8 +7,8 @@ import numpy
 from detectron2 import model_zoo
 from detectron2.config import get_cfg
 
-from server.algorithms.batch_predictor import BatchPredictor
-from server.algorithms.services.predictor_service import PredictorService
+from server.algorithms.nn.batch_predictor import BatchPredictor
+from server.algorithms.services.base.predictor_service import PredictorService
 
 
 class PlayerPredictorService(PredictorService):
@@ -48,7 +48,7 @@ class PlayerPredictorService(PredictorService):
         self.predictor = BatchPredictor(cfg)
         self.image_queue = image_queue
 
-        if self.device_lock is None:
+        if device_lock is None:
             self.device_lock = asyncio.Lock()
 
         else:

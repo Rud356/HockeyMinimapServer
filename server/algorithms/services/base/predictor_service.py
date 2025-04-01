@@ -7,7 +7,7 @@ from typing import Iterable
 import numpy
 from detectron2.structures import Instances
 
-from server.algorithms.batch_predictor import BatchPredictor
+from server.algorithms.nn.batch_predictor import BatchPredictor
 
 
 class PredictorService(ABC):
