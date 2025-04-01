@@ -1,3 +1,4 @@
+import os
 import asyncio
 from pathlib import Path
 from typing import Optional
@@ -21,6 +22,7 @@ from server.algorithms.services.player_data_extraction_service import PlayerData
 from server.algorithms.services.player_predictor_service import PlayerPredictorService
 from server.utils.config.key_point import KeyPoint
 
+os.environ["OPENCV_VIDEO_ACCELERATION"] = "ANY"
 source_video: Path = Path("../static/videos/converted_demo.mp4")
 
 
@@ -67,7 +69,7 @@ async def main(video_path: Path, field_model: Path, players_model: Path):
     loop.create_task(field_service())
     loop.create_task(player_service())
 
-    cap = cv2.VideoCapture(str(video_path))
+    cap = cv2.VideoCapture(str(video_path), cv2.CAP_FFMPEG)
     frame_n = 0
     map_data: Optional[FieldExtractedData] = None
     mapper: Optional[PlayersMapper] = None
@@ -75,9 +77,9 @@ async def main(video_path: Path, field_model: Path, players_model: Path):
 
     # Video ouputs
     map_img = cv2.imread("../map.png")
-    fourcc = cv2.VideoWriter_fourcc(*'XVID')
-    out_video = cv2.VideoWriter('../output.avi', fourcc, 25.0, (1280, 720))
-    out_map_video = cv2.VideoWriter('../output_map.avi', fourcc, 25.0, (1259, 770))
+    fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+    out_video = cv2.VideoWriter('../output.mp4', fourcc, 25.0, (1280, 720))
+    out_map_video = cv2.VideoWriter('../output_map.mp4', fourcc, 25.0, (1259, 770))
 
     while cap.isOpened():
         ret, frame = cap.read()
