@@ -103,46 +103,8 @@ class DiskSpaceAllocator:
                     self.current_disk_usage.free,
                     self.total_free_space
                 )
-
         yield preallocate_space
 
         async with self.disk_allocation_lock:
             del self.active_space_reservations_bins[bin_id]
             self.current_disk_usage = self.get_disk_usage()
-
-
-if __name__ == "__main__":
-    async def demo_alloc(alloc, size):
-        async with alloc.preallocate_disk_space(size*(1024**3)) as data:
-            await asyncio.sleep(10)
-
-
-    async def main():
-        alloc = DiskSpaceAllocator()
-        print("Allocating 10G * 1.1")
-        asyncio.create_task(demo_alloc(alloc, 10))
-        print(DiskUsage(alloc.current_disk_usage.total, alloc.total_reserved_space, alloc.total_free_space))
-        await asyncio.sleep(0.2)
-        print("Allocating 12G * 1.1")
-        asyncio.create_task(demo_alloc(alloc, 12))
-        print(DiskUsage(alloc.current_disk_usage.total, alloc.total_reserved_space, alloc.total_free_space))
-        await asyncio.sleep(0.2)
-        print("Allocating 50G * 1.1")
-        asyncio.create_task(demo_alloc(alloc, 50))
-        await asyncio.sleep(0.2)
-        print(DiskUsage(alloc.current_disk_usage.total, alloc.total_reserved_space, alloc.total_free_space))
-
-        print("Allocating 80G * 1.1, excepting error")
-        try:
-            exc = asyncio.create_task(demo_alloc(alloc, 80))
-            await asyncio.sleep(0.1)
-            await exc
-            print(DiskUsage(alloc.current_disk_usage.total, alloc.total_reserved_space, alloc.total_free_space))
-        except MemoryError as e:
-            print(f"Allocation error, took too much disk space: {e}")
-
-        print("Allocating 20G * 1.1")
-        await demo_alloc(alloc, 20)
-        print(DiskUsage(alloc.current_disk_usage.total, alloc.total_reserved_space, alloc.total_free_space))
-
-    asyncio.run(main())
