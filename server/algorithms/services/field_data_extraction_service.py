@@ -100,4 +100,10 @@ class FieldDataExtractionService(FieldDataExtractionProtocol):
                 goal_lines_param
             ),
             field_data.field.polygon
-        )
+        ), (field_bbox,
+                blue_circle_center,
+                center_line,
+                red_circle_centers,
+                blue_lines_param,
+                goal_zones_centers,
+                goal_lines_param)
