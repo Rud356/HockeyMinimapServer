@@ -88,8 +88,6 @@ class KeyPointPlacer:
             self.determine_quadrant(blue_circle, center_point) for blue_circle in blue_circles
         ]
         quadrants = self.apply_camera_rotation_on_quadrants(*quadrants)
-
-        # TODO: add rotations for camera positions on sides of field
         mapped_points: dict[KeyPoint, Point] = {
             self.red_circles_points[quadrant]: point for quadrant, point in zip(quadrants, blue_circles)
         }
