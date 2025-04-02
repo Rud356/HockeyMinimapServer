@@ -7,7 +7,7 @@ import cv2
 import numpy
 import torch
 
-from minimap_server import MINIMAP_KEY_POINTS
+from server.minimap_server import MINIMAP_KEY_POINTS
 from server.algorithms.data_types import BoundingBox, FieldData, Point
 from server.algorithms.data_types.field_extracted_data import FieldExtractedData
 from server.algorithms.enums import CameraPosition

@@ -1,8 +1,8 @@
+from __future__ import annotations
 from dataclasses import dataclass
-from typing import Optional
+from typing import Optional, TYPE_CHECKING
 
 import numpy
-from detectron2.structures import Instances
 
 from server.algorithms.data_types.bounding_box import BoundingBox
 from server.algorithms.data_types.field_instance import FieldInstance
@@ -10,6 +10,8 @@ from server.algorithms.data_types.mask import Mask
 from server.algorithms.data_types.point import Point
 from server.algorithms.enums.field_classes_enum import FieldClasses
 
+if TYPE_CHECKING:
+    from detectron2.structures import Instances
 
 @dataclass(repr=True)
 class FieldData:
