@@ -53,6 +53,9 @@ class PlayersMapper:
         :param points: Координаты игроков.
         :return: Координаты игроков в мини-карте.
         """
+        if len(points) == 0:
+            return []
+
         pts: numpy.ndarray = numpy.array([[p.x, p.y] for p in points], dtype='float32')
         pts_converted: numpy.ndarray = numpy.array([pts])
         to_map_coordinates = cv2.perspectiveTransform(pts_converted, self.field_transform)[0]
