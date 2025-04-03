@@ -35,7 +35,7 @@ class PlayerTracker:
             ]
         )
 
-        targets: Any = self.tracker.update(dest, 0).astype(np.int32).tolist()
+        targets: Any = self.tracker.update(dest).astype(np.int32).tolist()
         data: list[RawPlayerTrackingData] = []
 
         for target in targets:
