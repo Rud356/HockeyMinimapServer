@@ -2,6 +2,7 @@ import os
 from pathlib import Path
 
 import cv2
+import torch
 import torch.nn as nn
 import torchvision.datasets as datasets
 from torchvision.models import resnet18
@@ -31,9 +32,10 @@ train_dataset = datasets.ImageFolder(os.path.join(data_dir, 'train'), transform=
 val_dataset = datasets.ImageFolder(os.path.join(data_dir, 'val'), transform=team_detector_transform)
 print(Path(os.path.join(data_dir, 'train')).resolve(), Path(os.path.join(data_dir, 'val')).resolve())
 
+device = "cuda" if torch.cuda.is_available() else "cpu"
 trainer = TeamDetectorTeacher(train_dataset, val_dataset, 8, TeamDetectorModel())
 model = trainer.train_nn()
-predictor: TeamDetectionPredictor = TeamDetectionPredictor(model, team_detector_transform)
+predictor: TeamDetectionPredictor = TeamDetectionPredictor(model, team_detector_transform, device)
 
 for image_name in os.listdir(test_dir):
     image_path = os.path.join(test_dir, image_name)

@@ -5,7 +5,6 @@ from typing import Optional, TYPE_CHECKING
 import numpy
 import torch
 from detectron2.structures import Instances
-from functorch.dim import Tensor
 
 from server.algorithms.data_types.player_data import PlayerData
 from server.algorithms.enums import Team
@@ -15,6 +14,7 @@ from server.algorithms.player_tracker import PlayerTracker
 from server.algorithms.players_mapper import PlayersMapper
 
 if TYPE_CHECKING:
+    from torch import Tensor
     from server.algorithms.data_types import Mask, RawPlayerTrackingData, Point
 
 

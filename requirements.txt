@@ -9,7 +9,8 @@ cython~=3.0.11
 torch~=2.5.1
 torchvision~=0.20.1
 torchaudio~=2.5.1
-scikit-learn~=1.6.1
+scipy==1.15.2
+scikit-learn==1.6.0
 sort-track~=0.0.8
 python-multipart~=0.0.20
 aiofiles~=0.8.0

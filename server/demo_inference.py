@@ -35,7 +35,7 @@ async def field_data(
     key_point_placer: KeyPointPlacer
 ) -> FieldExtractedData:
     fut = await field_service.add_inference_task_to_queue(frame)
-    inference = (await fut)[0]
+    inference = (await fut)[0].to("cpu")
     field_shapes = FieldData.construct_field_data_from_output(
         inference
     )

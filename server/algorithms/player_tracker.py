@@ -8,7 +8,7 @@ from server.algorithms.data_types import BoundingBox
 from server.algorithms.data_types.raw_player_tracking_data import RawPlayerTrackingData
 from server.algorithms.enums.player_classes_enum import PlayerClasses
 
-
+# TODO: try out this one https://github.com/levan92/deep_sort_realtime for finding players
 class PlayerTracker:
     """
     Отслеживает идентичность игроков на поле между кадрами.
