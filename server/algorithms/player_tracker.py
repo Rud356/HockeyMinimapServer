@@ -14,7 +14,7 @@ class PlayerTracker:
     Отслеживает идентичность игроков на поле между кадрами.
     """
 
-    def __init__(self, start_from_id: int = 0, track_length: int = 2, min_hits: int = 3, iou_threshold: float = 0.3):
+    def __init__(self, start_from_id: int = 0, track_length: int = 6, min_hits: int = 4, iou_threshold: float = 0.2):
         self.start_from_id: int = start_from_id
         self.tracker: SortTracker = SortTracker(track_length, min_hits, iou_threshold)
 
