@@ -66,7 +66,7 @@ class PlayerDataExtractionService:
 
         # Update tracking algorithm
         tracking_data: list[RawPlayerTrackingData] = self.player_tracker.update(
-            boxes, scores, classes_predicted
+            boxes, scores, classes_predicted, frame
         )
 
         # Filter out players

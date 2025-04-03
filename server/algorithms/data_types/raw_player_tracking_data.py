@@ -12,4 +12,3 @@ class RawPlayerTrackingData(NamedTuple):
     tracking_id: int
     bounding_box: BoundingBox
     player_class: PlayerClasses
-    score: float
