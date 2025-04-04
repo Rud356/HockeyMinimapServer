@@ -1,13 +1,16 @@
-import os
 import asyncio
+import cProfile
+import io
+import os
+import pstats
 from pathlib import Path
+from pstats import SortKey
 from typing import Optional
 
 import cv2
 import numpy
 import torch
 
-from server.minimap_server import MINIMAP_KEY_POINTS
 from server.algorithms.data_types import BoundingBox, FieldData, Point
 from server.algorithms.data_types.field_extracted_data import FieldExtractedData
 from server.algorithms.enums import CameraPosition
@@ -20,6 +23,7 @@ from server.algorithms.services.field_data_extraction_service import FieldDataEx
 from server.algorithms.services.field_predictor_service import FieldPredictorService
 from server.algorithms.services.player_data_extraction_service import PlayerDataExtractionService
 from server.algorithms.services.player_predictor_service import PlayerPredictorService
+from server.minimap_server import MINIMAP_KEY_POINTS
 from server.utils.config.key_point import KeyPoint
 
 os.environ["OPENCV_VIDEO_ACCELERATION"] = "ANY"
@@ -177,9 +181,6 @@ async def main(video_path: Path, field_model: Path, players_model: Path):
 
 
 if __name__ == "__main__":
-    import cProfile, pstats, io
-    from pstats import SortKey
-
     pr = cProfile.Profile()
     pr.enable()
 

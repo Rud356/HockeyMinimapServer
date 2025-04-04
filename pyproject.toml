@@ -1,0 +1,59 @@
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "HockeyMinimapServer"
+dynamic = ["version"]
+readme = "README.md"
+authors = [
+    {name = "Rud356", email = "rud356github@gmail.com"},
+]
+description = "Сервер приложения для разметки хоккейных матчей"
+requires-python = ">=3.11.0"
+license = {text = "MIT License"}
+classifiers = [
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: Implementation :: CPython",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: POSIX :: Linux",
+    "Operating System :: Microsoft :: Windows :: Windows 10",
+    "Operating System :: Microsoft :: Windows :: Windows 11",
+    "Intended Audience :: System Administrators",
+    "Natural Language :: Russian",
+]
+dependencies = [
+    "sqlalchemy[asyncio]~=2.0.36",
+    "aiosqlite~=0.20.0",
+    "aiofiles~=0.8.0",
+    "types-aiofiles~=0.8.11",
+    "opencv-python~=4.10.0.84",
+    "ffmpeg-python~=0.2.0",
+    "fastapi[standart]~=0.115.12",
+    "python-multipart~=0.0.20",
+    "dishka~=1.4.2",
+    "cython~=3.0.11",
+    "scipy~=1.15.2",
+    "numpy~=2.2.4",
+    "scikit-learn~=1.6.0",
+    "sort-pip @ https://github.com/Rud356/sort-pip.git"
+]
+
+[tool.setuptools]
+packages = []
+
+[tool.setuptools.dynamic]
+version = {attr = "server.__init__.__version__"}
+
+[project.optional-dependencies]
+uvicorn = ["uvicorn~=0.34.0"]
+linters = ["ruff~=0.11.2", "mypy~=1.15.0"]
+dev = [
+    "sphinx~=5.0.2",
+    "sphinx-rtd-theme~=1.0.0",
+    "Pygments~=2.12.0",
+    "pytest~=8.3.5",
+    "pytest_asyncio~=0.26.0"
+]
