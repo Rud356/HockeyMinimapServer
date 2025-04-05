@@ -101,5 +101,6 @@ class FieldDataExtractionService(FieldDataExtractionProtocol):
                 goal_zones_centers,
                 goal_lines_param
             ),
-            field_data.field.polygon
+            field_data.field.polygon,
+            field_bbox
         )

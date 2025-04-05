@@ -11,9 +11,9 @@ import cv2
 import numpy
 import torch
 
-from server.algorithms.data_types import BoundingBox, FieldData, Point
+from server.algorithms.data_types import BoundingBox, Point
 from server.algorithms.data_types.field_extracted_data import FieldExtractedData
-from server.algorithms.enums import CameraPosition
+from server.algorithms.enums import CameraPosition, Team
 from server.algorithms.key_point_placer import KeyPointPlacer
 from server.algorithms.nn import TeamDetectionPredictor
 from server.algorithms.nn.team_detector import predictor
@@ -40,9 +40,6 @@ async def field_data(
 ) -> FieldExtractedData:
     fut = await field_service.add_inference_task_to_queue(frame)
     inference = (await fut)[0].to("cpu")
-    field_shapes = FieldData.construct_field_data_from_output(
-        inference
-    )
     field_points = FieldDataExtractionService(key_point_placer).get_field_data(
         inference
     )
@@ -84,6 +81,7 @@ async def main(video_path: Path, field_model: Path, players_model: Path):
     fourcc = cv2.VideoWriter_fourcc(*'mp4v')
     out_video = cv2.VideoWriter('../output.mp4', fourcc, 25.0, (1280, 720))
     out_map_video = cv2.VideoWriter('../output_map.mp4', fourcc, 25.0, (1259, 770))
+    tracked_players_teams: dict[int, Team] = {}
 
     while cap.isOpened():
         ret, frame = cap.read()
@@ -129,7 +127,8 @@ async def main(video_path: Path, field_model: Path, players_model: Path):
                 team_predictor,
                 mapper,
                 PlayerTracker(),
-                map_data.map_mask
+                map_data.map_mask,
+                map_data.field_bbox
             )
 
         assert map_data is not None, "Map data is still empty"
@@ -139,7 +138,7 @@ async def main(video_path: Path, field_model: Path, players_model: Path):
         fut = await player_service.add_inference_task_to_queue(frame)
         player_instances = (await fut)[0].to('cpu')
 
-        player_data = player_data_extractor.process_frame(frame, player_instances)
+        player_data = player_data_extractor.process_frame(frame, player_instances, tracked_players_teams)
 
         frame_copy = frame.copy()
         map_copy = map_img.copy()
@@ -149,6 +148,7 @@ async def main(video_path: Path, field_model: Path, players_model: Path):
 
             if player.team_id is not None:
                 player_data_repr += f" {player.team_id.name[0]}"
+                tracked_players_teams[player.tracking_id] = player.team_id
 
             bbox_real = BoundingBox.from_relative_bounding_box(player.bounding_box_on_camera, (720, 1280))
             minimap_point = Point.from_relative_coordinates(player.position, (770, 1259))

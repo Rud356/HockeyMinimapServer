@@ -1,5 +1,6 @@
 # TODO: Implement service for fetching data from video about player movement
 from __future__ import annotations
+
 from typing import Optional, TYPE_CHECKING
 
 import numpy
@@ -15,7 +16,7 @@ from server.algorithms.players_mapper import PlayersMapper
 
 if TYPE_CHECKING:
     from torch import Tensor
-    from server.algorithms.data_types import Mask, RawPlayerTrackingData, Point
+    from server.algorithms.data_types import BoundingBox, Mask, RawPlayerTrackingData, Point
 
 
 class PlayerDataExtractionService:
@@ -27,22 +28,31 @@ class PlayerDataExtractionService:
         team_predictor: TeamDetectionPredictor,
         players_mapper: PlayersMapper,
         player_tracker: PlayerTracker,
-        field_mask: Mask
+        field_mask: Mask,
+        field_bounding_box: BoundingBox
     ):
         self.team_predictor: TeamDetectionPredictor = team_predictor
         self.players_mapper: PlayersMapper = players_mapper
         self.player_tracker: PlayerTracker = player_tracker
         self.field_mask: numpy.ndarray = field_mask.mask
+        self.field_bbox: BoundingBox = field_bounding_box
 
-    def process_frame(self, frame: numpy.ndarray, instances: Instances) -> list[PlayerData]:
+    def process_frame(
+        self,
+        frame: numpy.ndarray,
+        instances: Instances,
+        known_tracked_players_teams: dict[int, Team]
+    ) -> list[PlayerData]:
         """
         Обрабатывает переданный кадр.
 
         :param frame: Кадр с игроками.
         :param instances: Выводы из Detectron2 с определениями классов игроков.
+        :param known_tracked_players_teams: Словарь соотнесения номеров отслеживания и команд игроков.
         :return: Список выделенных на кадре игроков и их номеров отслеживания.
         """
         output: list[PlayerData] = []
+        team_detection_bbox: BoundingBox = self.field_bbox.scale_bbox()
 
         # Filter out not on field
         threshold = 0.5
@@ -69,19 +79,22 @@ class PlayerDataExtractionService:
             boxes, scores, classes_predicted
         )
 
-        # Filter out players
-        player_indexes: list[int] = [
+        # Filter out players who don't need team detection
+        player_indexes_to_detect_team: list[int] = [
             n for n, track_data in enumerate(tracking_data)
-                if track_data.player_class != PlayerClasses.Referee
+                if (
+                    track_data.player_class != PlayerClasses.Referee and
+                    track_data.bounding_box.bottom_point in team_detection_bbox and
+                    track_data.tracking_id not in known_tracked_players_teams
+                )
         ]
 
         # Find out teams of players according to AI model
-        # TODO: filter out those who are close to borders of image
         teams: dict[int, Team] = {
             player_index: self.team_predictor(
                 tracking_data[player_index].bounding_box.cut_out_image_part(frame)
             )
-            for player_index in player_indexes
+            for player_index in player_indexes_to_detect_team
         }
 
         # Find positions of players on mini map
@@ -95,7 +108,8 @@ class PlayerDataExtractionService:
         )
 
         for n, (player_data, map_point) in enumerate(zip(tracking_data, map_points)):
-            player_team: Optional[Team] = teams.get(n)
+            # Choose source of team (detected now, or detected before)
+            player_team: Optional[Team] = teams.get(n) or known_tracked_players_teams.get(player_data.tracking_id)
             output.append(
                 PlayerData(
                     player_data.tracking_id,
@@ -108,5 +122,4 @@ class PlayerDataExtractionService:
                 )
             )
 
-        # TODO: Finish implementation
         return output

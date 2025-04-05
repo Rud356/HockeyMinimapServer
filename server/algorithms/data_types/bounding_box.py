@@ -100,6 +100,37 @@ class BoundingBox(NamedTuple):
             self.max_point.to_relative_coordinates(resolution)
         )
 
+    def scale_bbox(self, scale_factor: float = 0.95) -> BoundingBox:
+        """
+        Изменяет масштаб охватывающего прямоугольника.
+
+        :param scale_factor: Масштаб конечного прямоугольника.
+        :return: Прямоугольник с примененным масштабированием.
+        """
+        center_point: Point = self.center_point
+        width: float = self.max_point.x - self.min_point.x
+        height: float = self.max_point.y - self.min_point.y
+
+        new_width: float = width * scale_factor
+        new_height: float = height * scale_factor
+
+        return BoundingBox(
+            Point(center_point.x - new_width / 2, center_point.y - new_height / 2),
+            Point(center_point.x + new_width / 2, center_point.y + new_height / 2)
+        )
+
+    def __contains__(self, point: Point) -> bool:
+        """
+        Проверяет находиться ли точка внутри охватывающего прямоугольника.
+
+        :param point: Точка для проверки вхождения.
+        :return: Флаг, указывающий находится ли точка в прямоугольнике.
+        """
+        return (
+            (self.min_point.x <= point.x <= self.max_point.x) and
+            (self.min_point.y <= point.y <= self.max_point.y)
+        )
+
     @classmethod
     def calculate_combined_bbox(cls, *bounding_boxes: list[float]) -> BoundingBox:
         """
