@@ -1,22 +1,45 @@
-from typing import Optional
+from sqlalchemy.ext.asyncio import AsyncEngine
 
-from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession
-
-from .transaction_manager_sqla import TransactionManagerSQLA
-from ..protocols import Repository
 from .tables.base import Base
+from .transaction_manager_sqla import TransactionManagerSQLA
+from .user_repo_sqla import UserRepoSQLA
+from ..protocols import DatasetRepo, MapDataRepo, PlayerDataRepo, ProjectRepo, Repository, UserRepo, VideoRepo
+from ..protocols.frames_repo import FramesRepo
 
 
 class RepositorySQLA(Repository):
-    def __init__(self, session: AsyncSession, transaction: Optional[TransactionManagerSQLA] = None):
-        if transaction is not None:
-            self.transaction: TransactionManagerSQLA = transaction
+    def __init__(self, transaction: TransactionManagerSQLA):
+        self.transaction: TransactionManagerSQLA = transaction
 
-        elif (transaction_init := session.get_transaction()) is not None:
-            self.transaction = TransactionManagerSQLA(session, transaction_init)
+    @property
+    def player_data_repo(self) -> PlayerDataRepo:
+        ...
 
-        else:
-            self.transaction = TransactionManagerSQLA(session, session.begin())
+    @property
+    def dataset_repo(self) -> DatasetRepo:
+        ...
+
+    @property
+    def frames_repo(self) -> FramesRepo:
+        ...
+
+    @property
+    def user_repo(self) -> UserRepoSQLA:
+        return UserRepoSQLA(
+            self.transaction
+        )
+
+    @property
+    def video_repo(self) -> VideoRepo:
+        ...
+
+    @property
+    def map_data_repo(self) -> MapDataRepo:
+        ...
+
+    @property
+    def project_repo(self) -> ProjectRepo:
+        ...
 
     @staticmethod
     async def init_db(engine: AsyncEngine) -> None:

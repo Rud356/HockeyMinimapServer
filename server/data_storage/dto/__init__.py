@@ -8,6 +8,9 @@ from .project_export_dto import ProjectExportDTO
 from .teams_subset_dto import SubsetDataDTO, TeamsSubsetDTO
 from .user_dto import UserDTO
 from .video_dto import VideoDTO
+from .user_permissions_dto import UserPermissionsDTO
+from .user_permissions_data import UserPermissionsData
+
 
 __all__ = (
     "BoxDTO",
@@ -20,5 +23,7 @@ __all__ = (
     "SubsetDataDTO",
     "TeamsSubsetDTO",
     "UserDTO",
-    "VideoDTO"
+    "VideoDTO",
+    "UserPermissionsData",
+    "UserPermissionsDTO"
 )

@@ -17,3 +17,5 @@ class Project(Base):
     created_at: Mapped[datetime.datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     team_home_name: Mapped[str] = mapped_column(String(30), default="Home")
     team_away_name: Mapped[str] = mapped_column(String(30), default="Away")
+
+    __tablename__ = "project"
