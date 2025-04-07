@@ -20,3 +20,11 @@ class TransactionManager(Protocol):
 
         :return: Ничего.
         """
+
+    async def start_nested_transaction(self) -> "TransactionManager":
+        """
+        Создает вложенную транзакцию.
+
+        :return: Новый менеджер вложенной транзакции.
+        """
+        ...
