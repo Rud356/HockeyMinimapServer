@@ -10,7 +10,7 @@ from .tables.base import Base
 class RepositorySQLA(Repository):
     def __init__(self, session: AsyncSession, transaction: Optional[TransactionManagerSQLA] = None):
         if transaction is not None:
-            self.transaction = transaction
+            self.transaction: TransactionManagerSQLA = transaction
 
         elif (transaction_init := session.get_transaction()) is not None:
             self.transaction = TransactionManagerSQLA(session, transaction_init)
