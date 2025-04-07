@@ -8,6 +8,6 @@ class UserDTO(BaseModel):
     Описывает данные пользователя.
     """
     user_id: int
-    username: int
+    username: str
     display_name: str
     user_permissions: UserPermissionsDTO
