@@ -7,19 +7,9 @@ import uuid
 from typing import Any, AsyncGenerator
 
 from server.algorithms.data_types.disk_usage import DiskUsage
-from server.algorithms.exceptions.out_of_disk_space import OutOfDiskSpace
-
-
-class InvalidAllocationSize(ValueError):
-    """
-    Вызывается когда выделяемый объем меньше 1 байта.
-    """
-    
-    
-class InvalidAllocationOverPropositionFactor(ValueError):
-    """
-    Вызывается когда фактор умножения не является допустимым (допустимые значения от 1 до 1000).
-    """
+from server.algorithms.exceptions import InvalidAllocationOverPropositionFactor
+from server.algorithms.exceptions import InvalidAllocationSize
+from server.algorithms.exceptions import OutOfDiskSpace
 
 
 class DiskSpaceAllocator:
