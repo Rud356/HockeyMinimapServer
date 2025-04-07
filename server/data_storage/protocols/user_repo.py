@@ -1,15 +1,8 @@
-from typing import NamedTuple, Optional, Protocol, runtime_checkable
+from typing import Optional, Protocol, runtime_checkable
 
 from server.data_storage.dto.user_dto import UserDTO
+from server.data_storage.dto.user_permissions_data import UserPermissionsData
 from server.data_storage.protocols.transaction_manager import TransactionManager
-
-
-class UserPermissionsData(NamedTuple):
-    """
-    Перечисление прав пользователя.
-    """
-    can_administrate_users: bool
-    can_create_projects: bool
 
 
 @runtime_checkable
