@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import NamedTuple
+from typing import NamedTuple, Sequence
 
 import cv2
 import numpy
@@ -119,16 +119,23 @@ class BoundingBox(NamedTuple):
             Point(center_point.x + new_width / 2, center_point.y + new_height / 2)
         )
 
-    def __contains__(self, point: Point) -> bool:
+    def __contains__(self, point: Point | Sequence[float] | object) -> bool:
         """
         Проверяет находиться ли точка внутри охватывающего прямоугольника.
 
         :param point: Точка для проверки вхождения.
         :return: Флаг, указывающий находится ли точка в прямоугольнике.
+        :raise TypeError: Когда типы данных не являются
         """
+        if not isinstance(point, Sequence):
+            raise TypeError(
+                f"Invalid contains check value, can not check {type(point)}, "
+                f"expecting point or tuple[float, float]"
+            )
+
         return (
-            (self.min_point.x <= point.x <= self.max_point.x) and
-            (self.min_point.y <= point.y <= self.max_point.y)
+            (self.min_point[0] <= point[0] <= self.max_point[0]) and
+            (self.min_point[1] <= point[1] <= self.max_point[1])
         )
 
     @classmethod
