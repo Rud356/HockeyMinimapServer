@@ -5,6 +5,7 @@ from typing import NamedTuple, TYPE_CHECKING
 
 import cv2
 import numpy as np
+from sqlalchemy.dialects.mysql import insert
 
 from server.algorithms.data_types.relative_point import RelativePoint
 
@@ -45,6 +46,27 @@ class Point(NamedTuple):
         return RelativePoint(
             self.x / resolution[0],
             self.y / resolution[1]
+        )
+
+    def to_relative_coordinates_inside_bbox(self, inside_of_bbox: BoundingBox) -> RelativePoint:
+        """
+        Вычисляет положение точки в рамках охватывающего прямоугольника.
+
+        :param inside_of_bbox: Охватывающий прямоугольник, в рамках которого вычисляются относительные координаты.
+        :return: Относительные координаты точки в рамках охватывающего прямоугольника.
+        """
+        clipped_point: Point = self.clip_point_to_bounding_box(inside_of_bbox)
+        recalculated_clipped_point: Point = Point(
+            clipped_point.x - inside_of_bbox.min_point.x,
+            clipped_point.y - inside_of_bbox.min_point.y
+        )
+        recalculated_bottom_point: Point = Point(
+            inside_of_bbox.max_point.x - inside_of_bbox.min_point.x,
+            inside_of_bbox.max_point.y - inside_of_bbox.min_point.y
+        )
+
+        return recalculated_clipped_point.to_relative_coordinates(
+            (int(recalculated_bottom_point.x), int(recalculated_bottom_point.y))
         )
 
     def visualize_point_on_image(
@@ -106,6 +128,20 @@ class Point(NamedTuple):
             point.x * resolution[0],
             point.y * resolution[1]
         )
+
+    @classmethod
+    def from_relative_coordinates_inside_bbox(cls, point: RelativePoint, inside_of_bbox: BoundingBox) -> Point:
+        recalculated_bottom_point: Point = Point(
+            inside_of_bbox.max_point.x - inside_of_bbox.min_point.x,
+            inside_of_bbox.max_point.y - inside_of_bbox.min_point.y
+        )
+
+        recalculated_clipped_point: Point = Point(
+            (point.x * recalculated_bottom_point.x) + inside_of_bbox.min_point.x,
+            (point.y * recalculated_bottom_point.y) + inside_of_bbox.min_point.y
+        )
+
+        return recalculated_clipped_point
 
     @staticmethod
     def assert_resolution_validity(resolution: tuple[int, int]) -> None:
