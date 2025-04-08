@@ -3,7 +3,7 @@ from typing import Mapping
 import cv2
 import numpy
 
-from server.algorithms.data_types import BoundingBox, Point
+from server.algorithms.data_types import BoundingBox, Point, RelativePoint
 from server.algorithms.exceptions.not_enough_field_points import NotEnoughFieldPoints
 from server.utils.config.key_point import KeyPoint
 
@@ -18,7 +18,7 @@ class PlayersMapper:
     def __init__(
         self,
         map_bbox: BoundingBox,
-        field_points: Mapping[KeyPoint, Point],
+        field_points: Mapping[KeyPoint, Point] | Mapping[Point, Point] | Mapping[RelativePoint, RelativePoint],
         reproj_threshold: float = 4.0,
         max_iters: int = 2000,
         confidence: float = 0.9

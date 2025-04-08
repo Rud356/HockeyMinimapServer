@@ -114,8 +114,7 @@ class PlayerDataExtractionService:
                 PlayerData(
                     player_data.tracking_id,
                     None,
-                    map_point.to_relative_coordinates(resolution),
-                    # TODO: Swap out for relative coordinates inside of bounding box for minimap
+                    map_point.to_relative_coordinates_inside_bbox(self.players_mapper.map_bbox),
                     player_data.bounding_box.to_relative_coordinates(resolution),
                     player_data.player_class,
                     player_team

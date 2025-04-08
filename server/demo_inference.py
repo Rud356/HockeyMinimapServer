@@ -82,6 +82,7 @@ async def main(video_path: Path, field_model: Path, players_model: Path):
     out_video = cv2.VideoWriter('../output.mp4', fourcc, 25.0, (1280, 720))
     out_map_video = cv2.VideoWriter('../output_map.mp4', fourcc, 25.0, (1259, 770))
     tracked_players_teams: dict[int, Team] = {}
+    map_bbox: Optional[BoundingBox] = None
 
     while cap.isOpened():
         ret, frame = cap.read()
@@ -131,6 +132,7 @@ async def main(video_path: Path, field_model: Path, players_model: Path):
                 map_data.field_bbox
             )
 
+        assert map_bbox is not None, "Map bbox must be not None"
         assert map_data is not None, "Map data is still empty"
         assert mapper is not None, "Must have mapper, if map data is provided"
         assert player_data_extractor is not None, "Must have player data extractor instance at this point in code"
@@ -151,7 +153,7 @@ async def main(video_path: Path, field_model: Path, players_model: Path):
                 tracked_players_teams[player.tracking_id] = player.team_id
 
             bbox_real = BoundingBox.from_relative_bounding_box(player.bounding_box_on_camera, (720, 1280))
-            minimap_point = Point.from_relative_coordinates(player.position, (770, 1259))
+            minimap_point = Point.from_relative_coordinates_inside_bbox(player.position, map_bbox)
 
             frame_copy = bbox_real.visualize_bounding_box(frame_copy)
             draw_text(
