@@ -32,7 +32,7 @@ setup(
         "ffmpeg-python~=0.2.0",
         "fastapi[standard]~=0.115.12",
         "python-multipart~=0.0.20",
-        "dishka~=1.4.2",
+        "dishka~=1.5.2",
         "cython~=3.0.11",
         "scipy~=1.15.2",
         "numpy~=2.2.4",

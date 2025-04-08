@@ -23,10 +23,13 @@ class Video(Base):
     is_processed: Mapped[bool] = mapped_column(default=False)
     source_video_path: Mapped[str] = mapped_column(String, unique=True)
     converted_video_path: Mapped[Optional[str]] = mapped_column(String, unique=True)
-    dataset_id: Mapped[Optional[int]] = mapped_column(ForeignKey("dataset.dataset_id"))
+    dataset_id: Mapped[Optional[int]] = mapped_column(ForeignKey("teams_dataset.dataset_id"))
 
     dataset: Mapped["TeamsDataset"] = relationship(
-        lazy="joined"
+        lazy="joined",
+        primaryjoin=(
+            "TeamsDataset.dataset_id == Video.dataset_id"
+        )
     )
 
     __tablename__ = "video"

@@ -10,6 +10,6 @@ class TeamsDataset(Base):
     Описывает таблицу дата сетов разделения команд.
     """
     dataset_id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
-    video_id: Mapped[int] = mapped_column(ForeignKey("video.video_id"), primary_key=True)
+    video_id: Mapped[int] = mapped_column(ForeignKey("video.video_id"), index=True)
 
     __tablename__ = "teams_dataset"

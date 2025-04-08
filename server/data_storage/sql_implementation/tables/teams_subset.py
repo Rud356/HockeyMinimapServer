@@ -20,10 +20,12 @@ class TeamsSubset(Base):
         autoincrement=True
     )
     dataset_id: Mapped[int] = mapped_column(
-        ForeignKey("teams_dataset.dataset_id")
+        ForeignKey("teams_dataset.dataset_id"),
+        index=True
     )
     video_id: Mapped[int] = mapped_column(
         ForeignKey("teams_dataset.video_id"),
+        index=True
     )
     from_frame_id: Mapped[int]
     to_frame_id: Mapped[int]

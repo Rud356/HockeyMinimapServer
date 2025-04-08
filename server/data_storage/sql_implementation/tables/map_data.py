@@ -16,8 +16,7 @@ class MapData(Base):
     """
     map_data_id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     video_id: Mapped[int] = mapped_column(
-        ForeignKey("video.video_id"),
-        primary_key=True
+        ForeignKey("video.video_id"), index=True
     )
     point_on_minimap_id: Mapped[int] = mapped_column(
         ForeignKey("point.point_id")
