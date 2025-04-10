@@ -1,5 +1,6 @@
 from typing import Optional, Protocol, runtime_checkable
 
+from server.data_storage.dto import UserPermissionsDTO
 from server.data_storage.dto.user_dto import UserDTO
 from server.data_storage.dto.user_permissions_data import UserPermissionsData
 from server.data_storage.protocols.transaction_manager import TransactionManager
@@ -27,6 +28,7 @@ class UserRepo(Protocol):
         :param password: Пароль пользователя.
         :param user_permissions: Права пользователя.
         :return: Данные о новом пользователе.
+        :raises IntegrityError: Данные не прошли проверку на валидность для вставки.
         """
         ...
 
@@ -36,6 +38,8 @@ class UserRepo(Protocol):
 
         :param user_id: Идентификатор пользователя.
         :return: Данные о пользователе.
+        :raises NotFoundError: Пользователь не найден.
+        :raises ValueError: Неверные входные данные.
         """
         ...
 
@@ -51,28 +55,32 @@ class UserRepo(Protocol):
 
     async def delete_user(self, user_id: int) -> bool:
         """
-        Удаляет пользователя из базы данных.
+        Удаляет пользователя из базы данных без фиксации в БД.
 
         :param user_id: Идентификатор пользователя для удаления.
         :return: Был ли пользователь успешно удален.
+        :raises NotFoundError: Пользователь не найден.
         """
         ...
 
-    async def change_user_permissions(self, user_id: int, new_permissions: UserPermissionsData) -> UserPermissionsData:
+    async def change_user_permissions(self, user_id: int, new_permissions: UserPermissionsData) -> UserPermissionsDTO:
         """
         Изменяет права пользователя на новые права.
 
         :param user_id: Идентификатор пользователя для изменения.
-        :param new_permissions:
-        :return:
+        :param new_permissions: Новые права пользователя.
+        :return: Обновленное состояние прав пользователя.
+        :raises NotFoundError: Пользователь не найден.
+        :raises ValueError: Неверные входные данные.
         """
         ...
 
     async def edit_user(
-        self, user_id: int,
-        username: Optional[str],
-        display_name: Optional[str],
-        password: Optional[str]
+        self,
+        user_id: int,
+        username: Optional[str] = None,
+        display_name: Optional[str] = None,
+        password: Optional[str] = None
     ) -> UserDTO:
         """
         Изменяет данные пользователя.
@@ -82,6 +90,8 @@ class UserRepo(Protocol):
         :param display_name: Новое отображаемое имя.
         :param password: Новый пароль.
         :return: Новое представление пользователя.
+        :raises NotFoundError: Пользователь не найден.
+        :raises ValueError: Неверные входные данные.
         """
         ...
 
@@ -92,5 +102,6 @@ class UserRepo(Protocol):
         :param username: Имя пользователя.
         :param password: Пароль.
         :return: Представление пользователя.
+        :raise ValueError: Если предоставленные данные не являются валидными.
         """
         ...
