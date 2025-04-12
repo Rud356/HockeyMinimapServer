@@ -22,6 +22,7 @@ from server.algorithms.services.field_predictor_service import FieldPredictorSer
 from server.algorithms.services.map_video_renderer_service import MapVideoRendererService
 from server.algorithms.services.player_data_extraction_service import PlayerDataExtractionService
 from server.algorithms.services.player_predictor_service import PlayerPredictorService
+from server.algorithms.video_processing import VideoProcessing
 from server.data_storage.dto import BoxDTO, PointDTO
 from server.data_storage.dto.player_data_dto import PlayerDataDTO
 from server.minimap_server import MINIMAP_KEY_POINTS
@@ -67,6 +68,7 @@ async def main(video_path: Path, field_model: Path, players_model: Path):
     team_predictor: TeamDetectionPredictor = predictor
 
     map_img = cv2.imread("../map.png")
+    # Video output streams
     fourcc = cv2.VideoWriter_fourcc(*'mp4v')
     out_video = cv2.VideoWriter('../output.mp4', fourcc, 25.0, (1280, 720))
     out_map_video = cv2.VideoWriter('../output_map.mp4', fourcc, 25.0, (1259, 770))
@@ -85,8 +87,6 @@ async def main(video_path: Path, field_model: Path, players_model: Path):
     map_data: Optional[FieldExtractedData] = None
     mapper: Optional[PlayersMapper] = None
     player_data_extractor: Optional[PlayerDataExtractionService] = None
-
-    # Video ouputs
 
     map_bbox: Optional[BoundingBox] = None
 

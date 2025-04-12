@@ -2,6 +2,8 @@ from abc import ABC
 
 from fastapi import APIRouter
 
+from server.data_storage.dto import UserDTO
+
 
 class APIEndpoint(ABC):
     """

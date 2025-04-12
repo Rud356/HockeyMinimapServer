@@ -24,6 +24,7 @@ from server.utils.config import (
 )
 from server.utils.providers import ConfigProvider
 from server.utils.providers.disk_space_allocator_provider import DiskSpaceAllocatorProvider
+from server.utils.providers.render_service_limits_provider import RenderServiceLimitsProvider
 
 
 class MinimapServer:
@@ -46,7 +47,8 @@ class MinimapServer:
         container: AsyncContainer = make_async_container(
             DiskSpaceAllocatorProvider(DiskSpaceAllocator()),
             ConfigProvider(config),
-            FastapiProvider()
+            FastapiProvider(),
+            RenderServiceLimitsProvider(config.minimap_rendering_workers, config.minimap_frame_buffer)
         )
 
         setup_dishka(container=container, app=self.app)
@@ -132,6 +134,7 @@ MINIMAP_KEY_POINTS = MinimapKeyPointConfig(**
 
 server = MinimapServer(
     AppConfig(
+        minimap_frame_buffer=10,
         enable_gzip_compression=False,
         players_data_extraction_workers=4,
         minimap_rendering_workers=4,

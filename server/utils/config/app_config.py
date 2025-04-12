@@ -15,6 +15,7 @@ class AppConfig(BaseModel):
     enable_gzip_compression: bool
 
     players_data_extraction_workers: int = Field(ge=1, lt=20)
+    minimap_frame_buffer: int = Field(ge=1, lt=120)
     minimap_rendering_workers: int = Field(ge=1, lt=64)
 
     nn_config: NeuralNetworkConfig
