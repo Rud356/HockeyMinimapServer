@@ -23,6 +23,15 @@ class PlayerDataExtractionService:
     """
     Класс для обработки кадров видео и выделения информации об игроках.
     """
+    __slots__ = (
+        "team_predictor",
+        "players_mapper",
+        "player_tracker",
+        "field_mask",
+        "field_bbox",
+        "known_tracked_players_teams"
+    )
+
     def __init__(
         self,
         team_predictor: TeamDetectionPredictor,
@@ -36,19 +45,18 @@ class PlayerDataExtractionService:
         self.player_tracker: PlayerTracker = player_tracker
         self.field_mask: numpy.ndarray = field_mask.mask
         self.field_bbox: BoundingBox = field_bounding_box
+        self.known_tracked_players_teams: dict[int, Team] = {}
 
     def process_frame(
         self,
         frame: numpy.ndarray,
         instances: Instances,
-        known_tracked_players_teams: dict[int, Team]
     ) -> list[PlayerData]:
         """
         Обрабатывает переданный кадр.
 
         :param frame: Кадр с игроками.
         :param instances: Выводы из Detectron2 с определениями классов игроков.
-        :param known_tracked_players_teams: Словарь соотнесения номеров отслеживания и команд игроков.
         :return: Список выделенных на кадре игроков и их номеров отслеживания.
         """
         output: list[PlayerData] = []
@@ -66,7 +74,7 @@ class PlayerDataExtractionService:
 
         # Keep on field
         keep = [self.field_mask[int(y) - 1, int(x) - 1] > 0 for x, y in centers_bottoms]
-        keep_tensor = torch.tensor(keep, dtype=torch.bool)
+        keep_tensor = torch.BoolTensor(keep)
         filtered_on_field = filtered_instances[keep_tensor]
 
         # Get required parameters
@@ -85,7 +93,7 @@ class PlayerDataExtractionService:
                 if (
                     track_data.player_class != PlayerClasses.Referee and
                     track_data.bounding_box.bottom_point in team_detection_bbox and
-                    track_data.tracking_id not in known_tracked_players_teams
+                    track_data.tracking_id not in self.known_tracked_players_teams
                 )
         ]
 
@@ -109,7 +117,11 @@ class PlayerDataExtractionService:
 
         for n, (player_data, map_point) in enumerate(zip(tracking_data, map_points)):
             # Choose source of team (detected now, or detected before)
-            player_team: Optional[Team] = teams.get(n) or known_tracked_players_teams.get(player_data.tracking_id)
+            player_team: Optional[Team] = teams.get(n) or self.known_tracked_players_teams.get(player_data.tracking_id)
+
+            if (player_team is not None) and (player_data.tracking_id not in self.known_tracked_players_teams):
+                self.known_tracked_players_teams[player_data.tracking_id] = player_team
+
             output.append(
                 PlayerData(
                     player_data.tracking_id,

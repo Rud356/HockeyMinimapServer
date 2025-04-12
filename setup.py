@@ -38,6 +38,7 @@ setup(
         "numpy~=2.2.4",
         "scikit-learn~=1.6.0",
         "sort-pip @ git+https://github.com/Rud356/sort-pip.git",
+        "pyjwt~=2.10.1",
         "wheel"
     ],
     extras_require={
@@ -49,6 +50,7 @@ setup(
             "Pygments~=2.12.0",
             "pytest~=8.3.5",
             "pytest_asyncio~=0.26.0",
+            "pyinstrument~=5.0.1"
         ],
     },
     packages=[]

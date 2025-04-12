@@ -5,7 +5,7 @@ import cv2
 import torch
 import torch.nn as nn
 import torchvision.datasets as datasets
-from torchvision.models import resnet18
+from torchvision.models import ResNet18_Weights, resnet18
 
 from server.algorithms.enums.team import Team
 from server.algorithms.nn.team_detector_predictor import TeamDetectionPredictor
@@ -15,7 +15,7 @@ from server.algorithms.nn.team_detector_teacher import TeamDetectorTeacher, team
 class TeamDetectorModel(nn.Module):
     def __init__(self):
         super().__init__()
-        self.resnet18 = resnet18(pretrained=True)
+        self.resnet18 = resnet18(weights=ResNet18_Weights.DEFAULT)
         # Replace the final fully connected layer
         num_ftrs = self.resnet18.fc.in_features
         self.resnet18.fc = nn.Linear(num_ftrs, 2)  # Home team and away team

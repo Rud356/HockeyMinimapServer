@@ -1,5 +1,5 @@
 import asyncio
-import cProfile
+import pyinstrument
 import io
 import os
 import pstats
@@ -81,7 +81,6 @@ async def main(video_path: Path, field_model: Path, players_model: Path):
     fourcc = cv2.VideoWriter_fourcc(*'mp4v')
     out_video = cv2.VideoWriter('../output.mp4', fourcc, 25.0, (1280, 720))
     out_map_video = cv2.VideoWriter('../output_map.mp4', fourcc, 25.0, (1259, 770))
-    tracked_players_teams: dict[int, Team] = {}
     map_bbox: Optional[BoundingBox] = None
 
     while cap.isOpened():
@@ -110,19 +109,19 @@ async def main(video_path: Path, field_model: Path, players_model: Path):
                 map_demo = draw_text(map_demo, str(n), (int(map_p.x), int(map_p.y - 10)), (255, 192, 255))
                 map_demo = Point(int(map_p.x), int(map_p.y)).visualize_point_on_image(map_demo)
 
-            cv2.imshow("Demo field", out_demo)
-            cv2.imshow("Demo map", map_demo)
-            cv2.waitKey(0)
-            cv2.destroyAllWindows()
+            # cv2.imshow("Demo field", out_demo)
+            # cv2.imshow("Demo map", map_demo)
+            # cv2.waitKey(0)
+            # cv2.destroyAllWindows()
 
             # Patch up and display data to simulate user input
             mapper = PlayersMapper(
                 map_bbox,
                 map_data.key_points
             )
-            cv2.imshow("Warped image", mapper.warp_image(frame.copy()))
-            cv2.waitKey(0)
-            cv2.destroyAllWindows()
+            # cv2.imshow("Warped image", mapper.warp_image(frame.copy()))
+            # cv2.waitKey(0)
+            # cv2.destroyAllWindows()
 
             player_data_extractor = PlayerDataExtractionService(
                 team_predictor,
@@ -140,7 +139,7 @@ async def main(video_path: Path, field_model: Path, players_model: Path):
         fut = await player_service.add_inference_task_to_queue(frame)
         player_instances = (await fut)[0].to('cpu')
 
-        player_data = player_data_extractor.process_frame(frame, player_instances, tracked_players_teams)
+        player_data = player_data_extractor.process_frame(frame, player_instances)
 
         frame_copy = frame.copy()
         map_copy = map_img.copy()
@@ -150,7 +149,6 @@ async def main(video_path: Path, field_model: Path, players_model: Path):
 
             if player.team_id is not None:
                 player_data_repr += f" {player.team_id.name[0]}"
-                tracked_players_teams[player.tracking_id] = player.team_id
 
             bbox_real = BoundingBox.from_relative_bounding_box(player.bounding_box_on_camera, (720, 1280))
             minimap_point = Point.from_relative_coordinates_inside_bbox(player.position, map_bbox)
@@ -175,28 +173,19 @@ async def main(video_path: Path, field_model: Path, players_model: Path):
         # cv2.imshow("Field", frame_copy)
         # cv2.waitKey(0)
         # cv2.destroyAllWindows()
-        out_video.write(frame_copy)
-        out_map_video.write(map_copy)
+        # out_video.write(frame_copy)
+        # out_map_video.write(map_copy)
 
         frame_n += 1
         print(f"Frame {frame_n:<3} done")
 
 
 if __name__ == "__main__":
-    pr = cProfile.Profile()
-    pr.enable()
-
-    asyncio.run(
-        main(
-            source_video,
-            (Path(__file__).parent.parent / "models/FieldDetector_new_based_on_old.pth").resolve(),
-            (Path(__file__).parent.parent / "models/PlayersClassification_720_1.pth").resolve()
+    with pyinstrument.profile():
+        asyncio.run(
+            main(
+                source_video,
+                (Path(__file__).parent.parent / "models/FieldDetector_new_based_on_old.pth").resolve(),
+                (Path(__file__).parent.parent / "models/PlayersClassification_720_1.pth").resolve()
+            )
         )
-    )
-
-    pr.disable()
-    s = io.StringIO()
-    sortby = SortKey.CUMULATIVE
-    ps = pstats.Stats(pr, stream=s).sort_stats(sortby)
-    ps.print_stats()
-    print(s.getvalue())
