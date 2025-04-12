@@ -44,7 +44,7 @@ class PlayerDataExtractionService:
         self.players_mapper: PlayersMapper = players_mapper
         self.player_tracker: PlayerTracker = player_tracker
         self.field_mask: numpy.ndarray = field_mask.mask
-        self.field_bbox: BoundingBox = field_bounding_box
+        self.field_bbox: BoundingBox = field_bounding_box.scale_bbox(0.9)
         self.known_tracked_players_teams: dict[int, Team] = {}
 
     def process_frame(
@@ -60,7 +60,7 @@ class PlayerDataExtractionService:
         :return: Список выделенных на кадре игроков и их номеров отслеживания.
         """
         output: list[PlayerData] = []
-        team_detection_bbox: BoundingBox = self.field_bbox.scale_bbox()
+        team_detection_bbox: BoundingBox = self.field_bbox
 
         # Filter out not on field
         threshold = 0.5
@@ -92,7 +92,7 @@ class PlayerDataExtractionService:
             n for n, track_data in enumerate(tracking_data)
                 if (
                     track_data.player_class != PlayerClasses.Referee and
-                    track_data.bounding_box.bottom_point in team_detection_bbox and
+                    track_data.bounding_box.intersects_with(team_detection_bbox) and
                     track_data.tracking_id not in self.known_tracked_players_teams
                 )
         ]

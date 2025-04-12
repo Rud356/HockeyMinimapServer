@@ -47,7 +47,9 @@ class TeamDetectorTeacher:
         """
         train_losses, val_losses = [], []
         criterion = nn.CrossEntropyLoss()
-        optimizer = optim.Adam(self.model.parameters(), lr=0.001)
+        optimizer = optim.Adam(self.model.parameters(), lr=0.00075)
+        best_val_loss: float = float('inf')
+        best_model_state: dict = self.model.state_dict()
 
         for epoch in range(self.epochs):
             self.model.train()
@@ -83,6 +85,9 @@ class TeamDetectorTeacher:
             val_recall = recall_score(all_labels, all_preds, average='macro', zero_division=1)
             val_f1 = f1_score(all_labels, all_preds, average='macro', zero_division=1)
 
+            if val_loss < best_val_loss:
+                best_model_state = self.model.state_dict()
+
             if __debug__:
                 print(
                     f"Epoch [{epoch + 1}/{self.epochs}], "
@@ -94,4 +99,7 @@ class TeamDetectorTeacher:
                     f"Val F1 Score: {val_f1:.4f}"
                 )
 
+        self.model.load_state_dict(best_model_state)
+        # Manual memory cleanup
+        del best_model_state
         return self.model

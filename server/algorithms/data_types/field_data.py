@@ -13,7 +13,8 @@ from server.algorithms.enums.field_classes_enum import FieldClasses
 if TYPE_CHECKING:
     from detectron2.structures import Instances
 
-@dataclass(repr=True)
+
+@dataclass(repr=True, slots=True)
 class FieldData:
     """
     Описывает значения, выделенные с изображения поля нейросетью Detectron2.

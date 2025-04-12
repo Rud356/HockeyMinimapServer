@@ -16,6 +16,10 @@ class TeamDetectorModel(nn.Module):
     def __init__(self):
         super().__init__()
         self.resnet18 = resnet18(weights=ResNet18_Weights.DEFAULT)
+
+        for param in self.resnet18.parameters():
+            param.requires_grad = False
+
         # Replace the final fully connected layer
         num_ftrs = self.resnet18.fc.in_features
         self.resnet18.fc = nn.Linear(num_ftrs, 2)  # Home team and away team
@@ -33,7 +37,7 @@ val_dataset = datasets.ImageFolder(os.path.join(data_dir, 'val'), transform=team
 print(Path(os.path.join(data_dir, 'train')).resolve(), Path(os.path.join(data_dir, 'val')).resolve())
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
-trainer = TeamDetectorTeacher(train_dataset, val_dataset, 8, TeamDetectorModel())
+trainer = TeamDetectorTeacher(train_dataset, val_dataset, 100, TeamDetectorModel())
 model = trainer.train_nn()
 predictor: TeamDetectionPredictor = TeamDetectionPredictor(model, team_detector_transform, device)
 

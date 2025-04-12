@@ -173,8 +173,8 @@ async def main(video_path: Path, field_model: Path, players_model: Path):
         # cv2.imshow("Field", frame_copy)
         # cv2.waitKey(0)
         # cv2.destroyAllWindows()
-        # out_video.write(frame_copy)
-        # out_map_video.write(map_copy)
+        out_video.write(frame_copy)
+        out_map_video.write(map_copy)
 
         frame_n += 1
         print(f"Frame {frame_n:<3} done")
