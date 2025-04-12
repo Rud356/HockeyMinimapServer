@@ -191,6 +191,44 @@ class VideoProcessing:
 
         return video_info
 
+    def compress_video(self, source_file: Path, dest_file: Path) -> dict[str, Any]:
+        """
+        Сжимает видео в размере для оптимизации передачи по сети.
+
+        :param source_file: Исходный файл.
+        :param dest_file: Целевой файл.
+        :return: Информация о выведенном видео.
+        :raise FileNotFound: Файл не найден на диске.
+        :raise InvalidFileFormat: Неподдерживаемый формат файла предоставлен в качестве файла.
+        """
+        # Checking video does exist and has correct file format that can be processed
+        self.probe_video(source_file)
+
+        with tempfile.TemporaryDirectory(prefix="hmms_") as temp_dir:
+            temp_dir_path: Path = Path(temp_dir)
+            temp_video: Path = temp_dir_path / "video.mp4"
+            # Execute convertion and correction
+            # Scale down without upscale and preserve aspect ratio
+            (
+                ffmpeg.input(
+                    str(source_file),
+                    hwaccel=self.processing_config.hwaccel
+                )
+                .output(
+                    str(temp_video),
+                    preset=f"{self.processing_config.preset}",
+                    crf=f"{self.processing_config.crf}",
+                    loglevel="quiet"
+                )
+                .global_args("-y")
+                .run()
+            )
+
+            video_info = self.probe_video(temp_video)
+            shutil.move(temp_video, dest_file)
+
+        return video_info
+
     @staticmethod
     def probe_video(file: Path) -> dict[str, Any]:
         """

@@ -7,7 +7,7 @@ from server.algorithms.enums.player_classes_enum import PlayerClasses
 from server.algorithms.enums.team import Team
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, slots=True)
 class PlayerData:
     """
     Описывает данные об игроке для отрисовки.

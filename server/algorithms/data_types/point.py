@@ -92,8 +92,7 @@ class Point(NamedTuple):
 
         return cv2.circle(
             image,
-            (int(self.x),
-             int(self.y)),
+            (int(self.x), int(self.y)),
             radius=radius,
             color=color,
             thickness=-1

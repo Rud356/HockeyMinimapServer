@@ -1,19 +1,17 @@
 import asyncio
-import pyinstrument
-import io
 import os
-import pstats
+from concurrent.futures.thread import ThreadPoolExecutor
 from pathlib import Path
-from pstats import SortKey
-from typing import Optional
+from typing import AsyncGenerator, Optional
 
 import cv2
 import numpy
+import pyinstrument
 import torch
 
 from server.algorithms.data_types import BoundingBox, Point
 from server.algorithms.data_types.field_extracted_data import FieldExtractedData
-from server.algorithms.enums import CameraPosition, Team
+from server.algorithms.enums import CameraPosition
 from server.algorithms.key_point_placer import KeyPointPlacer
 from server.algorithms.nn import TeamDetectionPredictor
 from server.algorithms.nn.team_detector import predictor
@@ -21,8 +19,11 @@ from server.algorithms.player_tracker import PlayerTracker
 from server.algorithms.players_mapper import PlayersMapper
 from server.algorithms.services.field_data_extraction_service import FieldDataExtractionService
 from server.algorithms.services.field_predictor_service import FieldPredictorService
+from server.algorithms.services.map_video_renderer_service import MapVideoRendererService
 from server.algorithms.services.player_data_extraction_service import PlayerDataExtractionService
 from server.algorithms.services.player_predictor_service import PlayerPredictorService
+from server.data_storage.dto import BoxDTO, PointDTO
+from server.data_storage.dto.player_data_dto import PlayerDataDTO
 from server.minimap_server import MINIMAP_KEY_POINTS
 from server.utils.config.key_point import KeyPoint
 
@@ -65,10 +66,19 @@ async def main(video_path: Path, field_model: Path, players_model: Path):
 
     team_predictor: TeamDetectionPredictor = predictor
 
+    map_img = cv2.imread("../map.png")
+    fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+    out_video = cv2.VideoWriter('../output.mp4', fourcc, 25.0, (1280, 720))
+    out_map_video = cv2.VideoWriter('../output_map.mp4', fourcc, 25.0, (1259, 770))
+
+    video_render_service = MapVideoRendererService(ThreadPoolExecutor(1), out_map_video)
+    data_renderer: AsyncGenerator[int, list[PlayerDataDTO] | None] = video_render_service.data_renderer(map_img)
+    await data_renderer.asend(None)
 
     loop = asyncio.get_running_loop()
     loop.create_task(field_service())
     loop.create_task(player_service())
+    renderer_task = loop.create_task(video_render_service.run())
 
     cap = cv2.VideoCapture(str(video_path), cv2.CAP_FFMPEG)
     frame_n = 0
@@ -77,10 +87,7 @@ async def main(video_path: Path, field_model: Path, players_model: Path):
     player_data_extractor: Optional[PlayerDataExtractionService] = None
 
     # Video ouputs
-    map_img = cv2.imread("../map.png")
-    fourcc = cv2.VideoWriter_fourcc(*'mp4v')
-    out_video = cv2.VideoWriter('../output.mp4', fourcc, 25.0, (1280, 720))
-    out_map_video = cv2.VideoWriter('../output_map.mp4', fourcc, 25.0, (1259, 770))
+
     map_bbox: Optional[BoundingBox] = None
 
     while cap.isOpened():
@@ -143,6 +150,8 @@ async def main(video_path: Path, field_model: Path, players_model: Path):
 
         frame_copy = frame.copy()
         map_copy = map_img.copy()
+
+        converted_player_data: list[PlayerDataDTO] = []
         for player in player_data:
             # TODO: Replace with actual visualiser wrapper
             player_data_repr = f"{player.tracking_id}: {player.class_id.name[:1]}"
@@ -161,23 +170,48 @@ async def main(video_path: Path, field_model: Path, players_model: Path):
                 (22, 99, 33)
             )
 
-            map_copy = minimap_point.visualize_point_on_image(map_copy)
-            draw_text(
-                map_copy,
-                player_data_repr,
-                (int(minimap_point.x), int(minimap_point.y - 10)),
-                (22, 99, 33)
+            converted_player_data.append(
+                PlayerDataDTO(
+                    tracking_id=player.tracking_id,
+                    player_id=None,
+                    player_name=None,
+                    team_id=player.team_id,
+                    class_id=player.class_id,
+                    player_on_camera=BoxDTO(
+                        top_point=PointDTO(
+                            x=bbox_real.min_point.x,
+                            y=bbox_real.min_point.y
+                        ),
+                        bottom_point=PointDTO(
+                            x=bbox_real.max_point.x,
+                            y=bbox_real.max_point.y
+                        )
+                    ),
+                    player_on_minimap=PointDTO(
+                        x=minimap_point.x,
+                        y=minimap_point.y
+                    )
+                )
             )
+
+        await data_renderer.asend(converted_player_data)
 
         # cv2.imshow("Map", map_copy)
         # cv2.imshow("Field", frame_copy)
         # cv2.waitKey(0)
         # cv2.destroyAllWindows()
         out_video.write(frame_copy)
-        out_map_video.write(map_copy)
 
         frame_n += 1
         print(f"Frame {frame_n:<3} done")
+
+    try:
+        await data_renderer.asend(None)
+
+    except StopAsyncIteration:
+        pass
+
+    await renderer_task
 
 
 if __name__ == "__main__":
