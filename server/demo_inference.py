@@ -26,6 +26,7 @@ from server.algorithms.video_processing import VideoProcessing
 from server.data_storage.dto import BoxDTO, PointDTO
 from server.data_storage.dto.player_data_dto import PlayerDataDTO
 from server.minimap_server import MINIMAP_KEY_POINTS
+from server.utils.config import VideoPreprocessingConfig
 from server.utils.config.key_point import KeyPoint
 
 os.environ["OPENCV_VIDEO_ACCELERATION"] = "ANY"
@@ -71,10 +72,15 @@ async def main(video_path: Path, field_model: Path, players_model: Path):
     # Video output streams
     fourcc = cv2.VideoWriter_fourcc(*'mp4v')
     out_video = cv2.VideoWriter('../output.mp4', fourcc, 25.0, (1280, 720))
-    out_map_video = cv2.VideoWriter('../output_map.mp4', fourcc, 25.0, (1259, 770))
 
-    video_render_service = MapVideoRendererService(ThreadPoolExecutor(1), out_map_video)
-    data_renderer: AsyncGenerator[int, list[PlayerDataDTO] | None] = video_render_service.data_renderer(map_img)
+    video_render_service = MapVideoRendererService(
+        ThreadPoolExecutor(1),
+        25.0,
+        Path('../output_map.mp4'),
+        map_img,
+        video_processing_config=VideoPreprocessingConfig(video_width=1280, video_height=720, crf=30)
+    )
+    data_renderer: AsyncGenerator[int, list[PlayerDataDTO] | None] = video_render_service.data_renderer()
     await data_renderer.asend(None)
 
     loop = asyncio.get_running_loop()

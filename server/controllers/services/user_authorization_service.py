@@ -22,7 +22,7 @@ class UserAuthorizationService:
         :param user: Объект с данными пользователя.
         :return: Токен доступа.
         """
-        return jwt.encode(user.model_dump_json(), self.key, algorithms=["HS256"])
+        return jwt.encode(user.model_dump(), self.key, algorithm="HS256")
 
     def decode_user_auth_token(self, token: str | None) -> UserDTO:
         """
@@ -36,7 +36,7 @@ class UserAuthorizationService:
             raise BadTokenPayload()
 
         try:
-            payload: dict[str, Any] = jwt.decode(token, self.key, algorithms=["HS256"])
+            payload: dict[str, Any] = jwt.decode(token, self.key, algorithm="HS256")
 
             return UserDTO.model_validate(payload)
 
@@ -60,7 +60,7 @@ class UserAuthorizationService:
 
             return repository_data == data
 
-    async def authenticate_by_token(self, token: str, repository: Repository) -> UserDTO:
+    async def authenticate_by_token(self, token: str | None, repository: Repository) -> UserDTO:
         """
         Производит аутентификацию пользователя.
 

@@ -1,8 +1,12 @@
 import asyncio
+import shutil
+import tempfile
 from asyncio import Queue
 from concurrent.futures import Executor
 from concurrent.futures.thread import ThreadPoolExecutor
+from pathlib import Path
 from typing import AsyncGenerator, Optional
+from functools import partial
 
 import cv2
 import ffmpeg
@@ -12,6 +16,7 @@ from server.algorithms.enums import Team
 from server.algorithms.enums.player_classes_enum import PlayerClasses
 from server.data_storage.dto import PointDTO
 from server.data_storage.dto.player_data_dto import PlayerDataDTO
+from server.utils.config import VideoPreprocessingConfig
 
 
 class MapVideoRendererService:
@@ -22,7 +27,10 @@ class MapVideoRendererService:
     def __init__(
         self,
         renderer_pool_executor: Executor,
-        video_writer: cv2.VideoWriter,
+        fps: int | float,
+        output_dest: Path,
+        map_frame: numpy.ndarray,
+        video_processing_config: VideoPreprocessingConfig,
         frame_buffer_limit: int = 10,
         point_size: int = 25,
         home_color: tuple[int, int, int] = (135, 206, 235),
@@ -30,7 +38,11 @@ class MapVideoRendererService:
         referee_color: tuple[int, int, int] = (128, 77, 65)
     ):
         assert frame_buffer_limit >= 1, "Must always have frame buffer limit set to 1 or more as integer"
-        self.video_writer: cv2.VideoWriter = video_writer
+        assert fps > 5, "Must specify fps at least"
+        self.fps: float = fps
+        self.output_dest: Path = output_dest.resolve()
+        self.map_frame: numpy.ndarray = map_frame
+        self.video_processing_config: VideoPreprocessingConfig = video_processing_config
         self.renderer_pool_executor: Executor = renderer_pool_executor
         self.draw_queue: Queue[numpy.ndarray | None] = Queue(frame_buffer_limit)
         self.point_size = point_size
@@ -45,24 +57,43 @@ class MapVideoRendererService:
         :return: Ничего не возвращает, останавливается передачей None в очередь на вывод.
         """
         loop: asyncio.AbstractEventLoop = asyncio.get_running_loop()
-        process = (
-            ffmpeg.input("pipe:", format="rawvideo", pix_fmt="bgr24",
-                s='{}x{}'.format(1259, 770), hwaccel="auto"
+        height, width, *_ = self.map_frame.shape
+
+        with tempfile.TemporaryDirectory(prefix="hmms_map_render_") as temp_dir:
+            temp_video_path: Path = Path(temp_dir) / self.output_dest.name
+            process = (
+                ffmpeg.input("pipe:", format="rawvideo", pix_fmt="bgr24",
+                    s='{}x{}'.format(width, height),
+                    hwaccel=self.video_processing_config.hwaccel,
+                    loglevel="quiet"
+                )
+                .filter('pad', width='ceil(iw/2)*2', height='ceil(ih/2)*2')
+                .output(
+                    str(temp_video_path.resolve()),
+                    pix_fmt='yuv420p',
+                    preset=f"{self.video_processing_config.preset}",
+                    crf=f"{self.video_processing_config.crf}",
+                    movflags='faststart'
+                )
+                .global_args("-y")
+                .run_async(pipe_stdin=True)
             )
-            .filter('pad', width='ceil(iw/2)*2', height='ceil(ih/2)*2')
-            .output('output.mp4', pix_fmt='yuv420p', crf=27)
-            .global_args("-y")
-            .run_async(pipe_stdin=True)
-        )
 
-        with self.renderer_pool_executor as write_executor:
-            while (frame := await self.draw_queue.get()) is not None:
-                await loop.run_in_executor(write_executor, process.stdin.write, frame.tobytes())
+            with self.renderer_pool_executor as write_executor:
+                while (frame := await self.draw_queue.get()) is not None:
+                    await loop.run_in_executor(write_executor, process.stdin.write, frame.tobytes())
 
-        process.stdin.close()
-        process.wait()
+                process.stdin.close()
+                process.wait()
+                await loop.run_in_executor(
+                    write_executor,
+                    partial(
+                        shutil.move,
+                        temp_video_path.resolve(), self.output_dest.resolve()
+                    )
+                )
 
-    async def data_renderer(self, map_frame: numpy.ndarray) -> AsyncGenerator[int, list[PlayerDataDTO] | None]:
+    async def data_renderer(self) -> AsyncGenerator[int, list[PlayerDataDTO] | None]:
         """
         Рисует кадры мини-карты.
 
@@ -80,7 +111,7 @@ class MapVideoRendererService:
                 await self.draw_queue.put(None)
                 return
 
-            map_copy = map_frame.copy()
+            map_copy = self.map_frame.copy()
             updated_frame = await self.draw_frame_data(map_copy, fetched_frame_data)
             await self.draw_queue.put(updated_frame)
 

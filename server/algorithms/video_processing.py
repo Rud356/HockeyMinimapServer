@@ -125,7 +125,8 @@ class VideoProcessing:
                     frames="1",
                     preset=f"{self.processing_config.preset}",
                     crf=f"{self.processing_config.crf}",
-                    loglevel="quiet"
+                    loglevel="quiet",
+                    movflags='faststart'
                 )
                 .global_args("-y")
                 .run()
@@ -180,7 +181,8 @@ class VideoProcessing:
                     vf=f"{scale_filter},lenscorrection=k1={k1}:k2={k2}",
                     preset=f"{self.processing_config.preset}",
                     crf=f"{self.processing_config.crf}",
-                    loglevel="quiet"
+                    loglevel="quiet",
+                    movflags='faststart'
                 )
                 .global_args("-y")
                 .run()
@@ -218,7 +220,8 @@ class VideoProcessing:
                     str(temp_video),
                     preset=f"{self.processing_config.preset}",
                     crf=f"{self.processing_config.crf}",
-                    loglevel="quiet"
+                    loglevel="quiet",
+                    movflags='faststart'
                 )
                 .global_args("-y")
                 .run()
