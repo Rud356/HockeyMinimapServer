@@ -15,7 +15,8 @@ class UserRepo(Protocol):
     transaction: TransactionManager
 
     async def create_user(
-        self, username: str,
+        self,
+        username: str,
         display_name: str,
         password: str,
         user_permissions: UserPermissionsData

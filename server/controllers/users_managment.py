@@ -3,18 +3,17 @@ from typing import Annotated
 from dishka.integrations.fastapi import FromDishka
 from fastapi import APIRouter, Cookie, HTTPException
 
-from server.controllers.dto.edit_user import EditUser
-from server.controllers.dto.user_is_deleted import UserIsDeleted
+from server.controllers.dto import CreateUser, EditUser, UserIsDeleted
 from server.controllers.endpoints_base import APIEndpoint
 from server.controllers.exception import UnauthorizedResourceAccess
 from server.controllers.services.user_authorization_service import UserAuthorizationService
 from server.data_storage.dto import UserDTO, UserPermissionsDTO
-from server.data_storage.exceptions import NotFoundError
+from server.data_storage.exceptions import DataIntegrityError, NotFoundError
 from server.data_storage.protocols import Repository
 from server.views.user_views import UserView
 
 
-class VideoUploadEndpoint(APIEndpoint):
+class UserManagementEndpoint(APIEndpoint):
     """
     Описывает эндпоинт апи для взаимодействия с пользователями.
     """
@@ -63,6 +62,18 @@ class VideoUploadEndpoint(APIEndpoint):
                 200: {"description": "Пользователь успешно удален"},
                 401: {"description": "Нет валидного токена авторизации"},
                 404: {"description": "Нет такого пользователя"}
+            },
+            tags=["users", "admin"]
+        )
+        self.router.add_api_route(
+            "/users/",
+            self.create_user,
+            description="Изменяет пользователя в базе данных",
+            methods=["post"],
+            responses={
+                200: {"description": "Пользователь успешно изменен"},
+                400: {"description": "Неправильные данные в теле запроса"},
+                401: {"description": "Нет валидного токена авторизации"},
             },
             tags=["users", "admin"]
         )
@@ -204,6 +215,44 @@ class VideoUploadEndpoint(APIEndpoint):
         else:
             raise HTTPException(status_code=404, detail="User not found with provided ID")
 
+    async def create_user(
+        self,
+        repository: FromDishka[Repository],
+        user_auth_service: FromDishka[UserAuthorizationService],
+        user_data: CreateUser,
+        user_token: Annotated[str | None, Cookie()] = None,
+    ) -> UserDTO:
+        """
+        Создает нового пользователя в системе.
+
+        :param repository: Объект для взаимодействия с БД.
+        :param user_auth_service: Сервис авторизации пользователя.
+        :param user_data: Данные нового пользователя.
+        :param user_token: Токен пользователя, запрашивающего создание.
+        :return:
+        """
+        user: UserDTO = await user_auth_service.authenticate_by_token(
+            user_token, repository
+        )
+
+        if not user.user_permissions.can_administrate_users:
+            raise UnauthorizedResourceAccess(
+                "User is required to have access to administrating rights"
+            )
+
+        try:
+            return await UserView(repository).create_user(
+                user_data.username,
+                user_data.display_name,
+                user_data.password,
+                user_data.user_permissions
+            )
+
+        except DataIntegrityError as err:
+            raise HTTPException(
+                400, "Invalid data in user creation body (duplicate possible)"
+            ) from err
+
     async def edit_user(
         self,
         user_id: int,
@@ -230,6 +279,7 @@ class VideoUploadEndpoint(APIEndpoint):
             raise UnauthorizedResourceAccess(
                 "User is required to have access to administrating rights"
             )
+
         try:
             return await UserView(repository).edit_user(
                 user_id, user_edit.username, user_edit.display_name, user_edit.password

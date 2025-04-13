@@ -170,6 +170,16 @@ async def test_users_batch_select(repo):
 
     assert users_compare == user_ref
 
+    async with repo.transaction as tr:
+        users_compare: list[UserDTO] = await repo.user_repo.get_users(limit=10)
+
+    assert users_compare == user_ref[:10]
+
+    async with repo.transaction as tr:
+        users_compare: list[UserDTO] = await repo.user_repo.get_users(limit=10, offset=10)
+
+    assert users_compare == user_ref[10:20]
+
 
 async def test_deleting_user(repo):
     async with repo.transaction as tr:

@@ -10,9 +10,11 @@ class AppConfig(BaseModel):
     """
     Хранит конфигурацию приложения.
     """
+    local_mode: bool
     debug_visualization: bool
     db_connection_string: str
     enable_gzip_compression: bool
+    server_jwt_key: str
 
     players_data_extraction_workers: int = Field(ge=1, lt=20)
     minimap_frame_buffer: int = Field(ge=1, lt=120)

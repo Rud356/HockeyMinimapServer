@@ -44,6 +44,48 @@ class UserView:
         async with self.repository.transaction:
             return await self.repository.user_repo.delete_user(user_id)
 
+    async def create_user(
+        self,
+        username: str,
+        display_name: str,
+        password: str,
+        user_permissions: UserPermissionsDTO
+    ) -> UserDTO:
+        """
+        Создает нового пользователя системы в базе данных.
+
+        :param username: Имя пользователя для входа.
+        :param display_name: Отображаемое имя пользователя.
+        :param password: Пароль пользователя.
+        :param user_permissions: Права пользователя.
+        :return: Данные о новом пользователе.
+        :raises DataIntegrityError: Данные не прошли проверку на валидность для вставки.
+        """
+        async with self.repository.transaction:
+            return await self.repository.user_repo.create_user(
+                username=username,
+                display_name=display_name,
+                password=password,
+                user_permissions=UserPermissionsData(
+                    can_administrate_users=user_permissions.can_administrate_users,
+                    can_create_projects=user_permissions.can_create_projects
+                )
+            )
+
+    async def authenticate_user(self, username: str, password: str) -> UserDTO:
+        """
+        Аутентифицирует пользователя по предоставленному имени пользователя и паролю.
+
+        :param username: Имя пользователя.
+        :param password: Пароль.
+        :return: Представление пользователя.
+        :raise ValueError: Если предоставленные данные не являются валидными.
+        """
+        async with self.repository.transaction:
+            return await self.repository.user_repo.authenticate_user(
+                username, password
+            )
+
     async def edit_user(
         self,
         user_id: int,

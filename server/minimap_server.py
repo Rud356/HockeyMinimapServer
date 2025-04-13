@@ -1,4 +1,6 @@
+import asyncio
 import time
+import typing
 from contextlib import asynccontextmanager
 from pathlib import Path
 
@@ -11,10 +13,16 @@ from dishka.integrations.fastapi import (
 )
 from fastapi import APIRouter, FastAPI, Request, Response
 from fastapi.middleware.gzip import GZipMiddleware
+from sqlalchemy.ext.asyncio import create_async_engine
 from starlette.middleware.base import BaseHTTPMiddleware
 
 from server.algorithms.disk_space_allocator import DiskSpaceAllocator
+from server.controllers.services.user_authorization_service import UserAuthorizationService
+from server.controllers.user_authentication import UserAuthenticationEndpoint
+from server.controllers.users_managment import UserManagementEndpoint
 from server.controllers.video_upload import VideoUploadEndpoint
+from server.data_storage.sql_implementation.repository_sqla import RepositorySQLA
+from server.data_storage.sql_implementation.sqla_provider import SQLAlchemyProvider
 from server.utils.config import (
     AppConfig,
     MinimapKeyPointConfig,
@@ -25,6 +33,7 @@ from server.utils.config import (
 from server.utils.providers import ConfigProvider
 from server.utils.providers.disk_space_allocator_provider import DiskSpaceAllocatorProvider
 from server.utils.providers.render_service_limits_provider import RenderServiceLimitsProvider
+from server.utils.providers.user_auth_provider import UserAuthorizationProvider
 
 
 class MinimapServer:
@@ -44,10 +53,18 @@ class MinimapServer:
         self.app.add_middleware(BaseHTTPMiddleware, dispatch=self.add_process_time_header)
         self.router: APIRouter = APIRouter(route_class=DishkaRoute)
 
+        # temporary init code
+        engine = create_async_engine("sqlite+aiosqlite:///:memory:")
+        sqla_provider = SQLAlchemyProvider(engine)
+        self.tmp_repo: RepositorySQLA = typing.cast(RepositorySQLA, sqla_provider.get_repository())
+        asyncio.run(self.tmp_repo.init_db(engine))
+
         container: AsyncContainer = make_async_container(
             DiskSpaceAllocatorProvider(DiskSpaceAllocator()),
             ConfigProvider(config),
             FastapiProvider(),
+            sqla_provider,
+            UserAuthorizationProvider(UserAuthorizationService(key=config.server_jwt_key, local_mode=config.local_mode)),
             RenderServiceLimitsProvider(config.minimap_rendering_workers, config.minimap_frame_buffer)
         )
 
@@ -83,7 +100,7 @@ class MinimapServer:
         start_time = time.perf_counter()
         response = await call_next(request)
         process_time = time.perf_counter() - start_time
-        response.headers["X-Process-Time"] = str(round(process_time, 4))
+        response.headers["Server-Timing"] = f"app;dur={round(process_time * 1000, 4)}"
         return response
 
     @asynccontextmanager
@@ -95,8 +112,7 @@ class MinimapServer:
         uvicorn.run(self.app)
 
 
-MINIMAP_KEY_POINTS = MinimapKeyPointConfig(**
-    {
+MINIMAP_KEY_POINTS = MinimapKeyPointConfig.model_construct(values={
         "top_left_field_point": {"x": 16, "y": 88},
         "bottom_right_field_point": {"x": 1247, "y": 704},
 
@@ -134,11 +150,13 @@ MINIMAP_KEY_POINTS = MinimapKeyPointConfig(**
 
 server = MinimapServer(
     AppConfig(
+        local_mode=True,
         minimap_frame_buffer=10,
         enable_gzip_compression=False,
         players_data_extraction_workers=4,
         minimap_rendering_workers=4,
         debug_visualization=True,
+        server_jwt_key="ExamplePassword1234$$5",
         db_connection_string="Helloworld",
         nn_config=NeuralNetworkConfig(
             field_detection_model_path=Path(""), player_detection_model_path=Path(""), max_batch_size=5
@@ -151,6 +169,8 @@ server = MinimapServer(
 
 api = APIRouter(prefix="/api", route_class=DishkaRoute)
 VideoUploadEndpoint(api)
+UserManagementEndpoint(api)
+UserAuthenticationEndpoint(api)
 
 server.register_routes(api)
 server.finish_setup()

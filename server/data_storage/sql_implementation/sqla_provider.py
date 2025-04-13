@@ -1,7 +1,7 @@
-from dishka import Provider, Scope, provide
+from dishka import AnyOf, Provider, Scope, provide
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker
 
-from server.data_storage.protocols import Repository
+from server.data_storage.protocols import Repository, TransactionManager
 from server.data_storage.sql_implementation.repository_sqla import RepositorySQLA
 from server.data_storage.sql_implementation.transaction_manager_sqla import TransactionManagerSQLA
 
@@ -40,6 +40,10 @@ class SQLAlchemyProvider(Provider):
 
         else:
             return TransactionManagerSQLA(session, session.begin())
+
+    @provide(scope=Scope.REQUEST)
+    def get_transaction_manager_protocol(self, session: AsyncSession) -> TransactionManager:
+        return self.get_transaction_manager(session)
 
     @provide(scope=Scope.REQUEST)
     def get_repository(self) -> Repository:

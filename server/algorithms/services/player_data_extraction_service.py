@@ -44,7 +44,7 @@ class PlayerDataExtractionService:
         self.players_mapper: PlayersMapper = players_mapper
         self.player_tracker: PlayerTracker = player_tracker
         self.field_mask: numpy.ndarray = field_mask.mask
-        self.field_bbox: BoundingBox = field_bounding_box.scale_bbox(0.9)
+        self.field_bbox: BoundingBox = field_bounding_box.scale_bbox(0.8)
         self.known_tracked_players_teams: dict[int, Team] = {}
 
     def process_frame(

@@ -36,7 +36,7 @@ class UserAuthorizationService:
             raise BadTokenPayload()
 
         try:
-            payload: dict[str, Any] = jwt.decode(token, self.key, algorithm="HS256")
+            payload: dict[str, Any] = jwt.decode(token, self.key, algorithms=["HS256"])
 
             return UserDTO.model_validate(payload)
 
