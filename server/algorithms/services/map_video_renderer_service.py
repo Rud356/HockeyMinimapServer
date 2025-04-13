@@ -5,6 +5,7 @@ from concurrent.futures.thread import ThreadPoolExecutor
 from typing import AsyncGenerator, Optional
 
 import cv2
+import ffmpeg
 import numpy
 
 from server.algorithms.enums import Team
@@ -44,12 +45,22 @@ class MapVideoRendererService:
         :return: Ничего не возвращает, останавливается передачей None в очередь на вывод.
         """
         loop: asyncio.AbstractEventLoop = asyncio.get_running_loop()
+        process = (
+            ffmpeg.input("pipe:", format="rawvideo", pix_fmt="bgr24",
+                s='{}x{}'.format(1259, 770), hwaccel="auto"
+            )
+            .filter('pad', width='ceil(iw/2)*2', height='ceil(ih/2)*2')
+            .output('output.mp4', pix_fmt='yuv420p', crf=27)
+            .global_args("-y")
+            .run_async(pipe_stdin=True)
+        )
 
         with self.renderer_pool_executor as write_executor:
             while (frame := await self.draw_queue.get()) is not None:
-                await loop.run_in_executor(write_executor, self.video_writer.write, frame)
+                await loop.run_in_executor(write_executor, process.stdin.write, frame.tobytes())
 
-        self.video_writer.release()
+        process.stdin.close()
+        process.wait()
 
     async def data_renderer(self, map_frame: numpy.ndarray) -> AsyncGenerator[int, list[PlayerDataDTO] | None]:
         """
