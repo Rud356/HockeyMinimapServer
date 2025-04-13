@@ -84,7 +84,10 @@ class MapVideoRendererService:
                     await loop.run_in_executor(write_executor, process.stdin.write, frame.tobytes())
 
                 process.stdin.close()
-                process.wait()
+                await loop.run_in_executor(
+                    write_executor,
+                    process.wait
+                )
                 await loop.run_in_executor(
                     write_executor,
                     partial(

@@ -16,6 +16,7 @@ class Video(Base):
     Описывает таблицу видео.
     """
     video_id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    fps: Mapped[float] = mapped_column(default=25.0)
     corrective_coefficient_k1: Mapped[float] = mapped_column(default=0.0)
     corrective_coefficient_k2: Mapped[float] = mapped_column(default=0.0)
     camera_position: Mapped[CameraPosition] = mapped_column(default=CameraPosition.top_left_corner)
