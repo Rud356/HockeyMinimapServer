@@ -1,5 +1,6 @@
 import asyncio
 import os
+import time
 from concurrent.futures.thread import ThreadPoolExecutor
 from pathlib import Path
 from typing import AsyncGenerator, Optional
@@ -221,11 +222,12 @@ async def main(video_path: Path, field_model: Path, players_model: Path):
 
 
 if __name__ == "__main__":
-    with pyinstrument.profile():
-        asyncio.run(
-            main(
-                source_video,
-                (Path(__file__).parent.parent / "models/FieldDetector_new_based_on_old.pth").resolve(),
-                (Path(__file__).parent.parent / "models/PlayersClassification_720_1.pth").resolve()
-            )
+    start = time.time()
+    asyncio.run(
+        main(
+            source_video,
+            (Path(__file__).parent.parent / "models/FieldDetector_new_based_on_old.pth").resolve(),
+            (Path(__file__).parent.parent / "models/PlayersClassification_720_1.pth").resolve()
         )
+    )
+    print(f"Took {round(time.time() - start, 3)}s to render")
