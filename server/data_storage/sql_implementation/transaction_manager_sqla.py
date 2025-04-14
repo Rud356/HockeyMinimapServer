@@ -1,4 +1,5 @@
-from typing import Self
+from inspect import Traceback
+from typing import Any, Self
 
 from sqlalchemy.ext.asyncio import AsyncSession, AsyncSessionTransaction
 
@@ -35,7 +36,12 @@ class TransactionManagerSQLA(TransactionManager):
         await self.transaction.__aenter__()
         return self
 
-    async def __aexit__(self, exc_type, exc_value, traceback) -> None:
+    async def __aexit__(
+        self,
+        exc_type: type[Exception | Any] | None,
+        exc_value: Exception | Any | None,
+        traceback: Traceback | Any
+    ) -> None:
         """
         Вызывает закрытие транзакции.
 

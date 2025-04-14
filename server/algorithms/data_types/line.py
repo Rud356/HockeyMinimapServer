@@ -1,10 +1,11 @@
 from __future__ import annotations
 
+import typing
 from typing import NamedTuple, Optional, TYPE_CHECKING
 
 import cv2
-import numpy
 
+from server.algorithms.data_types import CV_Image
 from server.algorithms.data_types.point import Point
 
 if TYPE_CHECKING:
@@ -20,9 +21,9 @@ class Line(NamedTuple):
 
     def visualize_line_on_image(
         self,
-        image: numpy.ndarray,
+        image: CV_Image,
         color: tuple[int, int, int] = (0, 128, 196)
-    ) -> numpy.ndarray:
+    ) -> CV_Image:
         """
         Визуализирует линию на изображении.
 
@@ -30,13 +31,15 @@ class Line(NamedTuple):
         :param image: Исходное изображение.
         :return: Новое изображение.
         """
-        return cv2.line(
-            image,
-            tuple(map(int, self.min_point)),
-            tuple(map(int, self.max_point)),
-            color,
-            2,
-            cv2.LINE_AA
+        return typing.cast(CV_Image,
+            cv2.line(
+                image,
+                tuple(map(int, self.min_point)),
+                tuple(map(int, self.max_point)),
+                color,
+                2,
+                cv2.LINE_AA
+            )
         )
 
     def clip_line_to_bounding_box(self, bounding_box: BoundingBox) -> Line:
@@ -54,7 +57,7 @@ class Line(NamedTuple):
     @classmethod
     def find_lines(
         cls,
-        image: numpy.ndarray,
+        image: CV_Image,
         min_threshold: int = 1,
         max_threshold: int = 1000
     ) -> Optional[Line]:
@@ -67,7 +70,7 @@ class Line(NamedTuple):
 
         :return: Искомая линия, проходящая через точки на изображении или ничего.
         """
-        image = cv2.Canny(image, 50.0, 200.0)
+        image = typing.cast(CV_Image, cv2.Canny(image, 50.0, 200.0))
         contours, hierarchy = cv2.findContours(image, cv2.RETR_CCOMP, cv2.CHAIN_APPROX_SIMPLE)
 
         if len(contours) < 1:

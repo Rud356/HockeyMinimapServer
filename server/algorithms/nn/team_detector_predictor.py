@@ -3,10 +3,10 @@ from __future__ import annotations
 from typing import Literal, TYPE_CHECKING
 
 import cv2
-import numpy
 import torch
 from PIL import Image
 
+from server.algorithms.data_types import CV_Image
 from server.algorithms.enums.team import Team
 from server.algorithms.nn.team_detector_teacher import team_detector_transform
 
@@ -32,7 +32,7 @@ class TeamDetectionPredictor:
         self.model = model.to(device)
         self.transform = transform_inputs
 
-    def __call__(self, image: numpy.ndarray) -> Team:
+    def __call__(self, image: CV_Image) -> Team:
         """
         Выполняет определение команды игрока с помощью нейронной сети.
 

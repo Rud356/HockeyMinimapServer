@@ -1,9 +1,10 @@
+import typing
 from typing import Mapping
 
 import cv2
 import numpy
 
-from server.algorithms.data_types import BoundingBox, Point, RelativePoint
+from server.algorithms.data_types import BoundingBox, CV_Image, Point, RelativePoint
 from server.algorithms.exceptions.not_enough_field_points import NotEnoughFieldPoints
 from server.utils.config.key_point import KeyPoint
 
@@ -36,7 +37,7 @@ class PlayersMapper:
 
         self.field_transform = homography_transform
 
-    def warp_image(self, image: numpy.ndarray) -> numpy.ndarray:
+    def warp_image(self, image: CV_Image) -> CV_Image:
         """
         Искажает изображение для демонстрации получаемого преобразования.
 
@@ -44,7 +45,7 @@ class PlayersMapper:
         :return: Новое изображение с примененным преобразованием.
         """
         height, width = image.shape[:2]
-        return cv2.warpPerspective(image, self.field_transform, (width, height))
+        return typing.cast(CV_Image, cv2.warpPerspective(image, self.field_transform, (width, height)))
 
     def transform_point_to_minimap_coordinates(self, *points: Point) -> list[Point]:
         """

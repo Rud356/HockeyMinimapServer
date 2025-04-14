@@ -3,7 +3,6 @@ from __future__ import annotations
 
 from typing import Optional, TYPE_CHECKING
 
-import numpy
 import torch
 from detectron2.structures import Instances
 
@@ -16,7 +15,7 @@ from server.algorithms.players_mapper import PlayersMapper
 
 if TYPE_CHECKING:
     from torch import Tensor
-    from server.algorithms.data_types import BoundingBox, Mask, RawPlayerTrackingData, Point
+    from server.algorithms.data_types import BoundingBox, CV_Image, Mask, RawPlayerTrackingData, Point
 
 
 class PlayerDataExtractionService:
@@ -43,13 +42,13 @@ class PlayerDataExtractionService:
         self.team_predictor: TeamDetectionPredictor = team_predictor
         self.players_mapper: PlayersMapper = players_mapper
         self.player_tracker: PlayerTracker = player_tracker
-        self.field_mask: numpy.ndarray = field_mask.mask
+        self.field_mask: CV_Image = field_mask.mask
         self.field_bbox: BoundingBox = field_bounding_box.scale_bbox(0.8)
         self.known_tracked_players_teams: dict[int, Team] = {}
 
     def process_frame(
         self,
-        frame: numpy.ndarray,
+        frame: CV_Image,
         instances: Instances,
     ) -> list[PlayerData]:
         """

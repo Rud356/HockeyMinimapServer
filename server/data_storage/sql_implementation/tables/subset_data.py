@@ -1,4 +1,4 @@
-from typing import Optional, TYPE_CHECKING
+from typing import Any, Optional, TYPE_CHECKING
 
 from sqlalchemy import ForeignKey, ForeignKeyConstraint
 from sqlalchemy.orm import Mapped, relationship
@@ -45,7 +45,7 @@ class SubsetData(Base):
         lazy="joined"
     )
 
-    __table_args__: tuple[ColumnCollectionConstraint | dict, ...] = (
+    __table_args__: tuple[ColumnCollectionConstraint | dict[Any, Any], ...] = (
         ForeignKeyConstraint(
             ["video_id", "frame_id"], ["frame.video_id", "frame.frame_id"]
         ),

@@ -1,8 +1,8 @@
-import numpy
 import torch
 from detectron2.engine import DefaultPredictor
 from detectron2.structures import Instances
 
+from server.algorithms.data_types import CV_Image
 from server.algorithms.data_types.detectron2_input import Detectron2Input
 
 
@@ -11,7 +11,7 @@ class BatchPredictor(DefaultPredictor):
     Предсказывает позиции игроков на видео и их класс.
     """
 
-    def batch_predict(self, *images: numpy.ndarray) -> list[dict[str, Instances]]:
+    def batch_predict(self, *images: CV_Image) -> list[dict[str, Instances]]:
         """
         Используется для получения выделений сразу на нескольких изображениях в BRG формате
         (формат по умолчанию OpenCV).

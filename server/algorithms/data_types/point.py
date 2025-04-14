@@ -1,12 +1,14 @@
 from __future__ import annotations
 
 import math
+import typing
 from typing import NamedTuple, TYPE_CHECKING
 
 import cv2
 import numpy as np
 from sqlalchemy.dialects.mysql import insert
 
+from server.algorithms.data_types import CV_Image
 from server.algorithms.data_types.relative_point import RelativePoint
 
 if TYPE_CHECKING:
@@ -71,10 +73,10 @@ class Point(NamedTuple):
 
     def visualize_point_on_image(
         self,
-        image: np.ndarray,
+        image: CV_Image,
         color: tuple[int, int, int] = (128, 38, 128),
         radius: int = 5
-    ) -> np.ndarray:
+    ) -> CV_Image:
         """
         Визуализирует точку на изображении.
 
@@ -90,12 +92,14 @@ class Point(NamedTuple):
             raise ValueError("Unexpected value for radius: must be at least 1 with int type, "
                              f"(got {radius=})")
 
-        return cv2.circle(
-            image,
-            (int(self.x), int(self.y)),
-            radius=radius,
-            color=color,
-            thickness=-1
+        return typing.cast(CV_Image,
+            cv2.circle(
+                image,
+                (int(self.x), int(self.y)),
+                radius=radius,
+                color=color,
+                thickness=-1
+            )
         )
 
     def find_distance_from_point(self, other_point: tuple[float, float] | Point) -> float:

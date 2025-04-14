@@ -1,9 +1,10 @@
 from contextlib import AbstractAsyncContextManager
-from typing import Protocol, Self, runtime_checkable
+from inspect import Traceback
+from typing import Any, Protocol, Self, runtime_checkable
 
 
 @runtime_checkable
-class TransactionManager(Protocol, AbstractAsyncContextManager):
+class TransactionManager(Protocol, AbstractAsyncContextManager[Any]):
     """
     Управляет транзакциями и сохранением изменений.
     """
@@ -38,7 +39,12 @@ class TransactionManager(Protocol, AbstractAsyncContextManager):
         """
         return self
 
-    async def __aexit__(self, exc_type, exc_value, traceback) -> None:
+    async def __aexit__(
+        self,
+        exc_type: type[Exception | Any] | None,
+        exc_value: Exception | Any | None,
+        traceback: Traceback | Any
+    ) -> None:
         """
         Вызывает закрытие транзакции.
 

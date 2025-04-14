@@ -1,17 +1,18 @@
 import asyncio
 import shutil
 import tempfile
+import typing
 from asyncio import Queue
 from concurrent.futures import Executor
 from concurrent.futures.thread import ThreadPoolExecutor
+from functools import partial
 from pathlib import Path
 from typing import AsyncGenerator, Optional
-from functools import partial
 
 import cv2
 import ffmpeg
-import numpy
 
+from server.algorithms.data_types import CV_Image
 from server.algorithms.enums import Team
 from server.algorithms.enums.player_classes_enum import PlayerClasses
 from server.data_storage.dto import PointDTO
@@ -29,7 +30,7 @@ class MapVideoRendererService:
         renderer_pool_executor: Executor,
         fps: int | float,
         output_dest: Path,
-        map_frame: numpy.ndarray,
+        map_frame: CV_Image,
         video_processing_config: VideoPreprocessingConfig,
         frame_buffer_limit: int = 10,
         point_size: int = 25,
@@ -41,10 +42,10 @@ class MapVideoRendererService:
         assert fps > 5, "Must specify fps at least"
         self.fps: float = fps
         self.output_dest: Path = output_dest.resolve()
-        self.map_frame: numpy.ndarray = map_frame
+        self.map_frame: CV_Image = map_frame
         self.video_processing_config: VideoPreprocessingConfig = video_processing_config
         self.renderer_pool_executor: Executor = renderer_pool_executor
-        self.draw_queue: Queue[numpy.ndarray | None] = Queue(frame_buffer_limit)
+        self.draw_queue: Queue[CV_Image | None] = Queue(frame_buffer_limit)
         self.point_size = point_size
         self.home_color: tuple[int, int, int] = home_color
         self.away_color: tuple[int, int, int] = away_color
@@ -120,7 +121,7 @@ class MapVideoRendererService:
 
             counter += 1
 
-    async def draw_frame_data(self, map_data: numpy.ndarray, players_data: list[PlayerDataDTO]) -> numpy.ndarray:
+    async def draw_frame_data(self, map_data: CV_Image, players_data: list[PlayerDataDTO]) -> CV_Image:
         """
         Асинхронно рисует информацию на кадре.
         :param map_data: Изображение мини-карты.
@@ -147,13 +148,13 @@ class MapVideoRendererService:
 
     def draw_player_point(
         self,
-        map_frame: numpy.ndarray,
+        map_frame: CV_Image,
         tracking_id: int,
         map_point_position: PointDTO,
         class_id: PlayerClasses,
         team_id: Optional[Team] = None,
         player_name: Optional[str] = None
-    ) -> numpy.ndarray:
+    ) -> CV_Image:
         """
         Рисует точку игрока на поле.
 
@@ -169,27 +170,45 @@ class MapVideoRendererService:
 
         match class_id:
             case PlayerClasses.Referee:
-                map_frame = cv2.circle(map_frame, point_position, self.point_size, self.referee_color, thickness=-1)
-                map_frame = cv2.circle(
-                    map_frame, point_position, self.point_size, (16, 16, 16), thickness=2, lineType=cv2.LINE_AA
+                map_frame = typing.cast(CV_Image,
+                    cv2.circle(
+                        map_frame,
+                        point_position,
+                        self.point_size,
+                        self.referee_color,
+                        thickness=-1
+                    )
+                )
+                map_frame = typing.cast(CV_Image,
+                    cv2.circle(
+                        map_frame, point_position, self.point_size, (16, 16, 16), thickness=2, lineType=cv2.LINE_AA
+                    )
                 )
                 map_frame = self.draw_text(map_frame, point_position, "R")
 
             case PlayerClasses.Player:
                 if team_id == Team.Home:
-                    map_frame = cv2.circle(map_frame, point_position, self.point_size, self.home_color, thickness=-1)
+                    map_frame = typing.cast(CV_Image,
+                        cv2.circle(map_frame, point_position, self.point_size, self.home_color, thickness=-1)
+                    )
 
                 elif team_id == Team.Away:
-                    map_frame = cv2.circle(map_frame, point_position, self.point_size, self.away_color, thickness=-1)
+                    map_frame = typing.cast(CV_Image,
+                        cv2.circle(map_frame, point_position, self.point_size, self.away_color, thickness=-1)
+                    )
 
                 else:
                     # Grey for unknown team
-                    map_frame = cv2.circle(map_frame, point_position, self.point_size, (127, 127, 127), thickness=-1)
+                    map_frame = typing.cast(CV_Image,
+                        cv2.circle(map_frame, point_position, self.point_size, (127, 127, 127), thickness=-1)
+                    )
 
                 # draw text with player name or id
-                map_frame = cv2.circle(
-                    map_frame, point_position, self.point_size,
-                    (16, 16, 16), thickness=2, lineType=cv2.LINE_AA
+                map_frame = typing.cast(CV_Image,
+                    cv2.circle(
+                        map_frame, point_position, self.point_size,
+                        (16, 16, 16), thickness=2, lineType=cv2.LINE_AA
+                    )
                 )
 
                 if player_name:
@@ -200,26 +219,34 @@ class MapVideoRendererService:
 
             case PlayerClasses.Goalie:
                 if team_id == Team.Home:
-                    map_frame = cv2.circle(map_frame, point_position, self.point_size, self.home_color, thickness=-1)
+                    map_frame = typing.cast(CV_Image,
+                        cv2.circle(map_frame, point_position, self.point_size, self.home_color, thickness=-1)
+                    )
 
                 elif team_id == Team.Away:
-                    map_frame = cv2.circle(map_frame, point_position, self.point_size, self.away_color, thickness=-1)
+                    map_frame = typing.cast(CV_Image,
+                        cv2.circle(map_frame, point_position, self.point_size, self.away_color, thickness=-1)
+                    )
 
                 else:
                     # Grey for unknown team
-                    map_frame = cv2.circle(
-                        map_frame, point_position, self.point_size, (127, 127, 127), thickness=-1
+                    map_frame = typing.cast(CV_Image,
+                        cv2.circle(
+                            map_frame, point_position, self.point_size, (127, 127, 127), thickness=-1
+                        )
                     )
 
                 # draw text with G for goalie
-                map_frame = cv2.circle(
-                    map_frame, point_position, self.point_size, (16, 16, 16), thickness=2, lineType=cv2.LINE_AA
+                map_frame = typing.cast(CV_Image,
+                    cv2.circle(
+                        map_frame, point_position, self.point_size, (16, 16, 16), thickness=2, lineType=cv2.LINE_AA
+                    )
                 )
                 map_frame = self.draw_text(map_frame, point_position, "G")
 
         return map_frame
 
-    def draw_text(self, image: numpy.ndarray, center: tuple[int, int], text: str) -> numpy.ndarray:
+    def draw_text(self, image: CV_Image, center: tuple[int, int], text: str) -> CV_Image:
         """
         Рисует текст на игроке.
 
@@ -235,13 +262,15 @@ class MapVideoRendererService:
         text_x = center[0] - text_width // 2
         text_y = center[1] + self.point_size // 2
 
-        return cv2.putText(
-            image,
-            text,
-            (text_x, text_y),
-            font,
-            font_scale,
-            (200, 200, 200),
-            font_thickness,
-            lineType=cv2.LINE_AA
+        return typing.cast(CV_Image,
+            cv2.putText(
+                image,
+                text,
+                (text_x, text_y),
+                font,
+                font_scale,
+                (200, 200, 200),
+                font_thickness,
+                lineType=cv2.LINE_AA
+            )
         )

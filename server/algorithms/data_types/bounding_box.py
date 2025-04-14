@@ -1,10 +1,12 @@
 from __future__ import annotations
 
+import typing
 from typing import NamedTuple, Sequence
 
 import cv2
 import numpy
 
+from server.algorithms.data_types import CV_Image
 from server.algorithms.data_types.point import Point
 from server.algorithms.data_types.relative_bounding_box import RelativeBoundingBox
 
@@ -55,7 +57,7 @@ class BoundingBox(NamedTuple):
 
     def visualize_bounding_box(
         self,
-        image: numpy.ndarray,
+        image: CV_Image,
         color: tuple[int, int, int] = (0, 255, 0)
     ) -> numpy.ndarray:
         """
@@ -65,15 +67,17 @@ class BoundingBox(NamedTuple):
         :param image: Исходное изображение.
         :return: Изображение с прямоугольником.
         """
-        return cv2.rectangle(
-            image,
-            tuple(map(int, self.min_point)),
-            tuple(map(int, self.max_point)),
-            color,
-            2
+        return typing.cast(CV_Image,
+            cv2.rectangle(
+                image,
+                tuple(map(int, self.min_point)),
+                tuple(map(int, self.max_point)),
+                color,
+                2
+            )
         )
 
-    def cut_out_image_part(self, image: numpy.ndarray) -> numpy.ndarray:
+    def cut_out_image_part(self, image: CV_Image) -> CV_Image:
         """
         Cuts out the part of the image defined by the bounding box.
 
@@ -156,7 +160,7 @@ class BoundingBox(NamedTuple):
         )
 
     @classmethod
-    def from_relative_bounding_box(cls, bbox: RelativeBoundingBox, resolution: tuple[int, int]):
+    def from_relative_bounding_box(cls, bbox: RelativeBoundingBox, resolution: tuple[int, int]) -> BoundingBox:
         """
         Преобразует относительные координаты в абсолютные.
 

@@ -4,9 +4,9 @@ from asyncio import Future
 from concurrent.futures import ThreadPoolExecutor
 from typing import Iterable
 
-import numpy
 from detectron2.structures import Instances
 
+from server.algorithms.data_types import CV_Image
 from server.algorithms.nn.batch_predictor import BatchPredictor
 
 
@@ -19,7 +19,7 @@ class PredictorService(ABC):
     device_lock: asyncio.Lock
     image_queue: asyncio.Queue[
         tuple[
-            tuple[numpy.ndarray, ...],
+            tuple[CV_Image, ...],
             Future[list[Instances]]
         ]
     ]
@@ -40,7 +40,7 @@ class PredictorService(ABC):
 
     async def execute_model(
         self,
-        nn_inputs: Iterable[numpy.ndarray],
+        nn_inputs: Iterable[CV_Image],
         loop: asyncio.AbstractEventLoop,
         threadpool: ThreadPoolExecutor
     ) -> list[Instances]:
@@ -60,7 +60,7 @@ class PredictorService(ABC):
             )
             return [result_instance["instances"] for result_instance in result]
 
-    async def add_inference_task_to_queue(self, *images: numpy.ndarray) -> Future[list[Instances]]:
+    async def add_inference_task_to_queue(self, *images: CV_Image) -> Future[list[Instances]]:
         """
         Добавляет задачу запуска нейросети на получение данных из изображения.
 

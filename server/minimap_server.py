@@ -98,7 +98,7 @@ class MinimapServer:
         :return: Ответ на запрос.
         """
         start_time = time.perf_counter()
-        response = await call_next(request)
+        response: Response = await call_next(request)
         process_time = time.perf_counter() - start_time
         response.headers["Server-Timing"] = f"app;dur={round(process_time * 1000, 4)}"
         return response
@@ -108,7 +108,7 @@ class MinimapServer:
         yield
         await app.state.dishka_container.close()
 
-    def start(self):
+    def start(self) -> None:
         uvicorn.run(self.app)
 
 

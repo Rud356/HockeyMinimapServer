@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-import numpy
 import torch
 from detectron2.structures import Instances
 
@@ -13,7 +12,7 @@ from server.data_storage.dto import BoxDTO, PointDTO, SubsetDataDTO
 
 if TYPE_CHECKING:
     from torch import Tensor
-    from server.algorithms.data_types import BoundingBox, Mask, RawPlayerTrackingData, Point
+    from server.algorithms.data_types import BoundingBox, CV_Image, Mask, RawPlayerTrackingData, Point
 
 
 class PlayerTrackingService:
@@ -27,7 +26,7 @@ class PlayerTrackingService:
         field_bounding_box: BoundingBox
     ):
         self.player_tracker: PlayerTracker = player_tracker
-        self.field_mask: numpy.ndarray = field_mask.mask
+        self.field_mask: CV_Image = field_mask.mask
         self.field_bbox: BoundingBox = field_bounding_box.scale_bbox()
 
     def process_frame(
@@ -95,9 +94,9 @@ class PlayerTrackingService:
 
     @staticmethod
     def get_players_data_from_frame(
-        frame: numpy.ndarray,
+        frame: CV_Image,
         frame_data: list[SubsetDataDTO]
-    ) -> list[tuple[Team, numpy.ndarray]]:
+    ) -> list[tuple[Team, CV_Image]]:
         """
         Получает изображения игроков с назначенными командами.
 
@@ -106,7 +105,7 @@ class PlayerTrackingService:
         :return: Список назначенных команд и картинок игроков.
         """
 
-        team_data: list[tuple[Team, numpy.ndarray]] = []
+        team_data: list[tuple[Team, CV_Image]] = []
         for player_data in frame_data:
             if player_data.class_id == PlayerClasses.Referee:
                 continue
@@ -116,7 +115,7 @@ class PlayerTrackingService:
                 min_point: PointDTO = player_with_team.box.top_point
                 max_point: PointDTO = player_with_team.box.bottom_point
 
-                player_frame: numpy.ndarray = BoundingBox(
+                player_frame: CV_Image = BoundingBox(
                     min_point=Point(x=min_point.x, y=min_point.y),
                     max_point=Point(x=max_point.x, y=max_point.y)
                 ).cut_out_image_part(frame)

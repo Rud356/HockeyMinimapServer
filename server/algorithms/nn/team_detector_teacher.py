@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import Any, Mapping, TYPE_CHECKING
 
 import torch
 from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_score
@@ -49,7 +49,7 @@ class TeamDetectorTeacher:
         criterion = nn.CrossEntropyLoss()
         optimizer = optim.Adam(self.model.parameters(), lr=0.00075)
         best_val_loss: float = float('inf')
-        best_model_state: dict = self.model.state_dict()
+        best_model_state: Mapping[str, Any] = self.model.state_dict()
 
         for epoch in range(self.epochs):
             self.model.train()

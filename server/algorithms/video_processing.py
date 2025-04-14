@@ -1,13 +1,14 @@
 import shutil
 import tempfile
+import typing
+from functools import reduce
 from pathlib import Path
 from typing import Any, Optional
-from functools import reduce
 
 import cv2
 import ffmpeg
-import numpy
 
+from server.algorithms.data_types import CV_Image
 from server.algorithms.exceptions.invalid_file_format import InvalidFileFormat
 from server.utils.config import VideoPreprocessingConfig
 
@@ -23,7 +24,7 @@ class VideoProcessing:
 
     def get_sample_from_video(
         self, file: Path, *, frame_timestamp: Optional[float] = None, frame_index: Optional[int] = None
-    ) -> tuple[numpy.ndarray | None, dict[str, Any]]:
+    ) -> tuple[CV_Image | None, dict[str, Any]]:
         """
         Получает один кадр из видео.
 
@@ -38,7 +39,7 @@ class VideoProcessing:
         :raise InvalidFileFormat: Неподдерживаемый формат файла предоставлен в качестве файла.
         """
         video_info = self.probe_video(file)
-        frame: Optional[numpy.ndarray] = None
+        frame: Optional[CV_Image] = None
 
         if frame_timestamp is not None and frame_index is not None:
             raise ValueError("Must only specify either frame timestamp or frame index")
@@ -60,7 +61,7 @@ class VideoProcessing:
                 # Set output frame
                 ret, frame_data = cap.read()
                 if ret:
-                    frame = frame_data
+                    frame = typing.cast(CV_Image, frame_data)
                 else:
                     raise InvalidFileFormat("Unexpected file format or file not readable by cv2")
 
@@ -81,7 +82,7 @@ class VideoProcessing:
         k1: float = 0.0,
         k2: float = 0.0,
         frame_timestamp: Optional[float] = None
-    ) -> tuple[numpy.ndarray, dict[str, Any]]:
+    ) -> tuple[CV_Image, dict[str, Any]]:
         """
         Применяет фильтр коррекции искажений к видео и выводи один кадр из видео.
 
@@ -99,7 +100,7 @@ class VideoProcessing:
             frame_timestamp = 0.0
 
         video_info = self.probe_video(source_file)
-        frame: Optional[numpy.ndarray] = None
+        frame: Optional[CV_Image] = None
 
         try:
             end_timestamp: float = self.convert_ffmpeg_timestamp_to_seconds(video_info["tags"]["DURATION"])
@@ -132,7 +133,7 @@ class VideoProcessing:
                 .run()
             )
 
-            sample_frame = cv2.imread(str(temp_frame))
+            sample_frame: CV_Image = typing.cast(CV_Image, cv2.imread(str(temp_frame)))
             if sample_frame is None:
                 raise InvalidFileFormat(
                     "Can't read the file, expected to have output from ffmpeg, but none received")

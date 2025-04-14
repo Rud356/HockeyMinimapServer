@@ -5,7 +5,8 @@ from .minimap_data_dto import MinimapDataDTO
 from .point_dto import PointDTO
 from .project_dto import ProjectDTO
 from .project_export_dto import ProjectExportDTO
-from .teams_subset_dto import SubsetDataDTO, TeamsSubsetDTO
+from .subset_data_dto import SubsetDataDTO
+from .teams_subset_dto import TeamsSubsetDTO
 from .user_dto import UserDTO
 from .video_dto import VideoDTO
 from .user_permissions_dto import UserPermissionsDTO

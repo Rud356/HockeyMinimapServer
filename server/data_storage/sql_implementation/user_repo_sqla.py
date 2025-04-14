@@ -2,7 +2,7 @@ import hashlib
 from typing import Optional, cast
 
 from pydantic import ValidationError
-from sqlalchemy import Delete, Result, Select
+from sqlalchemy import Delete, Select
 from sqlalchemy.exc import IntegrityError, ProgrammingError
 
 from server.data_storage.dto import UserDTO
@@ -82,7 +82,7 @@ class UserRepoSQLA(UserRepo):
             raise NotFoundError("Invalid data type was stored under this record") from err
 
     async def get_users(self, limit: int = 100, offset: int = 0) -> list[UserDTO]:
-        query: Select = Select(User).limit(limit).offset(offset).order_by(User.user_id)
+        query: Select[tuple[User, ...]] = Select(User).limit(limit).offset(offset).order_by(User.user_id)
         users: list[UserDTO] = []
 
         async for user_record in await self.transaction.session.stream_scalars(query):

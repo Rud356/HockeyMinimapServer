@@ -1,19 +1,21 @@
 import os
+import typing
 from pathlib import Path
 
 import cv2
 import torch
 import torch.nn as nn
 import torchvision.datasets as datasets
-from torchvision.models import ResNet18_Weights, resnet18
+from torchvision.models import ResNet, ResNet18_Weights, resnet18
 
+from server.algorithms.data_types import CV_Image
 from server.algorithms.enums.team import Team
 from server.algorithms.nn.team_detector_predictor import TeamDetectionPredictor
 from server.algorithms.nn.team_detector_teacher import TeamDetectorTeacher, team_detector_transform
 
 
 class TeamDetectorModel(nn.Module):
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
         self.resnet18 = resnet18(weights=ResNet18_Weights.DEFAULT)
 
@@ -24,7 +26,7 @@ class TeamDetectorModel(nn.Module):
         num_ftrs = self.resnet18.fc.in_features
         self.resnet18.fc = nn.Linear(num_ftrs, 2)  # Home team and away team
 
-    def forward(self, x):
+    def forward(self, x) -> ResNet:
         x = self.resnet18(x)
         return x
 
@@ -44,6 +46,6 @@ predictor: TeamDetectionPredictor = TeamDetectionPredictor(model, team_detector_
 for image_name in os.listdir(test_dir):
     image_path = os.path.join(test_dir, image_name)
     if os.path.isfile(image_path):
-        img = cv2.imread(image_path)
-        predicted_team = predictor(img)
+        img: CV_Image = typing.cast(CV_Image, cv2.imread(image_path))
+        predicted_team: Team = predictor(img)
         print(f'Image {image_name}: The player belongs to {predicted_team.name} team')

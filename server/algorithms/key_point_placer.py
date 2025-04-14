@@ -67,7 +67,7 @@ class KeyPointPlacer:
             (HorizontalPosition.bottom, VerticalPosition.right): key_points.right_goal_zone
         }
 
-    def set_camera_position(self, camera_position: CameraPosition):
+    def set_camera_position(self, camera_position: CameraPosition) -> None:
         """
         Устанавливает положение камеры на поле.
 

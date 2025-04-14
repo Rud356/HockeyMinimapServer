@@ -3,11 +3,11 @@ from asyncio import Future, Queue
 from pathlib import Path
 from typing import ClassVar, Optional
 
-import numpy
 from detectron2 import model_zoo
 from detectron2.config import get_cfg
 from detectron2.structures import Instances
 
+from server.algorithms.data_types import CV_Image
 from server.algorithms.nn.batch_predictor import BatchPredictor
 from server.algorithms.services.base.predictor_service import PredictorService
 
@@ -25,7 +25,7 @@ class FieldPredictorService(PredictorService):
         device: str,
         image_queue: Queue[
             tuple[
-                tuple[numpy.ndarray, ...],
+                tuple[CV_Image, ...],
                 Future[list[Instances]]
             ]
         ],

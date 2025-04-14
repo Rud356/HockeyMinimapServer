@@ -11,6 +11,8 @@ from .point import Point
 from .raw_player_tracking_data import RawPlayerTrackingData
 from .relative_bounding_box import RelativeBoundingBox
 from .relative_point import RelativePoint
+from .image_typehint import CV_Image
+
 
 __all__ = (
     "BoundingBox",
@@ -25,5 +27,6 @@ __all__ = (
     "FrameData",
     "DiskUsage",
     "PlayerData",
-    "RawPlayerTrackingData"
+    "RawPlayerTrackingData",
+    "CV_Image"
 )

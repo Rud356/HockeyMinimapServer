@@ -3,10 +3,11 @@ from asyncio import Future, Queue
 from pathlib import Path
 from typing import ClassVar, Optional
 
-import numpy
 from detectron2 import model_zoo
 from detectron2.config import get_cfg
+from detectron2.structures import Instances
 
+from server.algorithms.data_types import CV_Image
 from server.algorithms.nn.batch_predictor import BatchPredictor
 from server.algorithms.services.base.predictor_service import PredictorService
 
@@ -19,13 +20,13 @@ class PlayerPredictorService(PredictorService):
     _model_zoo_path: ClassVar[str] = "COCO-Detection/faster_rcnn_R_50_FPN_3x.yaml"
     predictor: BatchPredictor
     device_lock: asyncio.Lock
-    image_queue: Queue[tuple[tuple[numpy.ndarray, ...], Future]]
+    image_queue: Queue[tuple[tuple[CV_Image, ...], Future[list[Instances]]]]
 
     def __init__(
         self,
         weights: Path,
         device: str,
-        image_queue: Queue[tuple[tuple[numpy.ndarray, ...], Future]],
+        image_queue: Queue[tuple[tuple[CV_Image, ...], Future[list[Instances]]]],
         threshold: float = 0.5,
         device_lock: Optional[asyncio.Lock] = None
     ):
