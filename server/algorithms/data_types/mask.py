@@ -7,8 +7,8 @@ from typing import Optional
 import cv2
 import numpy
 
-from server.algorithms.data_types.image_typehint import CV_Image
 from server.algorithms.data_types.point import Point
+from server.algorithms.data_types.image_typehint import CV_Image
 
 
 @dataclass

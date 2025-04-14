@@ -6,9 +6,8 @@ from typing import NamedTuple, TYPE_CHECKING
 
 import cv2
 import numpy as np
-from sqlalchemy.dialects.mysql import insert
 
-from server.algorithms.data_types import CV_Image
+from server.algorithms.data_types.image_typehint import CV_Image
 from server.algorithms.data_types.relative_point import RelativePoint
 
 if TYPE_CHECKING:

@@ -112,7 +112,7 @@ class MinimapServer:
         uvicorn.run(self.app)
 
 
-MINIMAP_KEY_POINTS = MinimapKeyPointConfig.model_construct(values={
+MINIMAP_KEY_POINTS = MinimapKeyPointConfig(**{
         "top_left_field_point": {"x": 16, "y": 88},
         "bottom_right_field_point": {"x": 1247, "y": 704},
 

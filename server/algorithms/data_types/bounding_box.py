@@ -6,7 +6,7 @@ from typing import NamedTuple, Sequence
 import cv2
 import numpy
 
-from server.algorithms.data_types import CV_Image
+from server.algorithms.data_types.image_typehint import CV_Image
 from server.algorithms.data_types.point import Point
 from server.algorithms.data_types.relative_bounding_box import RelativeBoundingBox
 

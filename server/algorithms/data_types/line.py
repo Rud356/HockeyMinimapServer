@@ -5,8 +5,8 @@ from typing import NamedTuple, Optional, TYPE_CHECKING
 
 import cv2
 
-from server.algorithms.data_types import CV_Image
 from server.algorithms.data_types.point import Point
+from server.algorithms.data_types.image_typehint import CV_Image
 
 if TYPE_CHECKING:
     from server.algorithms.data_types.bounding_box import BoundingBox

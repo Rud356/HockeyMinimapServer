@@ -1,4 +1,5 @@
 from __future__ import annotations
+
 from dataclasses import dataclass
 from typing import Optional, TYPE_CHECKING
 
@@ -47,7 +48,7 @@ class FieldData:
 
         for mask, center, box, classified_as in zip(masks, boxes_centers, boxes, classes_predicted):
             instance_data: FieldInstance = FieldInstance(
-                BoundingBox.calculate_combined_bbox(box),
+                BoundingBox.calculate_combined_bbox(box.tolist()),
                 Mask((mask * 255).astype(numpy.uint8)),
                 Point(center[0], center[1]),
                 classified_as

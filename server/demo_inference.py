@@ -7,7 +7,6 @@ from typing import AsyncGenerator, Optional
 
 import cv2
 import numpy
-import pyinstrument
 import torch
 
 from server.algorithms.data_types import BoundingBox, Point
@@ -23,7 +22,6 @@ from server.algorithms.services.field_predictor_service import FieldPredictorSer
 from server.algorithms.services.map_video_renderer_service import MapVideoRendererService
 from server.algorithms.services.player_data_extraction_service import PlayerDataExtractionService
 from server.algorithms.services.player_predictor_service import PlayerPredictorService
-from server.algorithms.video_processing import VideoProcessing
 from server.data_storage.dto import BoxDTO, PointDTO
 from server.data_storage.dto.player_data_dto import PlayerDataDTO
 from server.minimap_server import MINIMAP_KEY_POINTS
