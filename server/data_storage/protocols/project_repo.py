@@ -1,7 +1,7 @@
 from typing import Optional, Protocol, runtime_checkable
 
 from server.data_storage.dto.project_dto import ProjectDTO
-from server.data_storage.protocols import TransactionManager
+from server.data_storage.protocols.transaction_manager import TransactionManager
 
 
 @runtime_checkable

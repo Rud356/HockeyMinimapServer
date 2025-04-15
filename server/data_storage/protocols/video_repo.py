@@ -56,25 +56,27 @@ class VideoRepo(Protocol):
         ...
 
     async def set_flag_video_is_converted(
-        self, video_id: int, from_directory: Path, converted_video_path: Path
+        self, video_id: int, flag_value: bool, from_directory: Path, converted_video_path: Path
     ) -> bool:
         """
         Устанавливает пометку завершения конвертации форматов видео.
 
+        :param video_id: Идентификатор видео.
+        :param flag_value: В какое значение установить флаг.
         :param from_directory: Путь до корневой директории с видео.
         :param converted_video_path: Путь, по которому доступно видео.
-        :param video_id: Идентификатор видео.
-        :return: Успешно занесены данные.
+        :return: Новое значение флага.
         :raise ValueError: Если видео не существует по указанному пути или не найдено видео в БД.
         """
         ...
 
-    async def set_flag_video_is_processed(self, video_id: int) -> bool:
+    async def set_flag_video_is_processed(self, video_id: int, flag_value: bool) -> bool:
         """
         Устанавливает пометку завершения обработки видео.
 
         :param video_id: Идентификатор видео.
-        :return: Успешно занесены данные.
+        :param flag_value: В какое значение установить флаг.
+        :return: Новое значение флага.
         :raise ValueError: Если видео не существует по указанному пути или не найдено видео в БД.
         """
         ...

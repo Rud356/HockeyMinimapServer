@@ -323,3 +323,9 @@ class VideoProcessing:
         :return:
         """
         return 0.0 <= timestamp <= end_timestamp
+
+    @staticmethod
+    def get_fps_from_probe(data: dict[str, str]) -> float:
+        r_frame_rate = data['r_frame_rate']
+        num, denominator = map(int, r_frame_rate.split('/'))
+        return num / denominator
