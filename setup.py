@@ -46,6 +46,8 @@ setup(
         "linters": ["ruff~=0.11.2", "mypy~=1.15.0"],
         "dev": [
             "sphinx~=5.0.2",
+            'docxbuilder',
+            "sphinx-autodoc-typehints~=3.1.0",
             "sphinx-rtd-theme~=1.0.0",
             "Pygments~=2.12.0",
             "pytest~=8.3.5",

@@ -30,11 +30,11 @@ from server.utils.config import VideoPreprocessingConfig
 from server.utils.config.key_point import KeyPoint
 
 os.environ["OPENCV_VIDEO_ACCELERATION"] = "ANY"
-source_video: Path = Path("../static/videos/converted_demo.mp4")
+source_video: Path = Path("static/videos/converted_demo.mp4")
 
 classes_names = list(Team.__members__)
-test_dir = '../datasets/custom_validation'
-data_dir = '../datasets/custom_dataset'
+test_dir = 'datasets/custom_validation'
+data_dir = 'datasets/custom_dataset'
 
 train_dataset = datasets.ImageFolder(os.path.join(data_dir, 'train'), transform=team_detector_transform)
 val_dataset = datasets.ImageFolder(os.path.join(data_dir, 'val'), transform=team_detector_transform)
@@ -89,15 +89,15 @@ async def main(video_path: Path, field_model: Path, players_model: Path):
 
     team_predictor: TeamDetectionPredictor = predictor
 
-    map_img = cv2.imread("../map.png")
+    map_img = cv2.imread("map.png")
     # Video output streams
     fourcc = cv2.VideoWriter_fourcc(*'mp4v')
-    out_video = cv2.VideoWriter('../output.mp4', fourcc, 25.0, (1280, 720))
+    out_video = cv2.VideoWriter('output.mp4', fourcc, 25.0, (1280, 720))
 
     video_render_service = MapVideoRendererService(
         ThreadPoolExecutor(1),
         25.0,
-        Path('../output_map.mp4'),
+        Path('output_map.mp4'),
         map_img,
         video_processing_config=VideoPreprocessingConfig(video_width=1280, video_height=720, crf=30)
     )
@@ -246,8 +246,8 @@ if __name__ == "__main__":
     asyncio.run(
         main(
             source_video,
-            (Path(__file__).parent.parent / "models/FieldDetector_new_based_on_old.pth").resolve(),
-            (Path(__file__).parent.parent / "models/PlayersClassification_720_1.pth").resolve()
+            (Path(__file__).parent / "models/FieldDetector_new_based_on_old.pth").resolve(),
+            (Path(__file__).parent / "models/PlayersClassification_720_1.pth").resolve()
         )
     )
     print(f"Took {round(time.time() - start, 3)}s to render")
