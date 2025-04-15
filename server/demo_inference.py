@@ -1,6 +1,7 @@
 import asyncio
 import os
 import time
+import typing
 from concurrent.futures.thread import ThreadPoolExecutor
 from pathlib import Path
 from typing import AsyncGenerator, Optional
@@ -8,13 +9,13 @@ from typing import AsyncGenerator, Optional
 import cv2
 import numpy
 import torch
+from torchvision import datasets
 
-from server.algorithms.data_types import BoundingBox, Point
+from server.algorithms.data_types import BoundingBox, CV_Image, Point
 from server.algorithms.data_types.field_extracted_data import FieldExtractedData
-from server.algorithms.enums import CameraPosition
+from server.algorithms.enums import CameraPosition, Team
 from server.algorithms.key_point_placer import KeyPointPlacer
-from server.algorithms.nn import TeamDetectionPredictor
-from server.algorithms.nn.team_detector import predictor
+from server.algorithms.nn import TeamDetectionPredictor, TeamDetectorModel, TeamDetectorTeacher, team_detector_transform
 from server.algorithms.player_tracker import PlayerTracker
 from server.algorithms.players_mapper import PlayersMapper
 from server.algorithms.services.field_data_extraction_service import FieldDataExtractionService
@@ -30,6 +31,27 @@ from server.utils.config.key_point import KeyPoint
 
 os.environ["OPENCV_VIDEO_ACCELERATION"] = "ANY"
 source_video: Path = Path("../static/videos/converted_demo.mp4")
+
+classes_names = list(Team.__members__)
+test_dir = '../datasets/custom_validation'
+data_dir = '../datasets/custom_dataset'
+
+train_dataset = datasets.ImageFolder(os.path.join(data_dir, 'train'), transform=team_detector_transform)
+val_dataset = datasets.ImageFolder(os.path.join(data_dir, 'val'), transform=team_detector_transform)
+print(Path(os.path.join(data_dir, 'train')).resolve(), Path(os.path.join(data_dir, 'val')).resolve())
+
+device = "cuda" if torch.cuda.is_available() else "cpu"
+trainer = TeamDetectorTeacher(train_dataset, val_dataset, 100, TeamDetectorModel())
+model = trainer.train_nn()
+predictor: TeamDetectionPredictor = TeamDetectionPredictor(model, team_detector_transform, device)
+
+for image_name in os.listdir(test_dir):
+    image_path = os.path.join(test_dir, image_name)
+    if os.path.isfile(image_path):
+        img: CV_Image = typing.cast(CV_Image, cv2.imread(image_path))
+        predicted_team: Team = predictor(img)
+        print(f'Image {image_name}: The player belongs to {predicted_team.name} team')
+
 
 
 def draw_text(img, text, pos, color):
