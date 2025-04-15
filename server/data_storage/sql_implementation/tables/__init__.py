@@ -12,3 +12,20 @@ from .teams_subset import TeamsSubset
 from .user import User
 from .user_permissions import UserPermissions
 from .video import Video
+
+__all__ = (
+    "Base",
+    "Box",
+    "Frame",
+    "MapData",
+    "Player",
+    "PlayerData",
+    "Point",
+    "Project",
+    "SubsetData",
+    "TeamsDataset",
+    "TeamsSubset",
+    "User",
+    "UserPermissions",
+    "Video"
+)

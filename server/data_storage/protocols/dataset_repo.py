@@ -13,12 +13,20 @@ class DatasetRepo(Protocol):
     """
     transaction: TransactionManager
 
-    async def get_videos_team_dataset(self, video_id: int) -> DatasetDTO:
+    async def create_dataset_for_video(self, video_id: int) -> DatasetDTO:
+        """
+        Создает новый датасет, привязанный к видео.
+
+        :param video_id: Идентификатор видео.
+        :return: Данные о наборе данных.
+        """
+
+    async def get_videos_team_dataset(self, dataset_id: int) -> DatasetDTO:
         """
         Получает набор данных выделения команд для видео.
 
-        :param video_id:
-        :return:
+        :param dataset_id: Идентификатор набора данных.
+        :return: Набор данных.
         """
         ...
 
@@ -55,11 +63,11 @@ class DatasetRepo(Protocol):
         """
         ...
 
-    async def get_teams_dataset_size(self, video_id: int) -> dict[Team, int]:
+    async def get_teams_dataset_size(self, dataset_id: int) -> dict[Team, int]:
         """
         Получает информацию о количестве точек данных с игроками по командам.
 
-        :param video_id: Номер игроков.
+        :param dataset_id: Идентификатор набора данных.
         :return: Словарь с командами и количеством точек об игроках в каждой из них.
         """
         ...

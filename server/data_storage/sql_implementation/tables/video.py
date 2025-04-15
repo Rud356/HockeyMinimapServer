@@ -1,9 +1,10 @@
-from typing import Optional, TYPE_CHECKING
+from typing import Any, Optional, TYPE_CHECKING
 
-from sqlalchemy import ForeignKey, String
+from sqlalchemy import CheckConstraint, ForeignKey, String
 from sqlalchemy.orm import Mapped
 from sqlalchemy.orm import mapped_column
 from sqlalchemy.orm import relationship
+from sqlalchemy.sql.schema import ColumnCollectionConstraint
 
 from server.algorithms.enums.camera_position import CameraPosition
 from server.data_storage.sql_implementation.tables.base import Base
@@ -17,8 +18,12 @@ class Video(Base):
     """
     video_id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     fps: Mapped[float] = mapped_column(default=25.0)
-    corrective_coefficient_k1: Mapped[float] = mapped_column(default=0.0)
-    corrective_coefficient_k2: Mapped[float] = mapped_column(default=0.0)
+    corrective_coefficient_k1: Mapped[float] = mapped_column(
+        default=0.0
+    )
+    corrective_coefficient_k2: Mapped[float] = mapped_column(
+        default=0.0
+    )
     camera_position: Mapped[CameraPosition] = mapped_column(default=CameraPosition.top_left_corner)
     is_converted: Mapped[bool] = mapped_column(default=False)
     is_processed: Mapped[bool] = mapped_column(default=False)
@@ -34,3 +39,8 @@ class Video(Base):
     )
 
     __tablename__ = "video"
+    __table_args__: tuple[ColumnCollectionConstraint | dict[Any, Any], ...] = (
+        CheckConstraint("corrective_coefficient_k1 BETWEEN -10.0 AND 10.0"),
+        CheckConstraint("corrective_coefficient_k2 BETWEEN -2.0 AND 2.0"),
+        {}
+    )

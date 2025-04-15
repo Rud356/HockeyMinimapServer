@@ -4,6 +4,7 @@ from typing import Optional, cast
 from pydantic import ValidationError
 from sqlalchemy import Delete, Select
 from sqlalchemy.exc import IntegrityError, ProgrammingError
+from sqlalchemy.ext.asyncio import AsyncScalarResult
 
 from server.data_storage.dto import UserDTO
 from server.data_storage.dto import UserPermissionsDTO
@@ -83,9 +84,10 @@ class UserRepoSQLA(UserRepo):
 
     async def get_users(self, limit: int = 100, offset: int = 0) -> list[UserDTO]:
         query: Select[tuple[User, ...]] = Select(User).limit(limit).offset(offset).order_by(User.user_id)
+        result: AsyncScalarResult[User] = await self.transaction.session.stream_scalars(query)
         users: list[UserDTO] = []
 
-        async for user_record in await self.transaction.session.stream_scalars(query):
+        async for user_record in result:
             try:
                 users.append(
                     UserDTO(

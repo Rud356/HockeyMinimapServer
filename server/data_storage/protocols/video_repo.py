@@ -1,3 +1,4 @@
+from pathlib import Path
 from typing import Optional, Protocol, runtime_checkable
 
 from server.algorithms.enums.camera_position import CameraPosition
@@ -12,10 +13,24 @@ class VideoRepo(Protocol):
     """
     transaction: TransactionManager
 
-    async def list_all_uploaded_videos_names(self) -> list[str]:
+    async def create_new_video(
+        self,
+        fps: float,
+        source_video_path: Path
+    ) -> VideoDTO:
         """
-        Выводит список видео файлов из папки для их хранения.
+        Создает новое видео в базе данных.
 
+        :param fps: FPS видео.
+        :param source_video_path: Относительный путь до файла от корня хранилища видео.
+        :return: Информация о созданном объекте видео.
+        """
+
+    async def list_all_uploaded_videos_names(self, from_directory: Path) -> list[Path]:
+        """
+        Выводит список видео файлов из папки для их хранения в относительных путях.
+
+        :param from_directory: Из какой директории вывести список файлов.
         :return: Список названий видео файлов.
         """
         ...
@@ -36,31 +51,43 @@ class VideoRepo(Protocol):
 
         :param video_id: Идентификатор видео.
         :return: Информация о видео.
+        :raises ValueError: Если данные на вход или выход невозможно привести к нужным типам.
         """
         ...
 
-    async def set_flag_video_is_converted(self) -> bool:
+    async def set_flag_video_is_converted(
+        self, video_id: int, from_directory: Path, converted_video_path: Path
+    ) -> bool:
         """
         Устанавливает пометку завершения конвертации форматов видео.
 
+        :param from_directory: Путь до корневой директории с видео.
+        :param converted_video_path: Путь, по которому доступно видео.
+        :param video_id: Идентификатор видео.
         :return: Успешно занесены данные.
+        :raise ValueError: Если видео не существует по указанному пути или не найдено видео в БД.
         """
         ...
 
-    async def set_flag_video_is_processed(self) -> bool:
+    async def set_flag_video_is_processed(self, video_id: int) -> bool:
         """
         Устанавливает пометку завершения обработки видео.
 
+        :param video_id: Идентификатор видео.
         :return: Успешно занесены данные.
+        :raise ValueError: Если видео не существует по указанному пути или не найдено видео в БД.
         """
         ...
 
-    async def adjust_corrective_coefficients(self, k1: float, k2: float) -> None:
+    async def adjust_corrective_coefficients(self, video_id: int, k1: float, k2: float) -> None:
         """
         Изменяет коэффициенты коррекции видео.
 
+        :param video_id: Идентификатор видео.
         :param k1: Первичный коэффициент коррекции.
         :param k2: Вторичный коэффициент коррекции.
+        :raise NotFoundError: Если видео не найдено в БД.
+        :raise DataIntegrityError: Если коэффициенты были неверно заданы.
         :return: Ничего.
         """
         ...
@@ -72,4 +99,5 @@ class VideoRepo(Protocol):
         :param video_id: Идентификатор видео.
         :param camera_position: Позиция камеры в пространстве.
         :return: Внесены ли изменения.
+        :raises NotFoundError: Если не найдено видео в бд.
         """
