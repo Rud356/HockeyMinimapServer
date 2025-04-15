@@ -16,7 +16,6 @@ class FieldPredictorService(PredictorService):
     """
     Класс сервиса обработки разметки поля в фоновом режиме с помощью detectron2.
     """
-
     _model_zoo_path: ClassVar[str] = "COCO-InstanceSegmentation/mask_rcnn_R_50_FPN_3x.yaml"
 
     def __init__(
@@ -39,7 +38,7 @@ class FieldPredictorService(PredictorService):
         :param device: Имя устройства выполнения.
         :param threshold: Пороговое значение уверенности в верном результате для выделения.
         :param device_lock: Блокировщик доступа к устройству для избежания совместного использования
-        при запуске нейросети.
+            при запуске нейросети.
         """
         cfg = get_cfg()
         cfg.merge_from_file(model_zoo.get_config_file(self._model_zoo_path))

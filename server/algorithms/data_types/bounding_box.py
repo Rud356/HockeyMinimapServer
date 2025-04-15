@@ -146,8 +146,8 @@ class BoundingBox(NamedTuple):
     def calculate_combined_bbox(cls, *bounding_boxes: list[float]) -> BoundingBox:
         """
         Находит объединенный ограничивающий прямоугольник из нескольких прямоугольников.
-        :param bounding_boxes: Списки из выходов от Detectron2, содержащие float
-            значения в порядке x1, y1, x2, y2.
+
+        :param bounding_boxes: Списки из выходов от Detectron2, содержащие float значения в порядке x1, y1, x2, y2.
         :return: Новый ограничивающий прямоугольник.
         """
         x_min = min(bbox[0] for bbox in bounding_boxes)

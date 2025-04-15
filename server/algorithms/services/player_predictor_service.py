@@ -15,6 +15,7 @@ from server.algorithms.services.base.predictor_service import PredictorService
 class PlayerPredictorService(PredictorService):
     """
     Класс сервиса обработки разметки игроков в фоновом режиме с помощью detectron2.
+
     """
 
     _model_zoo_path: ClassVar[str] = "COCO-Detection/faster_rcnn_R_50_FPN_3x.yaml"
@@ -37,7 +38,7 @@ class PlayerPredictorService(PredictorService):
         :param device: Имя устройства выполнения.
         :param threshold: Пороговое значение уверенности в верном результате для выделения.
         :param device_lock: Блокировщик доступа к устройству для избежания совместного использования
-        при запуске нейросети.
+            при запуске нейросети.
         """
         cfg = get_cfg()
         cfg.merge_from_file(model_zoo.get_config_file(self._model_zoo_path))
