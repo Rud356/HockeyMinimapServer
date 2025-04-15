@@ -168,7 +168,7 @@ class VideoRepoSQLA(VideoRepo):
             raise NotFoundError()
 
         async with await self.transaction.start_nested_transaction() as tr:
-            video_record.camera_position = camera_position
+            video_record.camera_position = CameraPosition(camera_position)
             await tr.commit()
 
         return True

@@ -100,4 +100,5 @@ class VideoRepo(Protocol):
         :param camera_position: Позиция камеры в пространстве.
         :return: Внесены ли изменения.
         :raises NotFoundError: Если не найдено видео в бд.
+        :raises ValueError: Если переданная позиция камеры не является валидной.
         """
