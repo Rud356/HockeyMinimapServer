@@ -1,16 +1,9 @@
 from pathlib import Path
 
-import pytest
-from sqlalchemy import Select
-
 from server.algorithms.enums import CameraPosition
-from server.data_storage.dto import VideoDTO
+from server.algorithms.video_processing import VideoPreprocessingConfig, VideoProcessing
 from server.data_storage.exceptions import DataIntegrityError, NotFoundError
-from server.data_storage.sql_implementation.tables import Video
-from server.algorithms.video_processing import VideoProcessing, VideoPreprocessingConfig
-from server.data_storage.sql_implementation.video_repo_sqla import VideoRepoSQLA
 from .fixtures import *
-
 
 test_video_directory: Path = Path(__file__).parent.parent.parent / "static" / "videos"
 test_video_path: Path = test_video_directory / "converted_demo.mp4"
