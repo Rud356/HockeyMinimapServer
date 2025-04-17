@@ -326,6 +326,22 @@ class VideoProcessing:
 
     @staticmethod
     def get_fps_from_probe(data: dict[str, str]) -> float:
+        """
+        Получает фреймрейт видео.
+
+        :param data: Данные из ffmpeg о видео.
+        :return: Количество кадров в секунду.
+        """
         r_frame_rate = data['r_frame_rate']
         num, denominator = map(int, r_frame_rate.split('/'))
         return num / denominator
+
+    @staticmethod
+    def get_frames_count_from_probe(data: dict[str, str]) -> int:
+        """
+        Получает количество кадров в видео.
+
+        :param data: Данные из ffmpeg о видео.
+        :return: Количество кадров.
+        """
+        return int(data['nb_frames'])

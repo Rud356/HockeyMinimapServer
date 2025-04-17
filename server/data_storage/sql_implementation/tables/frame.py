@@ -1,7 +1,8 @@
-from typing import Optional
+from typing import Any
 
 from sqlalchemy import ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy.sql.schema import ColumnCollectionConstraint, ForeignKeyConstraint
 
 from server.data_storage.sql_implementation.tables.base import Base
 from server.data_storage.sql_implementation.tables.player_data import PlayerData
@@ -12,7 +13,7 @@ class Frame(Base):
     """
     Представляет данные одного кадра видео.
     """
-    frame_id: Mapped[int] = mapped_column(primary_key=True, autoincrement=False)
+    frame_id: Mapped[int] = mapped_column(primary_key=True)
     video_id: Mapped[int] = mapped_column(ForeignKey("video.video_id"), primary_key=True)
 
     player_data: Mapped[list[PlayerData]] = relationship(

@@ -18,5 +18,7 @@ class FramesRepo(Protocol):
         :param video_id: Идентификатор видео.
         :param frames_count: Количество кадров для создания.
         :return: Количество созданных кадров.
+        :raise ValueError: Если количество кадров меньше 1 или больше 500 тысяч.
+        :raise DataIntegrityError: Если нарушено ограничение по существованию видео.
         """
         ...
