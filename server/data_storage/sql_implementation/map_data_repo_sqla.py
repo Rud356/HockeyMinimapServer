@@ -68,7 +68,7 @@ class MapDataRepoSQLA(MapDataRepo):
         modified: bool = False
 
         try:
-            async with await self.transaction.start_nested_transaction() as tr:
+            async with await self.transaction.start_nested_transaction():
                 data_point: Optional[MapData] = (await self.transaction.session.execute(
                     Select(MapData).where(MapData.map_data_id == map_data_id)
                 )).scalar_one_or_none()

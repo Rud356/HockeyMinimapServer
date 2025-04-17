@@ -1,7 +1,7 @@
 from pathlib import Path
 from typing import Optional
 
-from pydantic import BaseModel, field_validator, validator
+from pydantic import BaseModel, field_validator
 
 from server.algorithms.enums.camera_position import CameraPosition
 

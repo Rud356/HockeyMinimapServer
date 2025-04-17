@@ -45,6 +45,7 @@ setup(
         "uvicorn": ["uvicorn~=0.34.0"],
         "linters": ["ruff~=0.11.2", "mypy~=1.15.0"],
         "dev": [
+            "ruff~=0.11.2",
             "sphinx~=5.0.2",
             'docxbuilder',
             "sphinx-autodoc-typehints~=3.1.0",

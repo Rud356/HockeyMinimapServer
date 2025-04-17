@@ -1,4 +1,4 @@
-from dishka import AnyOf, Provider, Scope, provide
+from dishka import Provider, Scope, provide
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker
 
 from server.data_storage.protocols import Repository, TransactionManager

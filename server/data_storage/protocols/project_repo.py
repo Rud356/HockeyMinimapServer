@@ -26,6 +26,7 @@ class ProjectRepo(Protocol):
         :param team_home_name: Название домашней команды.
         :param team_away_name: Название гостевой команды.
         :return: Информация о проекте.
+        :raises DataIntegrityError: Неверные входные данные для создания проекта.
         """
 
     async def edit_project(
@@ -43,6 +44,8 @@ class ProjectRepo(Protocol):
         :param team_home_name: Имя домашней команды.
         :param team_away_name: Имя гостевой команды.
         :return: Измененный проект.
+        :raises NotFoundError: Если не найден проект для изменения.
+        :raises DataIntegrityError: Неверные входные данные для создания проекта.
         """
 
     async def get_projects(self, limit: int = 100, offset: int = 0) -> list[ProjectDTO]:
@@ -60,4 +63,6 @@ class ProjectRepo(Protocol):
 
         :param project_id: Идентификатор проекта.
         :return: Данные о проекте.
+        :raise NotFoundError: Не найдено валидного проекта с таким идентификатором.
+        :raise ValueError: Неправильные входные данные.
         """

@@ -156,7 +156,7 @@ class UserRepoSQLA(UserRepo):
             if result is None:
                 raise NotFoundError("User was not found with specified ID")
 
-            async with await self.transaction.start_nested_transaction() as tr:
+            async with await self.transaction.start_nested_transaction():
                 if username:
                     result.username = username
 

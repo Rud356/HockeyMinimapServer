@@ -1,9 +1,7 @@
-from typing import Annotated
-
 from dishka.integrations.fastapi import FromDishka
-from fastapi import APIRouter, Cookie, HTTPException, Response
-from fastapi.responses import JSONResponse
+from fastapi import APIRouter, HTTPException, Response
 from fastapi.encoders import jsonable_encoder
+from fastapi.responses import JSONResponse
 
 from server.controllers.dto.user_auth import UserAuth
 from server.controllers.endpoints_base import APIEndpoint
