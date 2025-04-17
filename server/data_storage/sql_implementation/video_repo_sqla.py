@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Optional
+from typing import Optional, cast
 
 from pydantic import ValidationError
 from sqlalchemy import Select
@@ -43,7 +43,7 @@ class VideoRepoSQLA(VideoRepo):
                 is_converted=video_record.is_converted,
                 is_processed=video_record.is_processed,
                 source_video_path=Path(video_record.source_video_path),
-                converted_video_path=video_record.converted_video_path,
+                converted_video_path=cast(Path, video_record.converted_video_path),
                 dataset_id=video_record.dataset_id
             )
 
@@ -105,7 +105,7 @@ class VideoRepoSQLA(VideoRepo):
                 is_converted=video_record.is_converted,
                 is_processed=video_record.is_processed,
                 source_video_path=Path(video_record.source_video_path),
-                converted_video_path=video_record.converted_video_path,
+                converted_video_path=cast(Path, video_record.converted_video_path),
                 dataset_id=video_record.dataset_id
             )
 

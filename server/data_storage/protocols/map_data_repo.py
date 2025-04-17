@@ -31,20 +31,6 @@ class MapDataRepo(Protocol):
         :return: Список точек соотнесения с видео.
         """
 
-    async def get_reference_minimap_points(self) -> list[PointDTO]:
-        """
-        Предоставляет справочные значения точек на мини-карте.
-
-        :return: Список справочных точек для мини-карты, предоставляемой сервером.
-        """
-
-    async def get_minimap_bounding_box(self) -> tuple[PointDTO, PointDTO]:
-        """
-        Предоставляет ограничивающий прямоугольник области карты.
-
-        :return: Верхняя левая и правая нижняя точки ограничивающего прямоугольника в пространстве мини-карты.
-        """
-
     async def drop_all_mapping_points_for_video(self, video_id: int) -> int:
         """
         Удаляет все соотнесенные точки, относящиеся к видео.
@@ -68,4 +54,6 @@ class MapDataRepo(Protocol):
         :param point_on_minimap: Точка из мини-карты (при значении None - не изменяется).
         :param is_used: Используется ли точка в построении карты (при значении None - не изменяется).
         :return: Изменена ли точка.
+        :raises NotFoundError: Точка не найдена.
+        :raises DataIntegrityError: Если наружены ограничения целостности.
         """

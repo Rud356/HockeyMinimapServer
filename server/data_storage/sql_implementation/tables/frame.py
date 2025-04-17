@@ -1,8 +1,5 @@
-from typing import Any
-
 from sqlalchemy import ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from sqlalchemy.sql.schema import ColumnCollectionConstraint, ForeignKeyConstraint
 
 from server.data_storage.sql_implementation.tables.base import Base
 from server.data_storage.sql_implementation.tables.player_data import PlayerData

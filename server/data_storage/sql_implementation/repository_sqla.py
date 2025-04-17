@@ -1,6 +1,7 @@
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 from .frames_repo_sqla import FramesRepoSQLA
+from .map_data_repo_sqla import MapDataRepoSQLA
 from .tables.base import Base
 from .transaction_manager_sqla import TransactionManagerSQLA
 from .user_repo_sqla import UserRepoSQLA
@@ -33,8 +34,8 @@ class RepositorySQLA(Repository):
         return VideoRepoSQLA(self.transaction)
 
     @property
-    def map_data_repo(self) -> MapDataRepo:
-        ...
+    def map_data_repo(self) -> MapDataRepoSQLA:
+        return MapDataRepoSQLA(self.transaction)
 
     @property
     def project_repo(self) -> ProjectRepo:
