@@ -16,6 +16,7 @@ async def engine() -> AsyncEngine:
     )
     async with engine.connect() as conn:
         await conn.execute(text("PRAGMA foreign_keys=ON"))
+        await conn.execute(text("PRAGMA journal_mode=MEMORY;"))
 
     return engine
 

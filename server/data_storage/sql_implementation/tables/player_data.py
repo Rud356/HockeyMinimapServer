@@ -1,8 +1,9 @@
-from typing import Optional, TYPE_CHECKING
+from typing import Any, Optional, TYPE_CHECKING
 
-from sqlalchemy import ForeignKey
+from sqlalchemy import ForeignKey, ForeignKeyConstraint
 from sqlalchemy.orm import Mapped, relationship
 from sqlalchemy.orm import mapped_column
+from sqlalchemy.sql.schema import ColumnCollectionConstraint
 
 from server.algorithms.enums.player_classes_enum import PlayerClasses
 from server.data_storage.sql_implementation.tables.base import Base
@@ -22,11 +23,9 @@ class PlayerData(Base):
         primary_key=True
     )
     video_id: Mapped[int] = mapped_column(
-        ForeignKey("frame.video_id"),
         primary_key=True
     )
     frame_id: Mapped[int] = mapped_column(
-        ForeignKey("frame.frame_id"),
         primary_key=True
     )
     player_id: Mapped[Optional[int]] = mapped_column(
@@ -60,3 +59,10 @@ class PlayerData(Base):
     )
 
     __tablename__ = "player_data"
+    __table_args__: tuple[ColumnCollectionConstraint | dict[Any, Any], ...] = (
+        ForeignKeyConstraint(
+            ["video_id", "frame_id"], ["frame.video_id", "frame.frame_id"]
+        ),
+        {}
+    )
+
