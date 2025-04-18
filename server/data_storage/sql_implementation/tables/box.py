@@ -21,11 +21,13 @@ class Box(Base):
 
     top_point: Mapped["Point"] = relationship(
         primaryjoin="Box.top_point_id == Point.point_id",
-        lazy="joined"
+        lazy="joined",
+        cascade="all, delete"
     )
     bottom_point: Mapped["Point"] = relationship(
         primaryjoin="Box.bottom_point_id == Point.point_id",
-        lazy="joined"
+        lazy="joined",
+        cascade="all, delete"
     )
 
     __tablename__ = "box"
