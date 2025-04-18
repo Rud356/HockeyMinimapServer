@@ -1,6 +1,6 @@
-from typing import Optional, Sequence, cast
+from typing import Optional, Sequence
 
-from sqlalchemy import Delete, Select
+from sqlalchemy import Select
 from sqlalchemy.exc import IntegrityError, ProgrammingError
 
 from server.data_storage.dto import MinimapDataDTO, PointDTO
