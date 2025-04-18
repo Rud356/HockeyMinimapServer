@@ -61,8 +61,8 @@ class UserView:
         :return: Данные о новом пользователе.
         :raises DataIntegrityError: Данные не прошли проверку на валидность для вставки.
         """
-        async with self.repository.transaction:
-            return await self.repository.user_repo.create_user(
+        async with self.repository.transaction as tr:
+            new_user: UserDTO = await self.repository.user_repo.create_user(
                 username=username,
                 display_name=display_name,
                 password=password,
@@ -71,6 +71,8 @@ class UserView:
                     can_create_projects=user_permissions.can_create_projects
                 )
             )
+            await tr.commit()
+        return new_user
 
     async def authenticate_user(self, username: str, password: str) -> UserDTO:
         """
@@ -104,13 +106,15 @@ class UserView:
         :raises NotFoundError: Пользователь не найден.
         :raises ValueError: Неверные входные данные.
         """
-        async with self.repository.transaction:
-            return await self.repository.user_repo.edit_user(
+        async with self.repository.transaction as tr:
+            edited_user: UserDTO = await self.repository.user_repo.edit_user(
                 user_id,
                 username,
                 display_name,
                 password
             )
+            await tr.commit()
+        return edited_user
 
     async def change_user_permissions(self, user_id: int, new_permissions: UserPermissionsDTO) -> UserPermissionsDTO:
         """
@@ -122,11 +126,14 @@ class UserView:
         :raises NotFoundError: Пользователь не найден.
         :raises ValueError: Неверные входные данные.
         """
-        async with self.repository.transaction:
-            return await self.repository.user_repo.change_user_permissions(
+        async with self.repository.transaction as tr:
+            new_permissions = await self.repository.user_repo.change_user_permissions(
                 user_id=user_id,
                 new_permissions=UserPermissionsData(
                     can_administrate_users=new_permissions.can_administrate_users,
                     can_create_projects=new_permissions.can_create_projects
                 )
             )
+            await tr.commit()
+
+        return new_permissions
