@@ -56,9 +56,7 @@ class ProjectRepoSQLA(ProjectRepo):
     ) -> ProjectDTO:
         try:
             async with await self.transaction.start_nested_transaction() as tr:
-                editing_project: Optional[Project] = (await self.transaction.session.execute(
-                    Select(Project).where(Project.project_id == project_id)
-                )).scalar_one_or_none()
+                editing_project: Optional[Project] = await self._get_project(project_id)
 
                 if editing_project is None:
                     raise NotFoundError("Project with specified ID was not found")
@@ -110,9 +108,7 @@ class ProjectRepoSQLA(ProjectRepo):
 
     async def get_project(self, project_id: int) -> ProjectDTO:
         try:
-            result: Optional[Project] = (await self.transaction.session.execute(
-                Select(Project).where(Project.project_id == project_id)
-            )).scalar_one_or_none()
+            result: Optional[Project] = await self._get_project(project_id)
 
         except ProgrammingError:
             raise ValueError("Invalid data was provided as input")
@@ -132,3 +128,16 @@ class ProjectRepoSQLA(ProjectRepo):
 
         except ValidationError:
             raise NotFoundError("Project had invalid data when unpacking")
+
+    async def _get_project(self, project_id: int) -> Project:
+        """
+        Получает объект записи проекта.
+
+        :param project_id: Идентификатор проекта.
+        :return: Объект проекта.
+        """
+        result: Optional[Project] = (await self.transaction.session.execute(
+            Select(Project).where(Project.project_id == project_id)
+        )).scalar_one_or_none()
+
+        return result

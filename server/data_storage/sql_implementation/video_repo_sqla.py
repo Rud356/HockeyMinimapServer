@@ -85,9 +85,7 @@ class VideoRepoSQLA(VideoRepo):
 
     async def get_video(self, video_id: int) -> Optional[VideoDTO]:
         try:
-            video_record: Optional[Video] = (await self.transaction.session.execute(
-                Select(Video).where(Video.video_id == video_id)
-            )).scalar_one_or_none()
+            video_record: Optional[Video] = await self._get_video(video_id)
 
         except ProgrammingError:
             raise ValueError("Invalid input data types")
@@ -118,9 +116,7 @@ class VideoRepoSQLA(VideoRepo):
         if not (from_directory / converted_video_path).is_file():
             raise ValueError(f"Invalid file path {from_directory / converted_video_path}")
 
-        video_record: Optional[Video] = (await self.transaction.session.execute(
-            Select(Video).where(Video.video_id == video_id)
-        )).scalar_one_or_none()
+        video_record: Optional[Video] = await self._get_video(video_id)
 
         if video_record is None:
             raise ValueError("Video does not exists")
@@ -134,9 +130,7 @@ class VideoRepoSQLA(VideoRepo):
         return flag_value
 
     async def set_flag_video_is_processed(self, video_id: int, flag_value: bool) -> bool:
-        video_record: Optional[Video] = (await self.transaction.session.execute(
-            Select(Video).where(Video.video_id == video_id)
-        )).scalar_one_or_none()
+        video_record: Optional[Video] = await self._get_video(video_id)
 
         if video_record is None:
             raise ValueError("Video does not exists")
@@ -148,9 +142,7 @@ class VideoRepoSQLA(VideoRepo):
         return flag_value
 
     async def adjust_corrective_coefficients(self, video_id: int, k1: float, k2: float) -> None:
-        video_record: Optional[Video] = (await self.transaction.session.execute(
-            Select(Video).where(Video.video_id == video_id)
-        )).scalar_one_or_none()
+        video_record: Optional[Video] = await self._get_video(video_id)
 
         if video_record is None:
             raise NotFoundError()
@@ -166,9 +158,7 @@ class VideoRepoSQLA(VideoRepo):
             raise DataIntegrityError("Invalid coefficients values") from err
 
     async def set_camera_position(self, video_id: int, camera_position: CameraPosition) -> bool:
-        video_record: Optional[Video] = (await self.transaction.session.execute(
-            Select(Video).where(Video.video_id == video_id)
-        )).scalar_one_or_none()
+        video_record: Optional[Video] = await self._get_video(video_id)
 
         if video_record is None:
             raise NotFoundError()
@@ -178,3 +168,16 @@ class VideoRepoSQLA(VideoRepo):
             await tr.commit()
 
         return True
+
+    async def _get_video(self, video_id: int) -> Optional[Video]:
+        """
+        Получает объект записи видео.
+
+        :param video_id: Идентификатор видео.
+        :return: Запись в БД о видео или ничего.
+        """
+        video: Optional[Video] = (await self.transaction.session.execute(
+            Select(Video).where(Video.video_id == video_id)
+        )).scalar_one_or_none()
+
+        return video

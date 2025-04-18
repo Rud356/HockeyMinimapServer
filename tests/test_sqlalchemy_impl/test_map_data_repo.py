@@ -5,7 +5,7 @@ from sqlalchemy import Select, func
 from server.algorithms.video_processing import VideoPreprocessingConfig, VideoProcessing
 from server.data_storage.dto import PointDTO
 from server.data_storage.exceptions import DataIntegrityError, NotFoundError
-from server.data_storage.sql_implementation.tables import Frame, MapData
+from server.data_storage.sql_implementation.tables import MapData, Point
 from .fixtures import *
 
 test_video_directory: Path = Path(__file__).parent.parent.parent / "static" / "videos"
@@ -101,8 +101,16 @@ async def test_deleting_points(video_fps: float, repo: RepositorySQLA):
 
     async with repo.transaction as tr:
         dropped_count = await repo.map_data_repo.drop_all_mapping_points_for_video(video.video_id)
+        await tr.commit()
 
     assert dropped_count == len(point_src)
+
+    async with repo.transaction as tr:
+        result_points = (await tr.session.scalars(
+            Select(Point)
+        )).all()
+
+    assert len(result_points) == 0
 
 
 async def test_editing_points(video_fps: float, repo: RepositorySQLA):

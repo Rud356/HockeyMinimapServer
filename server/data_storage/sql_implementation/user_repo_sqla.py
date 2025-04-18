@@ -58,9 +58,7 @@ class UserRepoSQLA(UserRepo):
 
     async def get_user(self, user_id: int) -> UserDTO:
         try:
-            result: Optional[User] = (await self.transaction.session.execute(
-                Select(User).where(User.user_id == user_id)
-            )).scalar_one_or_none()
+            result: Optional[User] = await self._get_user(user_id)
 
         except ProgrammingError:
             raise ValueError("Invalid data was provided as input")
@@ -108,9 +106,7 @@ class UserRepoSQLA(UserRepo):
 
     async def delete_user(self, user_id: int) -> bool:
         async with await self.transaction.start_nested_transaction() as tr:
-            result: Optional[User] = (await self.transaction.session.execute(
-                Select(User).where(User.user_id == user_id)
-            )).scalar_one_or_none()
+            result: Optional[User] = await self._get_user(user_id)
 
             if result is None:
                 raise NotFoundError("User not found")
@@ -121,9 +117,7 @@ class UserRepoSQLA(UserRepo):
 
     async def change_user_permissions(self, user_id: int, new_permissions: UserPermissionsData) -> UserPermissionsDTO:
         try:
-            result: Optional[User] = (await self.transaction.session.execute(
-                Select(User).where(User.user_id == user_id)
-            )).scalar_one_or_none()
+            result: Optional[User] = await self._get_user(user_id)
 
             if result is None:
                 raise NotFoundError("User was not found with specified ID")
@@ -152,9 +146,7 @@ class UserRepoSQLA(UserRepo):
             raise ValueError("No data for update provided")
 
         try:
-            result: Optional[User] = (await self.transaction.session.execute(
-                Select(User).where(User.user_id == user_id)
-            )).scalar_one_or_none()
+            result: Optional[User] = await self._get_user(user_id)
 
             if result is None:
                 raise NotFoundError("User was not found with specified ID")
@@ -209,3 +201,16 @@ class UserRepoSQLA(UserRepo):
 
         except ProgrammingError as err:
             raise ValueError("Invalid input data") from err
+
+    async def _get_user(self, user_id: int) -> Optional[User]:
+        """
+        Получает объект записи о пользователе.
+
+        :param user_id: Идентификатор пользователя.
+        :return: Запись пользователя или ничего.
+        """
+        result: Optional[User] = (await self.transaction.session.execute(
+            Select(User).where(User.user_id == user_id)
+        )).scalar_one_or_none()
+
+        return result
