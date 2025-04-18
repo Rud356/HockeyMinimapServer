@@ -40,9 +40,11 @@ async def test_creating_video_frames(video_fps: float, video_frames_count: int, 
         video = await repo.video_repo.create_new_video(
             video_fps, test_video_path.relative_to(test_video_directory)
         )
+        await tr.commit()
 
     async with repo.transaction as tr:
         await repo.frames_repo.create_frames(1, video_frames_count)
+        await tr.commit()
 
     async with repo.transaction as tr:
         frames_inserted = await tr.session.scalar(
@@ -52,11 +54,18 @@ async def test_creating_video_frames(video_fps: float, video_frames_count: int, 
     assert frames_inserted == video_frames_count
 
 
+async def test_creating_frames_without_video(video_fps: float, video_frames_count: int, repo: RepositorySQLA):
+    with pytest.raises(DataIntegrityError):
+        async with repo.transaction as tr:
+            await repo.frames_repo.create_frames(1, video_frames_count)
+
+
 async def test_creating_invalid_frames_count(video_fps: float, video_frames_count: int, repo: RepositorySQLA):
     async with repo.transaction as tr:
         video = await repo.video_repo.create_new_video(
             video_fps, test_video_path.relative_to(test_video_directory)
         )
+        await tr.commit()
 
     with pytest.raises(ValueError):
         async with repo.transaction as tr:

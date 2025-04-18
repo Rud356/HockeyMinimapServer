@@ -28,7 +28,8 @@ class User(Base):
 
     user_permissions: Mapped["UserPermissions"] = relationship(
         back_populates="user",
-        lazy="joined"
+        lazy="joined",
+        cascade="all, delete-orphan"
     )
 
     __tablename__ = "users"

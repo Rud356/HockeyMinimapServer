@@ -1,6 +1,7 @@
 import pytest
 import pytest_asyncio  # noqa: used as plugin
 from dishka import Container, make_container
+from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
 
 from server.data_storage.sql_implementation.repository_sqla import RepositorySQLA, Repository
@@ -8,8 +9,15 @@ from server.data_storage.sql_implementation.sqla_provider import SQLAlchemyProvi
 
 
 @pytest.fixture()
-def engine() -> AsyncEngine:
-    return create_async_engine("sqlite+aiosqlite:///:memory:")
+async def engine() -> AsyncEngine:
+    engine: AsyncEngine = create_async_engine(
+        "sqlite+aiosqlite:///:memory:",
+        echo=True
+    )
+    async with engine.connect() as conn:
+        await conn.execute(text("PRAGMA foreign_keys=ON"))
+
+    return engine
 
 @pytest.fixture()
 def provider(engine: AsyncEngine) -> SQLAlchemyProvider:

@@ -192,18 +192,18 @@ async def test_deleting_user(repo):
                 can_create_projects=True
             )
         )
-
         await tr.commit()
 
     async with repo.transaction as tr:
         has_been_deleted: bool = await repo.user_repo.delete_user(user_data.user_id)
-        assert has_been_deleted, "Expected to delete user in this transaction"
+
+    assert has_been_deleted, "Expected to delete user in this transaction"
 
 
 async def test_deleting_non_existent_user(repo):
-    async with repo.transaction as tr:
-        has_been_deleted: bool = await repo.user_repo.delete_user(1000)
-        assert not has_been_deleted, "Expected to delete user in this transaction"
+    with pytest.raises(NotFoundError):
+        async with repo.transaction as tr:
+            has_been_deleted: bool = await repo.user_repo.delete_user(1000)
 
 
 async def test_changing_user_permissions(repo):

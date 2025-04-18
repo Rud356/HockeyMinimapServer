@@ -2,7 +2,7 @@ import hashlib
 from typing import Optional, cast
 
 from pydantic import ValidationError
-from sqlalchemy import Delete, Select
+from sqlalchemy import Select
 from sqlalchemy.exc import IntegrityError, ProgrammingError
 from sqlalchemy.ext.asyncio import AsyncScalarResult
 
@@ -107,14 +107,16 @@ class UserRepoSQLA(UserRepo):
         return users
 
     async def delete_user(self, user_id: int) -> bool:
-        result = await self.transaction.session.execute(
-            Delete(User).where(User.user_id == user_id)
-        )
+        async with await self.transaction.start_nested_transaction() as tr:
+            result: Optional[User] = (await self.transaction.session.execute(
+                Select(User).where(User.user_id == user_id)
+            )).scalar_one_or_none()
 
-        if result.rowcount == 1:
-            return True
+            if result is None:
+                raise NotFoundError("User not found")
 
-        return False
+            await tr.session.delete(result)
+        return True
 
     async def change_user_permissions(self, user_id: int, new_permissions: UserPermissionsData) -> UserPermissionsDTO:
         try:
