@@ -29,11 +29,11 @@ class MapData(Base):
     )
     point_on_camera: Mapped["Point"] = relationship(
         primaryjoin="MapData.camera_point_id == Point.point_id",
-        lazy="joined"
+        lazy="joined", cascade="all, delete"
     )
     point_on_minimap: Mapped["Point"] = relationship(
         primaryjoin="MapData.point_on_minimap_id == Point.point_id",
-        lazy="joined"
+        lazy="joined", cascade="all, delete"
     )
 
     __tablename__ = "map_data"

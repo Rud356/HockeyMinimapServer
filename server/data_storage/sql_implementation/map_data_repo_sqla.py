@@ -53,11 +53,15 @@ class MapDataRepoSQLA(MapDataRepo):
 
     async def drop_all_mapping_points_for_video(self, video_id: int) -> int:
         async with await self.transaction.start_nested_transaction() as tr:
-            result = await tr.session.execute(
-                Delete(MapData).where(MapData.video_id == video_id)
-            )
+            results: Sequence[MapData] = (await tr.session.scalars(
+                Select(MapData).where(MapData.video_id == video_id)
+            )).all()
 
-            return cast(int, result.rowcount)
+            for to_delete in results:
+                await self.transaction.session.delete(to_delete)
+
+            await tr.commit()
+            return len(results)
 
     async def edit_point_from_mapping(
         self,
