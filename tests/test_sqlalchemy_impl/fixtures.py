@@ -11,8 +11,7 @@ from server.data_storage.sql_implementation.sqla_provider import SQLAlchemyProvi
 @pytest.fixture()
 async def engine() -> AsyncEngine:
     engine: AsyncEngine = create_async_engine(
-        "sqlite+aiosqlite:///:memory:",
-        echo=True
+        "sqlite+aiosqlite:///:memory:"
     )
     async with engine.connect() as conn:
         await conn.execute(text("PRAGMA foreign_keys=ON"))
