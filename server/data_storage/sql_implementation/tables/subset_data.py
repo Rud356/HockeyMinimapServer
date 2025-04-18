@@ -42,7 +42,7 @@ class SubsetData(Base):
     )
     subset: Mapped["TeamsSubset"] = relationship(
         back_populates="subset_data",
-        lazy="joined"
+        lazy="raise"
     )
 
     __table_args__: tuple[ColumnCollectionConstraint | dict[Any, Any], ...] = (
