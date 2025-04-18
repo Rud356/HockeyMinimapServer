@@ -29,6 +29,7 @@ class MapDataRepoSQLA(MapDataRepo):
                         for map_point, video_point in mapping.items()
                     ]
                 )
+                await tr.commit()
 
         except (ProgrammingError, IntegrityError) as err:
             raise DataIntegrityError("Integrity check failed") from err
@@ -68,7 +69,7 @@ class MapDataRepoSQLA(MapDataRepo):
         modified: bool = False
 
         try:
-            async with await self.transaction.start_nested_transaction():
+            async with await self.transaction.start_nested_transaction() as tr:
                 data_point: Optional[MapData] = (await self.transaction.session.execute(
                     Select(MapData).where(MapData.map_data_id == map_data_id)
                 )).scalar_one_or_none()
@@ -89,6 +90,8 @@ class MapDataRepoSQLA(MapDataRepo):
                 if is_used is not None:
                     data_point.is_used = is_used
                     modified = True
+
+                await tr.commit()
 
         except (IntegrityError, ProgrammingError) as err:
             raise DataIntegrityError("Constraints are broken when updating map data point") from err

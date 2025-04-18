@@ -33,6 +33,7 @@ class ProjectRepoSQLA(ProjectRepo):
 
             async with await self.transaction.start_nested_transaction() as tr:
                 tr.session.add(new_project)
+                await tr.commit()
 
         except (ProgrammingError, IntegrityError) as err:
             raise DataIntegrityError("Invalid values provided for creating project") from err
@@ -54,7 +55,7 @@ class ProjectRepoSQLA(ProjectRepo):
         team_away_name: Optional[str] = None
     ) -> ProjectDTO:
         try:
-            async with await self.transaction.start_nested_transaction():
+            async with await self.transaction.start_nested_transaction() as tr:
                 editing_project: Optional[Project] = (await self.transaction.session.execute(
                     Select(Project).where(Project.project_id == project_id)
                 )).scalar_one_or_none()
@@ -70,6 +71,8 @@ class ProjectRepoSQLA(ProjectRepo):
 
                 if team_away_name:
                     editing_project.team_away_name = team_away_name
+
+                await tr.commit()
 
         except (ProgrammingError, IntegrityError) as err:
             raise DataIntegrityError("Invalid data for modification provided") from err

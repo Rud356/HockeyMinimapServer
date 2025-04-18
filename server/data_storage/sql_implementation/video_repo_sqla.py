@@ -125,9 +125,11 @@ class VideoRepoSQLA(VideoRepo):
         if video_record is None:
             raise ValueError("Video does not exists")
 
-        async with await self.transaction.start_nested_transaction():
+        async with await self.transaction.start_nested_transaction() as tr:
             video_record.converted_video_path = str(converted_video_path)
             video_record.is_converted = flag_value
+
+            await tr.commit()
 
         return flag_value
 
@@ -139,8 +141,9 @@ class VideoRepoSQLA(VideoRepo):
         if video_record is None:
             raise ValueError("Video does not exists")
 
-        async with await self.transaction.start_nested_transaction():
+        async with await self.transaction.start_nested_transaction() as tr:
             video_record.is_processed = flag_value
+            await tr.commit()
 
         return flag_value
 

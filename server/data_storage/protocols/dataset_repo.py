@@ -21,9 +21,9 @@ class DatasetRepo(Protocol):
         :return: Данные о наборе данных.
         """
 
-    async def get_videos_team_dataset(self, dataset_id: int) -> DatasetDTO:
+    async def get_team_dataset_by_id(self, dataset_id: int) -> DatasetDTO:
         """
-        Получает набор данных выделения команд для видео.
+        Получает набор данных выделения команд по идентификатору.
 
         :param dataset_id: Идентификатор набора данных.
         :return: Набор данных.

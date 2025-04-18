@@ -116,6 +116,7 @@ class UserRepoSQLA(UserRepo):
                 raise NotFoundError("User not found")
 
             await tr.session.delete(result)
+            await tr.commit()
         return True
 
     async def change_user_permissions(self, user_id: int, new_permissions: UserPermissionsData) -> UserPermissionsDTO:
@@ -158,7 +159,7 @@ class UserRepoSQLA(UserRepo):
             if result is None:
                 raise NotFoundError("User was not found with specified ID")
 
-            async with await self.transaction.start_nested_transaction():
+            async with await self.transaction.start_nested_transaction() as tr:
                 if username:
                     result.username = username
 
@@ -166,7 +167,9 @@ class UserRepoSQLA(UserRepo):
                     result.display_name = display_name
 
                 if password:
-                    result.password_hash = hashlib.sha256(password.encode('utf8')).hexdigest()
+                    result.password_hash = hashlib.sha256(password.encode('utf8')).hexdigest()\
+
+                await tr.commit()
 
         except (ProgrammingError, IntegrityError) as err:
             raise ValueError("Invalid data was provided as input") from err
