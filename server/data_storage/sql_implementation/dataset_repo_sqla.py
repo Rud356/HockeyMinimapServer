@@ -12,8 +12,8 @@ from ..dto import BoxDTO, DatasetDTO, PointDTO, SubsetDataDTO, TeamsSubsetDTO
 from ..dto.subset_data_input import SubsetDataInputDTO
 from ..exceptions import DataIntegrityError, NotFoundError
 from ..protocols import DatasetRepo
-from ...algorithms.enums import Team
-from ...algorithms.enums.player_classes_enum import PlayerClasses
+from server.algorithms.enums import Team
+from server.algorithms.enums.player_classes_enum import PlayerClasses
 
 
 class DatasetRepoSQLA(DatasetRepo):

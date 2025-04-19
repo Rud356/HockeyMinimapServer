@@ -57,17 +57,12 @@ class Line(NamedTuple):
     @classmethod
     def find_lines(
         cls,
-        image: CV_Image,
-        min_threshold: int = 1,
-        max_threshold: int = 1000
+        image: CV_Image
     ) -> Optional[Line]:
         """
         Находит линию на изображении с помощью алгоритма Hough Line из OpenCV.
 
         :param image: Исходное изображение с выделенными границами.
-        :param min_threshold: Минимальный параметр границы.
-        :param max_threshold: Максимальный параметр границы.
-
         :return: Искомая линия, проходящая через точки на изображении или ничего.
         """
         image = typing.cast(CV_Image, cv2.Canny(image, 50.0, 200.0))
