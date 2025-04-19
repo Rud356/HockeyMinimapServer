@@ -251,7 +251,7 @@ async def test_modifying_player_team(video_fps: float, video_frames_count: int, 
         await repo.frames_repo.create_frames(1, video_frames_count)
         await tr.commit()
 
-    frames_numbering = range(0, video_frames_count)
+    frames_numbering = range(0, video_frames_count*10)
 
     async with repo.transaction as tr:
         frames_data = [
@@ -272,7 +272,9 @@ async def test_modifying_player_team(video_fps: float, video_frames_count: int, 
             ]
             for _ in frames_numbering
         ]
+        start = time.time()
         await repo.player_data_repo.insert_player_data(
             video.video_id, frames_data
         )
         await tr.commit()
+        print(f"{time.time() - start}s to finish")

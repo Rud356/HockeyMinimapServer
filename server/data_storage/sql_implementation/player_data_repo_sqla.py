@@ -40,20 +40,12 @@ class PlayerDataRepoSQLA(PlayerDataRepo):
                             video_id=frame.video_id,
                             frame_id=frame_id,
                             class_id=data_point.class_id,
-                            box=Box(
-                                top_point=Point(
-                                    x=data_point.player_on_camera.top_point.x,
-                                    y=data_point.player_on_camera.top_point.y
-                                ),
-                                bottom_point=Point(
-                                    x=data_point.player_on_camera.top_point.x,
-                                    y=data_point.player_on_camera.top_point.y
-                                )
-                            ),
-                            point_on_minimap=Point(
-                                x=data_point.player_on_minimap.x,
-                                y=data_point.player_on_minimap.y,
-                            )
+                            player_on_camera_top_x=data_point.player_on_camera.top_point.x,
+                            player_on_camera_top_y=data_point.player_on_camera.top_point.y,
+                            player_on_camera_bottom_x=data_point.player_on_camera.top_point.x,
+                            player_on_camera_bottom_y=data_point.player_on_camera.top_point.y,
+                            point_on_minimap_x=data_point.player_on_minimap.x,
+                            point_on_minimap_y=data_point.player_on_minimap.y
                         )
                         is_not_referee: bool = data_point.class_id != PlayerClasses.Referee
                         if is_not_referee and (assigned_teams.get(data_point.tracking_id) is None):
