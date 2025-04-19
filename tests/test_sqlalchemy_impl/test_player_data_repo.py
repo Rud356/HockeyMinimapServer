@@ -251,7 +251,7 @@ async def test_modifying_player_team(video_fps: float, video_frames_count: int, 
         await repo.frames_repo.create_frames(1, video_frames_count)
         await tr.commit()
 
-    frames_numbering = range(0, video_frames_count*10)
+    frames_numbering = range(0, video_frames_count)
 
     async with repo.transaction as tr:
         frames_data = [
@@ -272,9 +272,19 @@ async def test_modifying_player_team(video_fps: float, video_frames_count: int, 
             ]
             for _ in frames_numbering
         ]
-        start = time.time()
         await repo.player_data_repo.insert_player_data(
             video.video_id, frames_data
         )
         await tr.commit()
-        print(f"{time.time() - start}s to finish")
+
+    async with repo.transaction as tr:
+        await repo.player_data_repo.set_team_to_tracking_id(video.video_id, 5, 0, Team.Away)
+        await tr.commit()
+
+    async with repo.transaction:
+        fetched = await repo.player_data_repo.get_all_tracking_data(video.video_id)
+
+    for n, frame in enumerate(fetched.frames):
+        for point in frame:
+            if point.tracking_id == 0:
+                assert point.team_id == Team.Away, "Invalid team"

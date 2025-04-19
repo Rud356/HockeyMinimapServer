@@ -1,6 +1,7 @@
 from typing import Optional, Sequence, cast
 
 from sqlalchemy import Delete, Select, Update, and_, exists, func
+from sqlalchemy.engine import TupleResult
 from sqlalchemy.exc import IntegrityError, NoResultFound, ProgrammingError
 from sqlalchemy.ext.asyncio import AsyncScalarResult
 from sqlalchemy.orm import selectinload
@@ -26,9 +27,8 @@ class PlayerDataRepoSQLA(PlayerDataRepo):
         players_data_on_frame: list[list[PlayerDataDTO]]
     ) -> None:
         # Get last frame of sequence and if it doesn't exist - error out
-        assigned_teams: dict[int, Team] = {}
+        assigned_teams: dict[int, Team | None] = {}
         frame: Frame = await self._get_video_frame(video_id, len(players_data_on_frame) - 1)
-        data_buffer = []
 
         try:
             async with await self.transaction.start_nested_transaction() as tr:
@@ -124,9 +124,10 @@ class PlayerDataRepoSQLA(PlayerDataRepo):
         return cast(int, result.rowcount)
 
     async def set_team_to_tracking_id(self, video_id: int, frame_id: int, tracking_id: int, team: Team) -> None:
-        player_data: Optional[PlayerData] = await self.transaction.session.get(
-            PlayerData, {"video_id": video_id, "frame_id": frame_id}
-        )
+        player_data: Optional[PlayerData] = (await self.transaction.session.scalars(
+            Select(PlayerData)
+            .where(and_(PlayerData.video_id == video_id, PlayerData.frame_id))
+        )).first()
 
         if player_data is None:
             raise NotFoundError("Player tracking data was not found")
@@ -219,20 +220,8 @@ class PlayerDataRepoSQLA(PlayerDataRepo):
                     player_name=player_name,
                     team_id=team_id,
                     class_id=player_data.class_id,
-                    player_on_camera=BoxDTO(
-                        top_point=PointDTO(
-                            x=player_data.box.top_point.x,
-                            y=player_data.box.top_point.y
-                        ),
-                        bottom_point=PointDTO(
-                            x=player_data.box.top_point.x,
-                            y=player_data.box.top_point.y
-                        )
-                    ),
-                    player_on_minimap=PointDTO(
-                        x=player_data.point_on_minimap.x,
-                        y=player_data.point_on_minimap.y
-                    )
+                    player_on_camera=player_data.box,
+                    player_on_minimap=player_data.point_on_minimap
                 )
                 frame_data_players.append(player)
 
@@ -273,20 +262,8 @@ class PlayerDataRepoSQLA(PlayerDataRepo):
                     player_name=player_name,
                     team_id=team_id,
                     class_id=player_data.class_id,
-                    player_on_camera=BoxDTO(
-                        top_point=PointDTO(
-                            x=player_data.box.top_point.x,
-                            y=player_data.box.top_point.y
-                        ),
-                        bottom_point=PointDTO(
-                            x=player_data.box.top_point.x,
-                            y=player_data.box.top_point.y
-                        )
-                    ),
-                    player_on_minimap=PointDTO(
-                        x=player_data.point_on_minimap.x,
-                        y=player_data.point_on_minimap.y
-                    )
+                    player_on_camera=player_data.box,
+                    player_on_minimap=player_data.point_on_minimap
                 )
                 frame_data_players.append(player)
 
@@ -322,7 +299,7 @@ class PlayerDataRepoSQLA(PlayerDataRepo):
     async def get_frames_min_and_max_ids_in_video(self, video_id: int) -> tuple[int, int]:
         min_frame_number: int
         max_frame_number: int
-        result = (await self.transaction.session.execute(
+        result: TupleResult[tuple[int, ...]] = (await self.transaction.session.execute(
             Select(func.min(Frame.frame_id), func.max(Frame.frame_id)).where(
                 Frame.video_id == video_id
             )
