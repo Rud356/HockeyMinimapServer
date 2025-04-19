@@ -1,6 +1,6 @@
 from typing import Any, Optional
 
-from sqlalchemy import ForeignKey, Integer
+from sqlalchemy import Integer
 from sqlalchemy.orm import Mapped
 from sqlalchemy.orm import mapped_column
 from sqlalchemy.sql.schema import ColumnCollectionConstraint, ForeignKeyConstraint

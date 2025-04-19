@@ -11,9 +11,7 @@ from server.data_storage.sql_implementation.tables.base import Base
 from server.data_storage.sql_implementation.tables.team_assignment import TeamAssignment
 
 if TYPE_CHECKING:
-    from server.data_storage.sql_implementation.tables.box import Box
     from server.data_storage.sql_implementation.tables.player import Player
-    from server.data_storage.sql_implementation.tables.point import Point
 
 
 class PlayerData(Base):

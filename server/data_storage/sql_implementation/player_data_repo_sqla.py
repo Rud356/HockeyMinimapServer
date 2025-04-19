@@ -8,10 +8,10 @@ from sqlalchemy.orm import selectinload
 
 from server.algorithms.enums import Team
 from server.algorithms.enums.player_classes_enum import PlayerClasses
-from .tables import Box, Frame, Player, PlayerData, Point, SubsetData
+from .tables import Frame, Player, PlayerData, SubsetData
 from .tables.team_assignment import TeamAssignment
 from .transaction_manager_sqla import TransactionManagerSQLA
-from ..dto import BoxDTO, FrameDataDTO, PointDTO
+from ..dto import FrameDataDTO
 from ..dto.player_data_dto import PlayerDataDTO
 from ..exceptions import DataIntegrityError, NotFoundError
 from ..protocols import PlayerDataRepo
