@@ -23,50 +23,58 @@ class PlayerDataRepoSQLA(PlayerDataRepo):
     async def insert_player_data(
         self,
         video_id: int,
-        frame_id: int,
-        players_data_on_frame: list[PlayerDataDTO]
+        players_data_on_frame: list[list[PlayerDataDTO]]
     ) -> None:
-        frame: Frame = await self._get_video_frame(video_id, frame_id)
+        # Get last frame of sequence and if it doesn't exist - error out
+        assigned_teams: dict[int, Team] = {}
+        frame: Frame = await self._get_video_frame(video_id, len(players_data_on_frame) - 1)
+        data_buffer = []
+
         try:
             async with await self.transaction.start_nested_transaction() as tr:
-                for data_point in players_data_on_frame:
-                    player_data_record: PlayerData = PlayerData(
-                        tracking_id=data_point.tracking_id,
-                        video_id=frame.video_id,
-                        frame_id=frame.frame_id,
-                        class_id=data_point.class_id,
-                        box=Box(
-                            top_point=Point(
-                                x=data_point.player_on_camera.top_point.x,
-                                y=data_point.player_on_camera.top_point.y
+                for frame_id, frame_data in enumerate(players_data_on_frame):
+                    players: list[PlayerData] = []
+                    for data_point in frame_data:
+                        player_data_record: PlayerData = PlayerData(
+                            tracking_id=data_point.tracking_id,
+                            video_id=frame.video_id,
+                            frame_id=frame_id,
+                            class_id=data_point.class_id,
+                            box=Box(
+                                top_point=Point(
+                                    x=data_point.player_on_camera.top_point.x,
+                                    y=data_point.player_on_camera.top_point.y
+                                ),
+                                bottom_point=Point(
+                                    x=data_point.player_on_camera.top_point.x,
+                                    y=data_point.player_on_camera.top_point.y
+                                )
                             ),
-                            bottom_point=Point(
-                                x=data_point.player_on_camera.top_point.x,
-                                y=data_point.player_on_camera.top_point.y
+                            point_on_minimap=Point(
+                                x=data_point.player_on_minimap.x,
+                                y=data_point.player_on_minimap.y,
                             )
-                        ),
-                        point_on_minimap=Point(
-                            x=data_point.player_on_minimap.x,
-                            y=data_point.player_on_minimap.y,
                         )
-                    )
-                    frame.player_data.append(player_data_record)
-                    if (
-                        (data_point.team_id is not None) and
-                        (await tr.session.get(TeamAssignment, data_point.team_id) is None)
-                    ):
-                        tr.session.add(
-                            TeamAssignment(
+                        is_not_referee: bool = data_point.class_id != PlayerClasses.Referee
+                        if is_not_referee and (assigned_teams.get(data_point.tracking_id) is None):
+                            # Save once and cache it to not overwrite same data or cause conflicts
+                            assigned_teams[data_point.tracking_id] = data_point.team_id
+                            player_data_record.team = TeamAssignment(
                                 tracking_id=data_point.tracking_id,
                                 video_id=video_id,
                                 frame_id=frame_id,
                                 team_id=data_point.team_id
                             )
-                        )
+
+                        players.append(player_data_record)
+                    tr.session.add_all(players)
+
+                    if frame_id % 100 == 0:
+                        await tr.session.flush()
 
                 await tr.commit()
 
-        except (IntegrityError, ProgrammingError) as err:
+        except (IntegrityError, ProgrammingError, NotFoundError) as err:
             raise DataIntegrityError("Invalid data provided") from err
 
     async def kill_tracking(self, video_id: int, frame_id: int, tracking_id: int) -> int:
@@ -322,11 +330,12 @@ class PlayerDataRepoSQLA(PlayerDataRepo):
     async def get_frames_min_and_max_ids_in_video(self, video_id: int) -> tuple[int, int]:
         min_frame_number: int
         max_frame_number: int
-        min_frame_number, max_frame_number, *_ = (await self.transaction.session.execute(
+        result = (await self.transaction.session.execute(
             Select(func.min(Frame.frame_id), func.max(Frame.frame_id)).where(
                 Frame.video_id == video_id
             )
         )).tuples()
+        (min_frame_number, max_frame_number), *_ = tuple(result)
 
         return min_frame_number, max_frame_number
 

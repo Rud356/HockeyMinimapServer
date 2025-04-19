@@ -17,15 +17,13 @@ class PlayerDataRepo(Protocol):
     async def insert_player_data(
         self,
         video_id: int,
-        frame_id: int,
-        players_data_on_frame: list[PlayerDataDTO]
+        players_data_on_frame: list[list[PlayerDataDTO]]
     ) -> None:
         """
         Создает информацию об игроках на кадре в базе данных.
 
         :param video_id: Видео к которому принадлежит кадр.
-        :param frame_id: К какому кадру принадлежит информация.
-        :param players_data_on_frame: Информация о кадре.
+        :param players_data_on_frame: Информация об игроках на каждом кадре.
         :return: Ничего.
         :raises NotFoundError: Если кадр для вставки не найден.
         :raises DataIntegrityError: Если вставлены неправильные данные.

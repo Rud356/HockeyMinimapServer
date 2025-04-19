@@ -17,7 +17,7 @@ class FramesRepoSQLA(FramesRepo):
 
         try:
             async with await self.transaction.start_nested_transaction() as tr:
-                results = await tr.session.scalars(
+                results = await tr.session.execute(
                     Insert(Frame).returning(Frame.frame_id), [
                         dict(frame_id=frame_n, video_id=video_id) for frame_n in range(frames_count)
                     ]
