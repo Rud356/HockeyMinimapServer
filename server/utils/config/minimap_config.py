@@ -4,6 +4,9 @@ from server.utils.config.key_point import KeyPoint
 
 
 class MinimapKeyPointConfig(BaseModel):
+    """
+    Описывает положения ключевых точек на карте.
+    """
     # Границы абсолютных координат поля мини-карты
     top_left_field_point: KeyPoint
     bottom_right_field_point: KeyPoint

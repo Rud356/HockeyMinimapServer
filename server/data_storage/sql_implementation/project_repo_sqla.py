@@ -110,8 +110,8 @@ class ProjectRepoSQLA(ProjectRepo):
         try:
             result: Optional[Project] = await self._get_project(project_id)
 
-        except ProgrammingError:
-            raise ValueError("Invalid data was provided as input")
+        except ProgrammingError as err:
+            raise ValueError("Invalid data was provided as input") from err
 
         if result is None:
             raise NotFoundError("Project with provided id was not found")
@@ -126,8 +126,8 @@ class ProjectRepoSQLA(ProjectRepo):
                 team_away_name=result.team_away_name
             )
 
-        except ValidationError:
-            raise NotFoundError("Project had invalid data when unpacking")
+        except ValidationError as err:
+            raise NotFoundError("Project had invalid data when unpacking") from err
 
     async def _get_project(self, project_id: int) -> Project | None:
         """

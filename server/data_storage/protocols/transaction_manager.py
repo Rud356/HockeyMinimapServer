@@ -29,7 +29,6 @@ class TransactionManager(Protocol, AbstractAsyncContextManager[Any]):
 
         :return: Новый менеджер вложенной транзакции.
         """
-        ...
 
     async def __aenter__(self) -> Self:
         """

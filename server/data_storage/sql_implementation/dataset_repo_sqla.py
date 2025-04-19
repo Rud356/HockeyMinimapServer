@@ -6,14 +6,14 @@ from sqlalchemy.engine import TupleResult
 from sqlalchemy.exc import IntegrityError, ProgrammingError
 from sqlalchemy.orm import selectinload
 
+from server.algorithms.enums import Team
+from server.algorithms.enums.player_classes_enum import PlayerClasses
 from .tables import Box, Point, SubsetData, TeamsDataset, TeamsSubset
 from .transaction_manager_sqla import TransactionManagerSQLA
 from ..dto import BoxDTO, DatasetDTO, PointDTO, SubsetDataDTO, TeamsSubsetDTO
 from ..dto.subset_data_input import SubsetDataInputDTO
 from ..exceptions import DataIntegrityError, NotFoundError
 from ..protocols import DatasetRepo
-from server.algorithms.enums import Team
-from server.algorithms.enums.player_classes_enum import PlayerClasses
 
 
 class DatasetRepoSQLA(DatasetRepo):
@@ -44,8 +44,8 @@ class DatasetRepoSQLA(DatasetRepo):
                 .where(TeamsDataset.dataset_id == dataset_id)
             )).scalar_one_or_none()
 
-        except ProgrammingError:
-            raise ValueError("Invalid data provided for lookup")
+        except ProgrammingError as err:
+            raise ValueError("Invalid data provided for lookup") from err
 
         if dataset is None:
             raise NotFoundError("Dataset with provided id was not found")
@@ -116,8 +116,8 @@ class DatasetRepoSQLA(DatasetRepo):
                 .where(TeamsDataset.dataset_id == dataset_id)
             )).scalar_one_or_none()
 
-        except ProgrammingError:
-            raise ValueError("Invalid data provided for lookup")
+        except ProgrammingError as err:
+            raise ValueError("Invalid data provided for lookup") from err
 
         if dataset is None:
             raise NotFoundError("Dataset with provided id was not found")
@@ -225,8 +225,8 @@ class DatasetRepoSQLA(DatasetRepo):
                 .where(TeamsDataset.dataset_id == dataset_id)
             )).scalar_one_or_none()
 
-        except ProgrammingError:
-            raise ValueError("Invalid data provided for lookup")
+        except ProgrammingError as err:
+            raise ValueError("Invalid data provided for lookup") from err
 
         if dataset is None:
             raise NotFoundError("Dataset with provided id was not found")

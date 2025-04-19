@@ -87,8 +87,8 @@ class VideoRepoSQLA(VideoRepo):
         try:
             video_record: Optional[Video] = await self._get_video(video_id)
 
-        except ProgrammingError:
-            raise ValueError("Invalid input data types")
+        except ProgrammingError as err:
+            raise ValueError("Invalid input data types") from err
 
         if video_record is None:
             return None

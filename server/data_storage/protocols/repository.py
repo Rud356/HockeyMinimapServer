@@ -18,31 +18,59 @@ class Repository(Protocol):
 
     @property
     def player_data_repo(self) -> PlayerDataRepo:
-        ...
+        """
+        Объект для взаимодействия с хранилищем данных игроков.
+
+        :return: Объект репозитория игроков.
+        """
 
     @property
     def dataset_repo(self) -> DatasetRepo:
-        ...
+        """
+        Объект для взаимодействия с хранилищем наборов данных разделения команд.
+
+        :return: Объект взаимодействия с набором данных о командах.
+        """
 
     @property
     def frames_repo(self) -> FramesRepo:
-        ...
+        """
+        Объект взаимодействия с хранилищем кадров видео.
+
+        :return: Объект репозитория кадров.
+        """
 
     @property
     def user_repo(self) -> UserRepo:
-        ...
+        """
+        Объект взаимодействия с хранилищем пользователей.
+
+        :return: Объект репозитория пользователей.
+        """
 
     @property
     def video_repo(self) -> VideoRepo:
-        ...
+        """
+        Объект взаимодействия с хранилищем видео.
+
+        :return: Объект репозитория видео.
+        """
 
     @property
     def map_data_repo(self) -> MapDataRepo:
-        ...
+        """
+        Объект взаимодействия с хранилищем данных о карте.
+
+        :return: Объект репозитория карты.
+        """
 
     @property
     def project_repo(self) -> ProjectRepo:
-        ...
+        """
+        Объект взаимодействия с хранилищем проектов.
+
+        :return: Объект репозитория проектов.
+        """
 
     async def export_project_data(self, project_id: int) -> ProjectExportDTO:
         """
@@ -51,7 +79,6 @@ class Repository(Protocol):
         :param project_id: Идентификатор проекта для экспорта.
         :return: Данные о всем проекте.
         """
-        ...
 
     async def import_project_data(self, project_data: ProjectExportDTO) -> ProjectDTO:
         """
@@ -60,4 +87,3 @@ class Repository(Protocol):
         :param project_data: Данные проекта для импорта.
         :return: Данные о новом проекте.
         """
-        ...

@@ -33,7 +33,6 @@ class VideoRepo(Protocol):
         :param from_directory: Из какой директории вывести список файлов.
         :return: Список названий видео файлов.
         """
-        ...
 
     async def get_videos(self, limit: int = 100, offset: int = 0) -> list[VideoDTO]:
         """
@@ -43,7 +42,6 @@ class VideoRepo(Protocol):
         :param offset: Отступ от первой записи.
         :return: Список информации о видео.
         """
-        ...
 
     async def get_video(self, video_id: int) -> Optional[VideoDTO]:
         """
@@ -53,7 +51,6 @@ class VideoRepo(Protocol):
         :return: Информация о видео.
         :raises ValueError: Если данные на вход или выход невозможно привести к нужным типам.
         """
-        ...
 
     async def set_flag_video_is_converted(
         self, video_id: int, flag_value: bool, from_directory: Path, converted_video_path: Path
@@ -68,7 +65,6 @@ class VideoRepo(Protocol):
         :return: Новое значение флага.
         :raise ValueError: Если видео не существует по указанному пути или не найдено видео в БД.
         """
-        ...
 
     async def set_flag_video_is_processed(self, video_id: int, flag_value: bool) -> bool:
         """
@@ -79,7 +75,6 @@ class VideoRepo(Protocol):
         :return: Новое значение флага.
         :raise ValueError: Если видео не существует по указанному пути или не найдено видео в БД.
         """
-        ...
 
     async def adjust_corrective_coefficients(self, video_id: int, k1: float, k2: float) -> None:
         """
@@ -92,7 +87,6 @@ class VideoRepo(Protocol):
         :raise DataIntegrityError: Если коэффициенты были неверно заданы.
         :return: Ничего.
         """
-        ...
 
     async def set_camera_position(self, video_id: int, camera_position: CameraPosition) -> bool:
         """

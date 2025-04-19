@@ -161,8 +161,7 @@ class UserManagementEndpoint(APIEndpoint):
         if (user_info := await UserView(repository).get_user(user_id)) is not None:
             return user_info
 
-        else:
-            raise HTTPException(status_code=404, detail="User not found with provided ID")
+        raise HTTPException(status_code=404, detail="User not found with provided ID")
 
     async def get_current_user_information(
         self,
@@ -212,8 +211,7 @@ class UserManagementEndpoint(APIEndpoint):
         if user_has_been_deleted := await UserView(repository).delete_user(user_id):
             return UserIsDeleted(user_id=user_id, deleted=user_has_been_deleted)
 
-        else:
-            raise HTTPException(status_code=404, detail="User not found with provided ID")
+        raise HTTPException(status_code=404, detail="User not found with provided ID")
 
     async def create_user(
         self,
@@ -322,7 +320,6 @@ class UserManagementEndpoint(APIEndpoint):
             return await UserView(repository).change_user_permissions(
                 user_id, new_permissions
             )
-
 
         except NotFoundError:
             raise HTTPException(404, detail="User was not found")

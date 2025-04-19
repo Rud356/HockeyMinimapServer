@@ -54,11 +54,10 @@ class UserAuthorizationService:
         if self.local_mode and data.username == "Admin":
             return True
 
-        else:
-            async with repository.transaction:
-                repository_data: UserDTO = await repository.user_repo.get_user(user_id=data.user_id)
+        async with repository.transaction:
+            repository_data: UserDTO = await repository.user_repo.get_user(user_id=data.user_id)
 
-            return repository_data == data
+        return repository_data == data
 
     async def authenticate_by_token(self, token: str | None, repository: Repository) -> UserDTO:
         """
@@ -73,8 +72,7 @@ class UserAuthorizationService:
         if await self.authenticate_decoded_token(decoded_token, repository):
             return decoded_token
 
-        else:
-            raise UnauthorizedResourceAccess()
+        raise UnauthorizedResourceAccess()
 
     @staticmethod
     def local_account_data() -> UserDTO:

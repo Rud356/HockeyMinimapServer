@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Optional
+from typing import Any, Optional
 
 from pydantic import BaseModel, field_validator
 
@@ -19,7 +19,7 @@ class VideoDTO(BaseModel):
     dataset_id: Optional[int]
 
     @field_validator('source_video_path', 'converted_video_path', mode='before')
-    def convert_to_path(cls, value):
+    def convert_to_path(cls, value: Any): # noqa: pydantic example, this is run before model is constructed
         if isinstance(value, str):
             return Path(value)
         return value

@@ -1,6 +1,6 @@
 from typing import NamedTuple
 
-from server.algorithms.data_types import BoundingBox
+from server.algorithms.data_types.bounding_box import BoundingBox
 from server.algorithms.enums.player_classes_enum import PlayerClasses
 
 

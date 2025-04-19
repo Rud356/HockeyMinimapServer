@@ -113,7 +113,8 @@ class VideoUploadEndpoint(APIEndpoint):
             # TODO: add more details about error
             raise HTTPException(
                 status_code=507,
-                detail=f"Not enough disk space, only {ran_out_of_disk.free_runtime_disk_space} is currently unreserved"
+                detail=f"Not enough disk space, only "
+                       f"{ran_out_of_disk.free_runtime_disk_space} is currently unreserved"
             )
 
         except Exception:
@@ -121,5 +122,4 @@ class VideoUploadEndpoint(APIEndpoint):
 
         finally:
             await video_upload.close()
-
-        return {"message": f"Successfuly uploaded {video_upload.filename}"}
+            return {"message": f"Successfuly uploaded {video_upload.filename}"}

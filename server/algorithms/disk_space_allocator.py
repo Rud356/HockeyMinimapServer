@@ -84,7 +84,6 @@ class DiskSpaceAllocator:
             )
         
         bin_id = uuid.uuid1()
-
         async with self.disk_allocation_lock:
             preallocate_space = round(preallocate_space * over_proposition_factor)
 

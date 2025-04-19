@@ -260,8 +260,8 @@ class VideoProcessing:
 
             return video_streams[0]
 
-        except ffmpeg.Error:
-            raise InvalidFileFormat("File is not supported by ffmpeg")
+        except ffmpeg.Error as err:
+            raise InvalidFileFormat("File is not supported by ffmpeg") from err
 
     @staticmethod
     def set_capture_timestamp(cap: cv2.VideoCapture, timestamp: float) -> None:
@@ -297,7 +297,7 @@ class VideoProcessing:
         """
         Получает из строки длительности от ffmpeg время в секундах.
 
-        :param timestamp: Строка временной метки в формате hh:mm:ss\.mm.
+        :param timestamp: Строка временной метки в формате hh:mm:ss.mm.
         :return: Временная метка в секундах.
         :raise ValueError: Не верный формат временной метки.
         """

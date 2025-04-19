@@ -60,8 +60,8 @@ class UserRepoSQLA(UserRepo):
         try:
             result: Optional[User] = await self._get_user(user_id)
 
-        except ProgrammingError:
-            raise ValueError("Invalid data was provided as input")
+        except ProgrammingError as err:
+            raise ValueError("Invalid data was provided as input") from err
 
         if result is None:
             raise NotFoundError("User with provided id was not found")
@@ -81,7 +81,9 @@ class UserRepoSQLA(UserRepo):
             raise NotFoundError("Invalid data type was stored under this record") from err
 
     async def get_users(self, limit: int = 100, offset: int = 0) -> list[UserDTO]:
-        query: Select[tuple[User, ...]] = Select(User).limit(limit).offset(offset).order_by(User.user_id)
+        query: Select[tuple[User, ...]] = (
+            Select(User).limit(limit).offset(offset).order_by(User.user_id)
+        )
         result: AsyncScalarResult[User] = await self.transaction.session.stream_scalars(query)
         users: list[UserDTO] = []
 
@@ -115,7 +117,9 @@ class UserRepoSQLA(UserRepo):
             await tr.commit()
         return True
 
-    async def change_user_permissions(self, user_id: int, new_permissions: UserPermissionsData) -> UserPermissionsDTO:
+    async def change_user_permissions(
+        self, user_id: int, new_permissions: UserPermissionsData
+    ) -> UserPermissionsDTO:
         try:
             result: Optional[User] = await self._get_user(user_id)
 

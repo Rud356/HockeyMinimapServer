@@ -64,8 +64,12 @@ class MinimapServer:
             ConfigProvider(config),
             FastapiProvider(),
             sqla_provider,
-            UserAuthorizationProvider(UserAuthorizationService(key=config.server_jwt_key, local_mode=config.local_mode)),
-            RenderServiceLimitsProvider(config.minimap_rendering_workers, config.minimap_frame_buffer)
+            UserAuthorizationProvider(
+                UserAuthorizationService(key=config.server_jwt_key, local_mode=config.local_mode)
+            ),
+            RenderServiceLimitsProvider(
+                config.minimap_rendering_workers, config.minimap_frame_buffer
+            )
         )
 
         setup_dishka(container=container, app=self.app)

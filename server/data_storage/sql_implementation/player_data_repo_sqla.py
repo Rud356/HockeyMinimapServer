@@ -126,7 +126,7 @@ class PlayerDataRepoSQLA(PlayerDataRepo):
     async def set_team_to_tracking_id(self, video_id: int, frame_id: int, tracking_id: int, team: Team) -> None:
         player_data: Optional[PlayerData] = (await self.transaction.session.scalars(
             Select(PlayerData)
-            .where(and_(PlayerData.video_id == video_id, PlayerData.frame_id))
+            .where(and_(PlayerData.video_id == video_id))
         )).first()
 
         if player_data is None:
