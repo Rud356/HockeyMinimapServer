@@ -30,7 +30,7 @@ from server.utils.config import VideoPreprocessingConfig
 from server.utils.config.key_point import KeyPoint
 
 os.environ["OPENCV_VIDEO_ACCELERATION"] = "ANY"
-source_video: Path = Path("static/videos/converted_demo.mp4")
+source_video: Path = Path("tests/videos/converted_demo.mp4")
 
 classes_names = list(Team.__members__)
 test_dir = 'datasets/custom_validation'

@@ -1,15 +1,11 @@
 import datetime
 from pathlib import Path
 
-from sqlalchemy import Select, func
-
 from server.algorithms.video_processing import VideoPreprocessingConfig, VideoProcessing
-from server.data_storage.dto import PointDTO, ProjectDTO
-from server.data_storage.exceptions import DataIntegrityError, NotFoundError
-from server.data_storage.sql_implementation.tables import Frame, MapData
+from server.data_storage.dto import ProjectDTO
 from .fixtures import *
 
-test_video_directory: Path = Path(__file__).parent.parent.parent / "static" / "videos"
+test_video_directory: Path = Path(__file__).parent.parent.parent / "tests" / "videos"
 test_video_path: Path = test_video_directory / "converted_demo.mp4"
 
 

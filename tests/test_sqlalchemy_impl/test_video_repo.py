@@ -5,7 +5,7 @@ from server.algorithms.video_processing import VideoPreprocessingConfig, VideoPr
 from server.data_storage.exceptions import DataIntegrityError, NotFoundError
 from .fixtures import *
 
-test_video_directory: Path = Path(__file__).parent.parent.parent / "static" / "videos"
+test_video_directory: Path = Path(__file__).parent.parent.parent / "tests" / "videos"
 test_video_path: Path = test_video_directory / "converted_demo.mp4"
 
 

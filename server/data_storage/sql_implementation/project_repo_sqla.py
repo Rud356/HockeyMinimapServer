@@ -129,7 +129,7 @@ class ProjectRepoSQLA(ProjectRepo):
         except ValidationError:
             raise NotFoundError("Project had invalid data when unpacking")
 
-    async def _get_project(self, project_id: int) -> Project:
+    async def _get_project(self, project_id: int) -> Project | None:
         """
         Получает объект записи проекта.
 

@@ -27,6 +27,8 @@ class PlayerDataRepo(Protocol):
         :param frame_id: К какому кадру принадлежит информация.
         :param players_data_on_frame: Информация о кадре.
         :return: Ничего.
+        :raises NotFoundError: Если кадр для вставки не найден.
+        :raises DataIntegrityError: Если вставлены неправильные данные.
         """
 
     async def kill_tracking(self, video_id: int, frame_id: int, tracking_id: int) -> int:
@@ -37,6 +39,7 @@ class PlayerDataRepo(Protocol):
         :param frame_id: Номер кадра в видео, с которого прекращается отслеживание.
         :param tracking_id: Номер отслеживания.
         :return: Количество удаленных записей.
+        :raises NotFoundError: Если не найдено записей.
         """
 
     async def kill_all_tracking_of_player(self, video_id: int, tracking_id: int) -> int:
@@ -46,6 +49,7 @@ class PlayerDataRepo(Protocol):
         :param video_id: Идентификатор видео.
         :param tracking_id: Номер отслеживания.
         :return: Количество удаленных записей.
+        :raises NotFoundError: Если не найдено записей.
         """
 
     async def set_player_identity_to_user_id(self, video_id: int, tracking_id: int, player_id: int) -> int:
@@ -58,7 +62,7 @@ class PlayerDataRepo(Protocol):
         :return: Количество изменённых записей.
         """
 
-    async def set_team_to_tracking_id(self, video_id: int, frame_id: int, tracking_id: int, team: Team) -> int:
+    async def set_team_to_tracking_id(self, video_id: int, frame_id: int, tracking_id: int, team: Team) -> None:
         """
         Устанавливает команду для отслеживания игрока, если не было назначений до этого.
 
@@ -66,7 +70,7 @@ class PlayerDataRepo(Protocol):
         :param frame_id: Номер кадра в видео, на котором игроку назначена команда.
         :param tracking_id: Номер отслеживания.
         :param team: Команда для назначения.
-        :return: Количество измененных записей.
+        :return: Ничего.
         """
 
     async def set_player_class_to_tracking_id(
@@ -80,9 +84,10 @@ class PlayerDataRepo(Protocol):
         :param tracking_id: Номер отслеживания.
         :param class_id: Идентификатор класса игрока.
         :return: Количество измененных записей.
+        :raises NotFoundError: Если не найдено записей.
         """
 
-    async def get_user_ids_for_players(self, video_id: int) -> dict[int, str]:
+    async def get_user_ids_for_players(self, video_id: int) -> dict[int, str | None]:
         """
         Получает все пользовательские идентификаторы игроков, привязанные к видео.
 
@@ -97,6 +102,27 @@ class PlayerDataRepo(Protocol):
         :param video_id: Идентификатор видео.
         :param users_player_alias: Пользовательское имя для игрока.
         :return: Внутренний идентификатор соотнесения.
+        :raise DataIntegrityError: Неправильные входные данные или видео не существует.
+        """
+
+    async def delete_player_alias(self, custom_player_id: int) -> bool:
+        """
+        Удаляет пользовательский идентификатор пользователя.
+
+        :param custom_player_id: Идентификатор пользовательского имени игрока.
+        :return: Было ли удалено имя игрока.
+        :raise NoResultFound: Имя игрока с представленным идентификатором не найдено.
+        """
+
+    async def rename_player_alias(self, custom_player_id: int, users_player_alias: str) -> None:
+        """
+        Изменяет название идентификатора игрока.
+
+        :param custom_player_id: Идентификатор пользовательского имени игрока.
+        :param users_player_alias: Пользовательское имя для игрока.
+        :return: Ничего.
+        :raise NoResultFound: Имя игрока с представленным идентификатором не найдено.
+        :raise DataIntegrityError: Неправильные входные данные или видео не существует.
         """
 
     async def get_tracking_from_frames(self, video_id: int, limit: int = 120, offset: int = 0) -> FrameDataDTO:
@@ -122,5 +148,17 @@ class PlayerDataRepo(Protocol):
         Идентификатор первого и последнего кадра видео.
 
         :param video_id: Идентификатор видео.
+        :return: Минимальный и максимальный номер кадра в видео.
+        """
+
+    async def get_frames_min_and_max_ids_with_limit_offset(
+        self, video_id: int, limit: int, offset: int
+    ) -> tuple[int, int]:
+        """
+        Получает идентификаторы минимального и максимального кадра с отступом и лимитом.
+
+        :param video_id: Идентификатор видео.
+        :param limit: Сколько кадров взять.
+        :param offset: Сколько кадров отступить от начала выборки.
         :return: Минимальный и максимальный номер кадра в видео.
         """

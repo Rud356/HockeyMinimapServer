@@ -134,25 +134,24 @@ class DatasetRepoSQLA(DatasetRepo):
 
                 for n, frame_data in enumerate(subset_data):
                     for data_point in frame_data:
-                        new_subset.subset_data.append(
-                            SubsetData(
-                                tracking_id=data_point.tracking_id,
-                                video_id=dataset.video_id,
-                                frame_id=from_frame+n,
-                                team_id=data_point.team_id,
-                                class_id=data_point.class_id,
-                                box=Box(
-                                    top_point=Point(
-                                        x=data_point.box.top_point.x,
-                                        y=data_point.box.top_point.y
-                                    ),
-                                    bottom_point=Point(
-                                        x=data_point.box.top_point.x,
-                                        y=data_point.box.top_point.y
-                                    )
+                        subset_data_record: SubsetData = SubsetData(
+                            tracking_id=data_point.tracking_id,
+                            video_id=dataset.video_id,
+                            frame_id=from_frame+n,
+                            team_id=data_point.team_id,
+                            class_id=data_point.class_id,
+                            box=Box(
+                                top_point=Point(
+                                    x=data_point.box.top_point.x,
+                                    y=data_point.box.top_point.y
+                                ),
+                                bottom_point=Point(
+                                    x=data_point.box.top_point.x,
+                                    y=data_point.box.top_point.y
                                 )
                             )
                         )
+                        new_subset.subset_data.append(subset_data_record)
 
                 await tr.commit()
         except (IntegrityError, ProgrammingError) as err:

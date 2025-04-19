@@ -3,6 +3,7 @@ from sqlalchemy.ext.asyncio import AsyncEngine
 from .dataset_repo_sqla import DatasetRepoSQLA
 from .frames_repo_sqla import FramesRepoSQLA
 from .map_data_repo_sqla import MapDataRepoSQLA
+from .player_data_repo_sqla import PlayerDataRepoSQLA
 from .project_repo_sqla import ProjectRepoSQLA
 from .tables.base import Base
 from .transaction_manager_sqla import TransactionManagerSQLA
@@ -16,8 +17,8 @@ class RepositorySQLA(Repository):
         self.transaction: TransactionManagerSQLA = transaction
 
     @property
-    def player_data_repo(self) -> PlayerDataRepo:
-        ...
+    def player_data_repo(self) -> PlayerDataRepoSQLA:
+        return PlayerDataRepoSQLA(self.transaction)
 
     @property
     def dataset_repo(self) -> DatasetRepoSQLA:

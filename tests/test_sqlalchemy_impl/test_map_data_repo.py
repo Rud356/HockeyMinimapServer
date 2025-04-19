@@ -8,7 +8,7 @@ from server.data_storage.exceptions import DataIntegrityError, NotFoundError
 from server.data_storage.sql_implementation.tables import MapData, Point
 from .fixtures import *
 
-test_video_directory: Path = Path(__file__).parent.parent.parent / "static" / "videos"
+test_video_directory: Path = Path(__file__).parent.parent.parent / "tests" / "videos"
 test_video_path: Path = test_video_directory / "converted_demo.mp4"
 
 
