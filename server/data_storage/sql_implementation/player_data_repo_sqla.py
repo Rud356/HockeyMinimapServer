@@ -27,7 +27,6 @@ class PlayerDataRepoSQLA(PlayerDataRepo):
         players_data_on_frame: list[PlayerDataDTO]
     ) -> None:
         frame: Frame = await self._get_video_frame(video_id, frame_id)
-
         try:
             async with await self.transaction.start_nested_transaction() as tr:
                 for data_point in players_data_on_frame:
@@ -35,7 +34,6 @@ class PlayerDataRepoSQLA(PlayerDataRepo):
                         tracking_id=data_point.tracking_id,
                         video_id=frame.video_id,
                         frame_id=frame.frame_id,
-                        team_id=data_point.team_id,
                         class_id=data_point.class_id,
                         box=Box(
                             top_point=Point(
@@ -53,6 +51,18 @@ class PlayerDataRepoSQLA(PlayerDataRepo):
                         )
                     )
                     frame.player_data.append(player_data_record)
+                    if (
+                        (data_point.team_id is not None) and
+                        (await tr.session.get(TeamAssignment, data_point.team_id) is None)
+                    ):
+                        tr.session.add(
+                            TeamAssignment(
+                                tracking_id=data_point.tracking_id,
+                                video_id=video_id,
+                                frame_id=frame_id,
+                                team_id=data_point.team_id
+                            )
+                        )
 
                 await tr.commit()
 
