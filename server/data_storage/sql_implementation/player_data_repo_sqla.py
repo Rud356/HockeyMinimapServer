@@ -30,44 +30,49 @@ class PlayerDataRepoSQLA(PlayerDataRepo):
         assigned_teams: dict[int, Team | None] = {}
         frame: Frame = await self._get_video_frame(video_id, len(players_data_on_frame) - 1)
 
-        try:
-            async with await self.transaction.start_nested_transaction() as tr:
-                for frame_id, frame_data in enumerate(players_data_on_frame):
-                    players: list[PlayerData] = []
-                    for data_point in frame_data:
-                        player_data_record: PlayerData = PlayerData(
+        async with await self.transaction.start_nested_transaction() as tr:
+            for frame_id, frame_data in enumerate(players_data_on_frame):
+                players: list[PlayerData] = []
+                for data_point in frame_data:
+                    player_data_record: PlayerData = PlayerData(
+                        tracking_id=data_point.tracking_id,
+                        video_id=frame.video_id,
+                        frame_id=frame_id,
+                        class_id=data_point.class_id,
+                        player_on_camera_top_x=data_point.player_on_camera.top_point.x,
+                        player_on_camera_top_y=data_point.player_on_camera.top_point.y,
+                        player_on_camera_bottom_x=data_point.player_on_camera.top_point.x,
+                        player_on_camera_bottom_y=data_point.player_on_camera.top_point.y,
+                        point_on_minimap_x=data_point.player_on_minimap.x,
+                        point_on_minimap_y=data_point.player_on_minimap.y
+                    )
+                    is_not_referee: bool = data_point.class_id != PlayerClasses.Referee
+                    if is_not_referee and (assigned_teams.get(data_point.tracking_id) is None):
+                        # Save once and cache it to not overwrite same data or cause conflicts
+                        assigned_teams[data_point.tracking_id] = data_point.team_id
+                        player_data_record.team = TeamAssignment(
                             tracking_id=data_point.tracking_id,
-                            video_id=frame.video_id,
+                            video_id=video_id,
                             frame_id=frame_id,
-                            class_id=data_point.class_id,
-                            player_on_camera_top_x=data_point.player_on_camera.top_point.x,
-                            player_on_camera_top_y=data_point.player_on_camera.top_point.y,
-                            player_on_camera_bottom_x=data_point.player_on_camera.top_point.x,
-                            player_on_camera_bottom_y=data_point.player_on_camera.top_point.y,
-                            point_on_minimap_x=data_point.player_on_minimap.x,
-                            point_on_minimap_y=data_point.player_on_minimap.y
+                            team_id=data_point.team_id
                         )
-                        is_not_referee: bool = data_point.class_id != PlayerClasses.Referee
-                        if is_not_referee and (assigned_teams.get(data_point.tracking_id) is None):
-                            # Save once and cache it to not overwrite same data or cause conflicts
-                            assigned_teams[data_point.tracking_id] = data_point.team_id
-                            player_data_record.team = TeamAssignment(
-                                tracking_id=data_point.tracking_id,
-                                video_id=video_id,
-                                frame_id=frame_id,
-                                team_id=data_point.team_id
-                            )
 
-                        players.append(player_data_record)
-                    tr.session.add_all(players)
+                    players.append(player_data_record)
 
-                    if frame_id % 100 == 0:
+                tr.session.add_all(players)
+                if frame_id % 100 == 0:
+                    try:
                         await tr.session.flush()
 
+                    except(IntegrityError, ProgrammingError, NotFoundError) as err:
+                        await tr.rollback()
+                        raise DataIntegrityError("Invalid data provided") from err
+
+            try:
                 await tr.commit()
 
-        except (IntegrityError, ProgrammingError, NotFoundError) as err:
-            raise DataIntegrityError("Invalid data provided") from err
+            except (IntegrityError, ProgrammingError, NotFoundError) as err:
+                raise DataIntegrityError("Invalid data provided") from err
 
     async def kill_tracking(self, video_id: int, frame_id: int, tracking_id: int) -> int:
         if not await self._does_video_frame_data_exists(video_id, tracking_id):
@@ -123,7 +128,9 @@ class PlayerDataRepoSQLA(PlayerDataRepo):
 
         return cast(int, result.rowcount)
 
-    async def set_team_to_tracking_id(self, video_id: int, frame_id: int, tracking_id: int, team: Team) -> None:
+    async def set_team_to_tracking_id(
+        self, video_id: int, frame_id: int, tracking_id: int, team: Team
+    ) -> None:
         player_data: Optional[PlayerData] = (await self.transaction.session.scalars(
             Select(PlayerData)
             .where(and_(PlayerData.video_id == video_id))
@@ -156,14 +163,14 @@ class PlayerDataRepoSQLA(PlayerDataRepo):
         }
 
     async def create_user_id_for_players(self, video_id: int, users_player_alias: str) -> int:
-        try:
-            player_alias: Player = Player(video_id=video_id, user_id=users_player_alias)
-            async with await self.transaction.start_nested_transaction() as tr:
-                tr.session.add(player_alias)
+        player_alias: Player = Player(video_id=video_id, user_id=users_player_alias)
+        async with await self.transaction.start_nested_transaction() as tr:
+            tr.session.add(player_alias)
+            try:
                 await tr.commit()
 
-        except (ProgrammingError, IntegrityError) as err:
-            raise DataIntegrityError("Invalid video ID or some other problem with data") from err
+            except (ProgrammingError, IntegrityError) as err:
+                raise DataIntegrityError("Invalid video ID or some other problem with data") from err
 
         return player_alias.player_id
 
@@ -191,7 +198,9 @@ class PlayerDataRepoSQLA(PlayerDataRepo):
         except (ProgrammingError, IntegrityError) as err:
             raise DataIntegrityError("Invalid data for modification provided") from err
 
-    async def get_tracking_from_frames(self, video_id: int, limit: int = 120, offset: int = 0) -> FrameDataDTO:
+    async def get_tracking_from_frames(
+        self, video_id: int, limit: int = 120, offset: int = 0
+    ) -> FrameDataDTO:
         query: Select[tuple[Frame, ...]] = Select(Frame).order_by(
             Frame.frame_id
         ).limit(limit).offset(offset).options(
@@ -276,23 +285,24 @@ class PlayerDataRepoSQLA(PlayerDataRepo):
         )
 
     async def set_player_identity_to_user_id(self, video_id: int, tracking_id: int, player_id: int) -> int:
-        try:
-            async with await self.transaction.start_nested_transaction() as tr:
-                player_alias = await tr.session.get_one(
-                    Player, {"player_id": player_id, "video_id": video_id}
-                )
-                result = await tr.session.execute(
-                    Update(PlayerData).where(
-                        and_(
-                            PlayerData.video_id == video_id,
-                            SubsetData.tracking_id == tracking_id
-                        )
-                    ).values(player_id=player_alias.player_id)
-                )
+        async with await self.transaction.start_nested_transaction() as tr:
+            player_alias = await tr.session.get_one(
+                Player, {"player_id": player_id, "video_id": video_id}
+            )
+            result = await tr.session.execute(
+                Update(PlayerData).where(
+                    and_(
+                        PlayerData.video_id == video_id,
+                        SubsetData.tracking_id == tracking_id
+                    )
+                ).values(player_id=player_alias.player_id)
+            )
+
+            try:
                 await tr.commit()
 
-        except NoResultFound as err:
-            raise NotFoundError("Player or alias were not found") from err
+            except NoResultFound as err:
+                raise NotFoundError("Player or alias were not found") from err
 
         return cast(int, result.rowcount)
 

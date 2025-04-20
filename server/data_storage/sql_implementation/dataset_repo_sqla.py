@@ -21,14 +21,19 @@ class DatasetRepoSQLA(DatasetRepo):
         self.transaction: TransactionManagerSQLA = transaction
 
     async def create_dataset_for_video(self, video_id: int) -> DatasetDTO:
-        try:
-            new_dataset = TeamsDataset(video_id=video_id)
-            async with await self.transaction.start_nested_transaction() as tr:
-                tr.session.add(new_dataset)
+        new_dataset = TeamsDataset(video_id=video_id)
+        async with await self.transaction.start_nested_transaction() as tr:
+            tr.session.add(new_dataset)
+
+            try:
                 await tr.commit()
 
-        except (IntegrityError, ProgrammingError, AttributeError, ValidationError) as err:
-            raise DataIntegrityError("Video creation had database constraints broken or data is invalid") from err
+            except (
+                IntegrityError, ProgrammingError, AttributeError, ValidationError
+            ) as err:
+                raise DataIntegrityError(
+                    "Video creation had database constraints broken or data is invalid"
+                ) from err
 
         return DatasetDTO(
             dataset_id=new_dataset.dataset_id,
@@ -122,40 +127,41 @@ class DatasetRepoSQLA(DatasetRepo):
         if dataset is None:
             raise NotFoundError("Dataset with provided id was not found")
 
-        try:
-            async with await self.transaction.start_nested_transaction() as tr:
-                new_subset = TeamsSubset(
-                    dataset_id=dataset.dataset_id,
-                    video_id=dataset.video_id,
-                    from_frame_id=from_frame,
-                    to_frame_id=to_frame
-                )
-                tr.session.add(new_subset)
 
-                for n, frame_data in enumerate(subset_data):
-                    for data_point in frame_data:
-                        subset_data_record: SubsetData = SubsetData(
-                            tracking_id=data_point.tracking_id,
-                            video_id=dataset.video_id,
-                            frame_id=from_frame+n,
-                            team_id=data_point.team_id,
-                            class_id=data_point.class_id,
-                            box=Box(
-                                top_point=Point(
-                                    x=data_point.box.top_point.x,
-                                    y=data_point.box.top_point.y
-                                ),
-                                bottom_point=Point(
-                                    x=data_point.box.top_point.x,
-                                    y=data_point.box.top_point.y
-                                )
+        async with await self.transaction.start_nested_transaction() as tr:
+            new_subset = TeamsSubset(
+                dataset_id=dataset.dataset_id,
+                video_id=dataset.video_id,
+                from_frame_id=from_frame,
+                to_frame_id=to_frame
+            )
+            tr.session.add(new_subset)
+
+            for n, frame_data in enumerate(subset_data):
+                for data_point in frame_data:
+                    subset_data_record: SubsetData = SubsetData(
+                        tracking_id=data_point.tracking_id,
+                        video_id=dataset.video_id,
+                        frame_id=from_frame+n,
+                        team_id=data_point.team_id,
+                        class_id=data_point.class_id,
+                        box=Box(
+                            top_point=Point(
+                                x=data_point.box.top_point.x,
+                                y=data_point.box.top_point.y
+                            ),
+                            bottom_point=Point(
+                                x=data_point.box.top_point.x,
+                                y=data_point.box.top_point.y
                             )
                         )
-                        new_subset.subset_data.append(subset_data_record)
+                    )
+                    new_subset.subset_data.append(subset_data_record)
 
+            try:
                 await tr.commit()
-        except (IntegrityError, ProgrammingError) as err:
-            raise DataIntegrityError("Invalid data provided") from err
+            except (IntegrityError, ProgrammingError) as err:
+                raise DataIntegrityError("Invalid data provided") from err
 
         return new_subset.subset_id
 
@@ -239,7 +245,10 @@ class DatasetRepoSQLA(DatasetRepo):
                 TeamsSubset.dataset_id == dataset.dataset_id,
                 SubsetData.class_id != PlayerClasses.Referee
         )).group_by(SubsetData.team_id)
-        results: TupleResult[tuple[tuple[Team, int], ...]] = (await self.transaction.session.execute(query)).tuples()
+
+        results: TupleResult[tuple[tuple[Team, int], ...]] = (
+            await self.transaction.session.execute(query)
+        ).tuples()
 
         return {Team.Home: 0, Team.Away: 0} | {
             result[0]: result[1]

@@ -120,19 +120,16 @@ class UserRepoSQLA(UserRepo):
     async def change_user_permissions(
         self, user_id: int, new_permissions: UserPermissionsData
     ) -> UserPermissionsDTO:
-        try:
-            result: Optional[User] = await self._get_user(user_id)
+        result: Optional[User] = await self._get_user(user_id)
 
-            if result is None:
-                raise NotFoundError("User was not found with specified ID")
+        if result is None:
+            raise NotFoundError("User was not found with specified ID")
 
-            async with await self.transaction.start_nested_transaction() as tr:
-                result.user_permissions.can_administrate_users = bool(new_permissions.can_administrate_users)
-                result.user_permissions.can_create_projects = bool(new_permissions.can_create_projects)
-                await tr.commit()
+        async with await self.transaction.start_nested_transaction() as tr:
+            result.user_permissions.can_administrate_users = bool(new_permissions.can_administrate_users)
+            result.user_permissions.can_create_projects = bool(new_permissions.can_create_projects)
 
-        except ProgrammingError as err:
-            raise ValueError("Invalid data was provided as input") from err
+            await tr.commit()
 
         return UserPermissionsDTO(
             can_administrate_users=cast(bool, result.user_permissions.can_administrate_users),

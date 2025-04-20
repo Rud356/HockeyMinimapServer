@@ -17,22 +17,23 @@ class MapDataRepoSQLA(MapDataRepo):
     async def create_point_mapping_for_video(
         self, video_id: int, mapping: dict[PointDTO, PointDTO]
     ) -> int:
-        try:
-            async with await self.transaction.start_nested_transaction() as tr:
-                tr.session.add_all(
-                    [
-                        MapData(
-                            video_id=video_id,
-                            point_on_camera=Point(x=video_point.x, y=video_point.y),
-                            point_on_minimap=Point(x=map_point.x, y=map_point.y),
-                        )
-                        for map_point, video_point in mapping.items()
-                    ]
-                )
+        async with await self.transaction.start_nested_transaction() as tr:
+            tr.session.add_all(
+                [
+                    MapData(
+                        video_id=video_id,
+                        point_on_camera=Point(x=video_point.x, y=video_point.y),
+                        point_on_minimap=Point(x=map_point.x, y=map_point.y),
+                    )
+                    for map_point, video_point in mapping.items()
+                ]
+            )
+
+            try:
                 await tr.commit()
 
-        except (ProgrammingError, IntegrityError) as err:
-            raise DataIntegrityError("Integrity check failed") from err
+            except (ProgrammingError, IntegrityError) as err:
+                raise DataIntegrityError("Integrity check failed") from err
 
         return len(mapping)
 
@@ -44,8 +45,14 @@ class MapDataRepoSQLA(MapDataRepo):
         return [
             MinimapDataDTO(
                 map_data_id=map_data_point.map_data_id,
-                point_on_camera=PointDTO(x=map_data_point.point_on_camera.x, y=map_data_point.point_on_camera.y),
-                point_on_minimap=PointDTO(x=map_data_point.point_on_minimap.x, y=map_data_point.point_on_minimap.y),
+                point_on_camera=PointDTO(
+                    x=map_data_point.point_on_camera.x,
+                    y=map_data_point.point_on_camera.y
+                ),
+                point_on_minimap=PointDTO(
+                    x=map_data_point.point_on_minimap.x,
+                    y=map_data_point.point_on_minimap.y
+                ),
                 is_used=map_data_point.is_used
             )
             for map_data_point in result
@@ -71,33 +78,32 @@ class MapDataRepoSQLA(MapDataRepo):
         is_used: Optional[bool] = None
     ) -> bool:
         modified: bool = False
+        async with await self.transaction.start_nested_transaction() as tr:
+            data_point: Optional[MapData] = (await self.transaction.session.execute(
+                Select(MapData).where(MapData.map_data_id == map_data_id)
+            )).scalar_one_or_none()
 
-        try:
-            async with await self.transaction.start_nested_transaction() as tr:
-                data_point: Optional[MapData] = (await self.transaction.session.execute(
-                    Select(MapData).where(MapData.map_data_id == map_data_id)
-                )).scalar_one_or_none()
+            if data_point is None:
+                raise NotFoundError("Data point with specified ID wasn't found")
 
-                if data_point is None:
-                    raise NotFoundError("Data point with specified ID wasn't found")
+            if point_on_camera is not None:
+                data_point.point_on_camera.x = point_on_camera.x
+                data_point.point_on_camera.y = point_on_camera.y
+                modified = True
 
-                if point_on_camera is not None:
-                    data_point.point_on_camera.x = point_on_camera.x
-                    data_point.point_on_camera.y = point_on_camera.y
-                    modified = True
+            if point_on_minimap is not None:
+                data_point.point_on_minimap.x = point_on_minimap.x
+                data_point.point_on_minimap.y = point_on_minimap.y
+                modified = True
 
-                if point_on_minimap is not None:
-                    data_point.point_on_minimap.x = point_on_minimap.x
-                    data_point.point_on_minimap.y = point_on_minimap.y
-                    modified = True
+            if is_used is not None:
+                data_point.is_used = is_used
+                modified = True
 
-                if is_used is not None:
-                    data_point.is_used = is_used
-                    modified = True
-
+            try:
                 await tr.commit()
 
-        except (IntegrityError, ProgrammingError) as err:
-            raise DataIntegrityError("Constraints are broken when updating map data point") from err
+            except (IntegrityError, ProgrammingError) as err:
+                raise DataIntegrityError("Constraints are broken when updating map data point") from err
 
         return modified

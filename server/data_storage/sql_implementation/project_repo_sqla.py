@@ -54,26 +54,26 @@ class ProjectRepoSQLA(ProjectRepo):
         team_home_name: Optional[str] = None,
         team_away_name: Optional[str] = None
     ) -> ProjectDTO:
-        try:
-            async with await self.transaction.start_nested_transaction() as tr:
-                editing_project: Optional[Project] = await self._get_project(project_id)
+        async with await self.transaction.start_nested_transaction() as tr:
+            editing_project: Optional[Project] = await self._get_project(project_id)
 
-                if editing_project is None:
-                    raise NotFoundError("Project with specified ID was not found")
+            if editing_project is None:
+                raise NotFoundError("Project with specified ID was not found")
 
-                if name:
-                    editing_project.name = name
+            if name:
+                editing_project.name = name
 
-                if team_home_name:
-                    editing_project.team_home_name = team_home_name
+            if team_home_name:
+                editing_project.team_home_name = team_home_name
 
-                if team_away_name:
-                    editing_project.team_away_name = team_away_name
+            if team_away_name:
+                editing_project.team_away_name = team_away_name
 
+            try:
                 await tr.commit()
 
-        except (ProgrammingError, IntegrityError) as err:
-            raise DataIntegrityError("Invalid data for modification provided") from err
+            except (ProgrammingError, IntegrityError) as err:
+                raise DataIntegrityError("Invalid data for modification provided") from err
 
         return ProjectDTO(
             project_id=editing_project.project_id,

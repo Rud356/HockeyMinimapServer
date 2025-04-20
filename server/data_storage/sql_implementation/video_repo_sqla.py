@@ -25,14 +25,20 @@ class VideoRepoSQLA(VideoRepo):
         fps: float,
         source_video_path: Path
     ) -> VideoDTO:
-        try:
+
             video_record = Video(
                 source_video_path=str(source_video_path),
                 fps=fps
             )
             async with await self.transaction.start_nested_transaction() as tr:
                 tr.session.add(video_record)
-                await tr.commit()
+                try:
+                    await tr.commit()
+
+                except (IntegrityError, ProgrammingError, AttributeError, ValidationError) as err:
+                    raise DataIntegrityError(
+                        "Video creation had database constraints broken or data is invalid"
+                    ) from err
 
             return VideoDTO(
                 video_id=video_record.video_id,
@@ -46,9 +52,6 @@ class VideoRepoSQLA(VideoRepo):
                 converted_video_path=cast(Path, video_record.converted_video_path),
                 dataset_id=video_record.dataset_id
             )
-
-        except (IntegrityError, ProgrammingError, AttributeError, ValidationError) as err:
-            raise DataIntegrityError("Video creation had database constraints broken or data is invalid") from err
 
     async def list_all_uploaded_videos_names(self, from_directory: Path) -> list[Path]:
         return [
@@ -147,15 +150,15 @@ class VideoRepoSQLA(VideoRepo):
         if video_record is None:
             raise NotFoundError()
 
-        try:
-            async with await self.transaction.start_nested_transaction() as tr:
-                video_record.corrective_coefficient_k1 = k1
-                video_record.corrective_coefficient_k2 = k2
+        async with await self.transaction.start_nested_transaction() as tr:
+            video_record.corrective_coefficient_k1 = k1
+            video_record.corrective_coefficient_k2 = k2
 
+            try:
                 await tr.commit()
 
-        except (ProgrammingError, IntegrityError) as err:
-            raise DataIntegrityError("Invalid coefficients values") from err
+            except (ProgrammingError, IntegrityError) as err:
+                raise DataIntegrityError("Invalid coefficients values") from err
 
     async def set_camera_position(self, video_id: int, camera_position: CameraPosition) -> bool:
         video_record: Optional[Video] = await self._get_video(video_id)

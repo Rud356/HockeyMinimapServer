@@ -1,4 +1,3 @@
-import time
 from pathlib import Path
 
 from server.algorithms.enums import Team

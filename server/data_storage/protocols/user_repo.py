@@ -72,7 +72,6 @@ class UserRepo(Protocol):
         :param new_permissions: Новые права пользователя.
         :return: Обновленное состояние прав пользователя.
         :raises NotFoundError: Пользователь не найден.
-        :raises ValueError: Неверные входные данные.
         """
         ...
 
