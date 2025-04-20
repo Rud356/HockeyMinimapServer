@@ -1,5 +1,7 @@
 from pathlib import Path
 
+import pytest
+
 from server.algorithms.enums import Team
 from server.algorithms.enums.player_classes_enum import PlayerClasses
 from server.algorithms.video_processing import VideoPreprocessingConfig, VideoProcessing
@@ -287,3 +289,142 @@ async def test_modifying_player_team(video_fps: float, video_frames_count: int, 
         for point in frame:
             if point.tracking_id == 0:
                 assert point.team_id == Team.Away, "Invalid team"
+
+
+async def test_setting_player_team_to_not_existing(video_fps: float, video_frames_count: int, repo: RepositorySQLA):
+    async with repo.transaction as tr:
+        video = await repo.video_repo.create_new_video(
+            video_fps, test_video_path.relative_to(test_video_directory)
+        )
+        await tr.commit()
+
+    async with repo.transaction as tr:
+        await repo.frames_repo.create_frames(1, video_frames_count)
+        await tr.commit()
+
+    frames_numbering = range(0, video_frames_count)
+
+    async with repo.transaction as tr:
+        frames_data = [
+            [
+                PlayerDataDTO(
+                    tracking_id=p,
+                    team_id=Team.Home,
+                    player_id=None,
+                    player_name=None,
+                    class_id=PlayerClasses.Player,
+                    player_on_minimap=PointDTO(x=0.35, y=0.3),
+                    player_on_camera=BoxDTO(
+                        top_point=PointDTO(x=0.2, y=0.2),
+                        bottom_point=PointDTO(x=0.35, y=0.4)
+                    )
+                )
+                for p in range(10)
+            ]
+            for _ in frames_numbering
+        ]
+        await repo.player_data_repo.insert_player_data(
+            video.video_id, frames_data
+        )
+        await tr.commit()
+
+    with pytest.raises(NotFoundError):
+        async with repo.transaction as tr:
+            await repo.player_data_repo.set_team_to_tracking_id(video.video_id, 5, 1000, Team.Away)
+
+
+async def test_modifying_player_class(video_fps: float, video_frames_count: int, repo: RepositorySQLA):
+    async with repo.transaction as tr:
+        video = await repo.video_repo.create_new_video(
+            video_fps, test_video_path.relative_to(test_video_directory)
+        )
+        await tr.commit()
+
+    async with repo.transaction as tr:
+        await repo.frames_repo.create_frames(1, video_frames_count)
+        await tr.commit()
+
+    frames_numbering = range(0, video_frames_count)
+
+    async with repo.transaction as tr:
+        frames_data = [
+            [
+                PlayerDataDTO(
+                    tracking_id=p,
+                    team_id=Team.Home,
+                    player_id=None,
+                    player_name=None,
+                    class_id=PlayerClasses.Player,
+                    player_on_minimap=PointDTO(x=0.35, y=0.3),
+                    player_on_camera=BoxDTO(
+                        top_point=PointDTO(x=0.2, y=0.2),
+                        bottom_point=PointDTO(x=0.35, y=0.4)
+                    )
+                )
+                for p in range(10)
+            ]
+            for _ in frames_numbering
+        ]
+        await repo.player_data_repo.insert_player_data(
+            video.video_id, frames_data
+        )
+        await tr.commit()
+
+    async with repo.transaction as tr:
+        await repo.player_data_repo.set_player_class_to_tracking_id(
+            video.video_id, 5, 0, PlayerClasses.Referee
+        )
+        await tr.commit()
+
+    async with repo.transaction:
+        tr.session.expire_all()
+        fetched = await repo.player_data_repo.get_all_tracking_data(video.video_id)
+
+    for n, frame in enumerate(fetched.frames):
+        for point in frame:
+            if point.tracking_id == 0:
+                assert point.class_id == PlayerClasses.Referee, "Invalid player class"
+
+
+async def test_setting_player_class_to_not_existing(video_fps: float, video_frames_count: int, repo: RepositorySQLA):
+    async with repo.transaction as tr:
+        video = await repo.video_repo.create_new_video(
+            video_fps, test_video_path.relative_to(test_video_directory)
+        )
+        await tr.commit()
+
+    async with repo.transaction as tr:
+        await repo.frames_repo.create_frames(1, video_frames_count)
+        await tr.commit()
+
+    frames_numbering = range(0, video_frames_count)
+
+    async with repo.transaction as tr:
+        frames_data = [
+            [
+                PlayerDataDTO(
+                    tracking_id=p,
+                    team_id=Team.Home,
+                    player_id=None,
+                    player_name=None,
+                    class_id=PlayerClasses.Player,
+                    player_on_minimap=PointDTO(x=0.35, y=0.3),
+                    player_on_camera=BoxDTO(
+                        top_point=PointDTO(x=0.2, y=0.2),
+                        bottom_point=PointDTO(x=0.35, y=0.4)
+                    )
+                )
+                for p in range(10)
+            ]
+            for _ in frames_numbering
+        ]
+        await repo.player_data_repo.insert_player_data(
+            video.video_id, frames_data
+        )
+        await tr.commit()
+
+    with pytest.raises(NotFoundError):
+        async with repo.transaction as tr:
+            await repo.player_data_repo.set_player_class_to_tracking_id(
+                video.video_id, 5, 1000, PlayerClasses.Referee
+            )

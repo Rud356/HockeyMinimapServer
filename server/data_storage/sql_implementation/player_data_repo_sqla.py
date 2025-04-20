@@ -120,7 +120,7 @@ class PlayerDataRepoSQLA(PlayerDataRepo):
                 Update(PlayerData).where(
                     and_(
                         PlayerData.video_id == video_id,
-                        SubsetData.tracking_id == tracking_id
+                        PlayerData.tracking_id == tracking_id
                     )
                 ).values(class_id=class_id)
             )
@@ -133,7 +133,12 @@ class PlayerDataRepoSQLA(PlayerDataRepo):
     ) -> None:
         player_data: Optional[PlayerData] = (await self.transaction.session.scalars(
             Select(PlayerData)
-            .where(and_(PlayerData.video_id == video_id))
+            .where(
+                and_(
+                    PlayerData.video_id == video_id,
+                    PlayerData.tracking_id == tracking_id
+                )
+            )
         )).first()
 
         if player_data is None:
