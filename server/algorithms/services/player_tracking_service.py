@@ -27,7 +27,7 @@ class PlayerTrackingService:
     ):
         self.player_tracker: PlayerTracker = player_tracker
         self.field_mask: CV_Image = field_mask.mask
-        self.field_bbox: BoundingBox = field_bounding_box.scale_bbox()
+        self.field_bbox: BoundingBox = field_bounding_box.scale_bbox(0.8)
 
     def process_frame(
         self,

@@ -1,4 +1,3 @@
-# TODO: Implement service for fetching data from video about player movement
 from __future__ import annotations
 
 from typing import Optional, TYPE_CHECKING
