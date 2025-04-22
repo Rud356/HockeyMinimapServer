@@ -320,7 +320,7 @@ class VideoProcessing:
 
         :param timestamp: Временная метка для проверки в секундах.
         :param end_timestamp: Временная метка конца видео.
-        :return:
+        :return: Является ли верной временной меткой.
         """
         return 0.0 <= timestamp <= end_timestamp
 

@@ -20,7 +20,7 @@ class MinimapRendererService(Protocol):
         """
         Генерирует мини-карту
 
-        :param fps:
+        :param fps: Количество кадров в секунду.
         :param player_frame_data: Итератор с информацией об игроках на протяжении всего файла.
         :param dest_file: Путь до конечного файла мини-карты.
         :param ignore_exists: Нужно ли игнорировать существование выведенной мини-карты.

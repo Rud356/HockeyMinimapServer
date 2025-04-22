@@ -25,33 +25,32 @@ class VideoRepoSQLA(VideoRepo):
         fps: float,
         source_video_path: Path
     ) -> VideoDTO:
-
-            video_record = Video(
-                source_video_path=str(source_video_path),
-                fps=fps
-            )
-            async with await self.transaction.start_nested_transaction() as tr:
+        video_record = Video(
+            source_video_path=str(source_video_path),
+            fps=fps
+        )
+        async with await self.transaction.start_nested_transaction() as tr:
+            try:
                 tr.session.add(video_record)
-                try:
-                    await tr.commit()
+                await tr.commit()
 
-                except (IntegrityError, ProgrammingError, AttributeError, ValidationError) as err:
-                    raise DataIntegrityError(
-                        "Video creation had database constraints broken or data is invalid"
-                    ) from err
+            except (IntegrityError, ProgrammingError, AttributeError, ValidationError) as err:
+                raise DataIntegrityError(
+                    "Video creation had database constraints broken or data is invalid"
+                ) from err
 
-            return VideoDTO(
-                video_id=video_record.video_id,
-                fps=video_record.fps,
-                corrective_coefficient_k1=video_record.corrective_coefficient_k1,
-                corrective_coefficient_k2=video_record.corrective_coefficient_k2,
-                camera_position=video_record.camera_position,
-                is_converted=video_record.is_converted,
-                is_processed=video_record.is_processed,
-                source_video_path=Path(video_record.source_video_path),
-                converted_video_path=cast(Path, video_record.converted_video_path),
-                dataset_id=video_record.dataset_id
-            )
+        return VideoDTO(
+            video_id=video_record.video_id,
+            fps=video_record.fps,
+            corrective_coefficient_k1=video_record.corrective_coefficient_k1,
+            corrective_coefficient_k2=video_record.corrective_coefficient_k2,
+            camera_position=video_record.camera_position,
+            is_converted=video_record.is_converted,
+            is_processed=video_record.is_processed,
+            source_video_path=Path(video_record.source_video_path),
+            converted_video_path=cast(Path, video_record.converted_video_path),
+            dataset_id=video_record.dataset_id
+        )
 
     async def list_all_uploaded_videos_names(self, from_directory: Path) -> list[Path]:
         return [
