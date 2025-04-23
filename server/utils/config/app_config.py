@@ -1,7 +1,7 @@
 from pydantic import BaseModel, Field
 
 from server.utils.config.minimap_config import MinimapKeyPointConfig
-from server.utils.config.neural_netwroks_config import NeuralNetworkConfig
+from server.utils.config.neural_networks_config import NeuralNetworkConfig
 from server.utils.config.server_config import ServerSettings
 from server.utils.config.video_preprocessing_config import VideoPreprocessingConfig
 
