@@ -4,8 +4,7 @@ import jwt
 from fastapi import Response
 from pydantic import ValidationError
 
-from server.controllers.exception.bad_token_payload import BadTokenPayload
-from server.controllers.exception.unauthorized_resource_access import UnauthorizedResourceAccess
+from server.controllers.exceptions import BadTokenPayload, UnauthorizedResourceAccess
 from server.data_storage.dto import UserDTO, UserPermissionsDTO
 from server.data_storage.protocols import Repository
 

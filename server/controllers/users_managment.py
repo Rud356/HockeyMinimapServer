@@ -5,7 +5,7 @@ from fastapi import APIRouter, Cookie, HTTPException
 
 from server.controllers.dto import CreateUser, EditUser, UserIsDeleted
 from server.controllers.endpoints_base import APIEndpoint
-from server.controllers.exception import UnauthorizedResourceAccess
+from server.controllers.exceptions import UnauthorizedResourceAccess
 from server.controllers.services.user_authorization_service import UserAuthorizationService
 from server.data_storage.dto import UserDTO, UserPermissionsDTO
 from server.data_storage.exceptions import DataIntegrityError, NotFoundError

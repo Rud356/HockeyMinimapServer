@@ -14,6 +14,9 @@ from server.data_storage.protocols.video_repo import VideoRepo
 
 @runtime_checkable
 class Repository(Protocol):
+    """
+    Обеспечивает доступ и управление данными из БД.
+    """
     transaction: TransactionManager
 
     @property

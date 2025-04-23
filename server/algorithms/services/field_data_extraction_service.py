@@ -46,8 +46,7 @@ class FieldDataExtractionService(FieldDataExtractionProtocol):
         if field_data.field is None:
             raise ValueError("Must have at least field to process data")
 
-        else:
-            field_bbox = field_data.field.bbox
+        field_bbox = field_data.field.bbox
 
         if field_data.blue_circle:
             blue_circle_center = field_data.blue_circle.center_point

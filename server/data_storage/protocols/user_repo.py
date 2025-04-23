@@ -31,7 +31,6 @@ class UserRepo(Protocol):
         :return: Данные о новом пользователе.
         :raises IntegrityError: Данные не прошли проверку на валидность для вставки.
         """
-        ...
 
     async def get_user(self, user_id: int) -> UserDTO:
         """
@@ -42,7 +41,6 @@ class UserRepo(Protocol):
         :raises NotFoundError: Пользователь не найден.
         :raises ValueError: Неверные входные данные.
         """
-        ...
 
     async def get_users(self, limit: int = 100, offset: int = 0) -> list[UserDTO]:
         """
@@ -52,7 +50,6 @@ class UserRepo(Protocol):
         :param offset: Отступ от начала множества пользователей.
         :return: Пользователи.
         """
-        ...
 
     async def delete_user(self, user_id: int) -> bool:
         """
@@ -62,7 +59,6 @@ class UserRepo(Protocol):
         :return: Был ли пользователь успешно удален.
         :raises NotFoundError: Пользователь не найден.
         """
-        ...
 
     async def change_user_permissions(self, user_id: int, new_permissions: UserPermissionsData) -> UserPermissionsDTO:
         """
@@ -73,7 +69,6 @@ class UserRepo(Protocol):
         :return: Обновленное состояние прав пользователя.
         :raises NotFoundError: Пользователь не найден.
         """
-        ...
 
     async def edit_user(
         self,
@@ -93,7 +88,6 @@ class UserRepo(Protocol):
         :raises NotFoundError: Пользователь не найден.
         :raises ValueError: Неверные входные данные.
         """
-        ...
 
     async def authenticate_user(self, username: str, password: str) -> UserDTO:
         """
@@ -104,4 +98,3 @@ class UserRepo(Protocol):
         :return: Представление пользователя.
         :raise ValueError: Если предоставленные данные не являются валидными.
         """
-        ...
