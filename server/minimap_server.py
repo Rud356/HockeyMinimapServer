@@ -13,6 +13,7 @@ from dishka.integrations.fastapi import (
 )
 from fastapi import APIRouter, FastAPI, Request, Response
 from fastapi.middleware.gzip import GZipMiddleware
+from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.ext.asyncio import create_async_engine
 from starlette.middleware.base import BaseHTTPMiddleware
 
@@ -46,6 +47,14 @@ class MinimapServer:
             port=config.server_settings.port,
             **fastapi_app_config
         )
+        self.app.add_middleware(
+            CORSMiddleware,
+            allow_origins=["*"],
+            allow_credentials=True,
+            allow_methods=["*"],
+            allow_headers=["*"]
+        )
+
         # Initialize middlewares
         if config.enable_gzip_compression:
             self.app.add_middleware(GZipMiddleware, minimum_size=1000, compresslevel=5)
