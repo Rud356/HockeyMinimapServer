@@ -5,7 +5,7 @@ setup(
     name="HockeyMinimapServer",
     version="0.0.1",
     description="Server for minimap generation application",
-    long_description=open("README.md").read(),
+    long_description=open("README.md", encoding="UTF8").read(),
     long_description_content_type="text/markdown",
     author="Rud356",
     author_email="rud356github@gmail.com",
@@ -45,15 +45,15 @@ setup(
         "uvicorn": ["uvicorn~=0.34.0"],
         "linters": ["ruff~=0.11.2", "mypy~=1.15.0"],
         "dev": [
-            "ruff~=0.11.2",
-            "sphinx~=5.0.2",
-            'docxbuilder',
-            "sphinx-autodoc-typehints~=3.1.0",
-            "sphinx-rtd-theme~=1.0.0",
-            "Pygments~=2.12.0",
-            "pytest~=8.3.5",
-            "pytest_asyncio~=0.26.0",
-            "pyinstrument~=5.0.1"
+            "ruff>=0.11.2",
+            "sphinx>=5.0.2",
+            "docxbuilder",
+            "pytest-xdist[psutil]",
+            "sphinx-rtd-theme>=3.0.2",
+            "Pygments>=2.12.0,<3.0.0",
+            "pytest>=8.3.5,<9.0.0",
+            "pytest_asyncio>=0.26.0,<1.0.0",
+            "pyinstrument>=5.0.1"
         ],
     },
     packages=[]
