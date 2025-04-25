@@ -1,13 +1,13 @@
 from __future__ import annotations
 
-from typing import Any, Mapping, TYPE_CHECKING
+from typing import Any, Literal, Mapping, TYPE_CHECKING
 
 import torch
 from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_score
 from torch import nn as nn, optim as optim
 from torch.utils.data import DataLoader
 from torchvision import transforms as transforms
-from torchvision.datasets import ImageFolder
+from torchvision.datasets import ImageFolder, VisionDataset
 
 if TYPE_CHECKING:
     from server.algorithms.nn.team_detector import TeamDetectorModel
@@ -25,7 +25,14 @@ class TeamDetectorTeacher:
     """
     Класс, занимающийся обучением нейросети на основе входных данных для подготовки нейросети, разделяющей на команды.
     """
-    def __init__(self, train_dataset: ImageFolder, val_dataset: ImageFolder, epochs: int, model: TeamDetectorModel):
+    def __init__(
+        self,
+        train_dataset: ImageFolder,
+        val_dataset: ImageFolder,
+        epochs: int,
+        model: TeamDetectorModel,
+        device: Literal['cpu', 'cuda'] | str = 'cpu'
+    ):
         """
         Инициализирует класс для обучения модели.
 
@@ -33,11 +40,13 @@ class TeamDetectorTeacher:
         :param val_dataset: Набор данных для оценки качества.
         :param epochs: Количество итераций.
         :param model: Модель машинного обучения.
+        :param device: На каком устройстве выполняется обучение.
         """
-        self.train_loader: DataLoader[ImageFolder] = DataLoader(train_dataset, batch_size=32, shuffle=True)
-        self.val_loader: DataLoader[ImageFolder] = DataLoader(val_dataset, batch_size=32, shuffle=False)
+        self.train_loader: DataLoader[VisionDataset] = DataLoader(train_dataset, batch_size=128, shuffle=True)
+        self.val_loader: DataLoader[VisionDataset] = DataLoader(val_dataset, batch_size=128, shuffle=True)
         self.epochs: int = epochs
-        self.model: TeamDetectorModel = model
+        self.model: TeamDetectorModel = model.to(device)
+        self.device: str = device
 
     def train_nn(self) -> TeamDetectorModel:
         """
@@ -56,8 +65,8 @@ class TeamDetectorTeacher:
             running_loss = 0.0
             for inputs, labels in self.train_loader:
                 optimizer.zero_grad()
-                outputs = self.model(inputs)
-                labels = labels.type(torch.LongTensor)
+                outputs = self.model(inputs.to(self.device))
+                labels = labels.type(torch.LongTensor).to(self.device)
                 loss = criterion(outputs, labels)
                 loss.backward()
                 optimizer.step()
@@ -71,8 +80,8 @@ class TeamDetectorTeacher:
             all_preds = []
             with torch.no_grad():
                 for inputs, labels in self.val_loader:
-                    outputs = self.model(inputs)
-                    labels = labels.type(torch.LongTensor)
+                    outputs = self.model(inputs.to(self.device))
+                    labels = labels.type(torch.LongTensor).to(self.device)
                     loss = criterion(outputs, labels)
                     val_loss += loss.item()
                     _, preds = torch.max(outputs, 1)

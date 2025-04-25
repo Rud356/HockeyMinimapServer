@@ -26,9 +26,12 @@ from server.algorithms.services.player_predictor_service import PlayerPredictorS
 from server.data_storage.dto import BoxDTO, PointDTO
 from server.data_storage.dto.player_data_dto import PlayerDataDTO
 from server.minimap_server import MINIMAP_KEY_POINTS
+from server.utils.async_buffered_generator import buffered_generator
+from server.utils.async_video_reader import async_video_reader
 from server.utils.config import VideoPreprocessingConfig
 from server.utils.config.key_point import KeyPoint
 
+torch.set_float32_matmul_precision('medium')
 os.environ["OPENCV_VIDEO_ACCELERATION"] = "ANY"
 source_video: Path = Path("tests/videos/converted_demo.mp4")
 
@@ -117,11 +120,7 @@ async def main(video_path: Path, field_model: Path, players_model: Path):
 
     map_bbox: Optional[BoundingBox] = None
 
-    while cap.isOpened():
-        ret, frame = cap.read()
-        if not ret:
-            break
-
+    async for frame in buffered_generator(async_video_reader(cap), 30):
         if frame_n == 0:
             map_data = await field_data(frame.copy(), field_service, key_point_placer)
 

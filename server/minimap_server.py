@@ -40,7 +40,7 @@ from server.utils.providers.user_auth_provider import UserAuthorizationProvider
 class MinimapServer:
     app: FastAPI
 
-    def __init__(self, config: AppConfig, **fastapi_app_config):
+    def __init__(self, config: AppConfig, **fastapi_app_config) -> None:
         self.app = FastAPI(
             lifespan=self.lifespan,
             host=config.server_settings.host,
