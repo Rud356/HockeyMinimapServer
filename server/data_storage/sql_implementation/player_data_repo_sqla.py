@@ -167,8 +167,16 @@ class PlayerDataRepoSQLA(PlayerDataRepo):
             player_id.player_id: player_id.user_id for player_id in players_ids
         }
 
-    async def create_user_id_for_players(self, video_id: int, users_player_alias: str) -> int:
-        player_alias: Player = Player(video_id=video_id, user_id=users_player_alias)
+    async def create_user_id_for_players(
+        self,
+        video_id: int,
+        users_player_alias: str,
+        player_team: Team | None = None
+    ) -> int:
+        player_alias: Player = Player(
+            video_id=video_id, user_id=users_player_alias, team_id=player_team
+        )
+
         async with await self.transaction.start_nested_transaction() as tr:
             tr.session.add(player_alias)
             try:

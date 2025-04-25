@@ -165,6 +165,7 @@ server = MinimapServer(
     AppConfig(
         local_mode=True,
         minimap_frame_buffer=10,
+        prefetch_frame_buffer=120,
         enable_gzip_compression=False,
         players_data_extraction_workers=4,
         minimap_rendering_workers=4,
@@ -172,7 +173,9 @@ server = MinimapServer(
         server_jwt_key="ExamplePassword1234$$5",
         db_connection_string="Helloworld",
         nn_config=NeuralNetworkConfig(
-            field_detection_model_path=Path(""), player_detection_model_path=Path(""), max_batch_size=5
+            field_detection_model_path=Path(""),
+            player_detection_model_path=Path(""),
+            max_batch_size=5
         ),
         minimap_config=MINIMAP_KEY_POINTS,
         server_settings=ServerSettings(host="localhost", port=1080, is_local_instance=True),

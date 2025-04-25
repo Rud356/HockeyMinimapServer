@@ -93,12 +93,18 @@ class PlayerDataRepo(Protocol):
         :return: Соотнесение идентификаторов пользовательских назначений к именам этих назначений.
         """
 
-    async def create_user_id_for_players(self, video_id: int, users_player_alias: str) -> int:
+    async def create_user_id_for_players(
+        self,
+        video_id: int,
+        users_player_alias: str,
+        player_team: Team | None = None
+    ) -> int:
         """
         Создает пользовательский идентификатор для игроков в видео.
 
         :param video_id: Идентификатор видео.
         :param users_player_alias: Пользовательское имя для игрока.
+        :param player_team: Команда игрока.
         :return: Внутренний идентификатор соотнесения.
         :raise DataIntegrityError: Неправильные входные данные или видео не существует.
         """

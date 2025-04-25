@@ -4,6 +4,7 @@ from sqlalchemy import ForeignKey, String
 from sqlalchemy.orm import Mapped
 from sqlalchemy.orm import mapped_column
 
+from server.algorithms.enums import Team
 from server.data_storage.sql_implementation.tables.base import Base
 
 
@@ -14,5 +15,6 @@ class Player(Base):
     player_id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     video_id: Mapped[int] = mapped_column(ForeignKey("video.video_id"), index=True)
     user_id: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    team_id: Mapped[Optional[Team]] = mapped_column(default=None)
 
     __tablename__ = "player"
