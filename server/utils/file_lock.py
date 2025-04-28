@@ -3,7 +3,7 @@ from asyncio import Lock, sleep
 
 from contextlib import asynccontextmanager
 from pathlib import Path
-from typing import AsyncGenerator
+from typing import AsyncGenerator, NoReturn
 
 
 class FileLock:
@@ -31,7 +31,7 @@ class FileLock:
         async with current_lock:
             yield None
 
-    async def run_cleanup_loop(self) -> None:
+    async def run_cleanup_loop(self) -> NoReturn:
         """
         Запускает сервис отчистки блокировок доступа к файлам.
 

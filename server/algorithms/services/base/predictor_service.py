@@ -2,7 +2,7 @@ import asyncio
 from abc import ABC
 from asyncio import Future
 from concurrent.futures import ThreadPoolExecutor
-from typing import Iterable
+from typing import Iterable, NoReturn
 
 from detectron2.structures import Instances
 
@@ -24,7 +24,7 @@ class PredictorService(ABC):
         ]
     ]
 
-    async def __call__(self) -> None:
+    async def __call__(self) -> NoReturn:
         """
         Обрабатывает изображения в режиме сервиса на устройстве обработки.
 
