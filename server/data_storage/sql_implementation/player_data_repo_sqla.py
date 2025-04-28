@@ -334,26 +334,20 @@ class PlayerDataRepoSQLA(PlayerDataRepo):
     async def get_frames_min_and_max_ids_with_limit_offset(
         self, video_id: int, limit: int, offset: int
     ) -> tuple[int, int]:
-        """
-        Получает идентификаторы минимального и максимального кадра с отступом и лимитом.
-
-        :param video_id: Идентификатор видео.
-        :param limit: Сколько кадров взять.
-        :param offset: Сколько кадров отступить от начала выборки.
-        :return: Минимальный и максимальный номер кадра в видео.
-        """
         min_frame_number: int
         max_frame_number: int
-        min_frame_number, max_frame_number, *_ = (await self.transaction.session.execute(
+        result = (await self.transaction.session.execute(
             Select(func.min(Frame.frame_id), func.max(Frame.frame_id))
-            .order_by(Frame.frame_id)
-            .limit(limit)
-            .offset(offset)
             .where(
-                Frame.video_id == video_id
+                Frame.video_id == video_id,
+                Frame.frame_id.between(offset, offset+limit)
             )
-        )).tuples()
+        )).one_or_none()
 
+        if result is None:
+            raise IndexError("Invalid frame indexes")
+
+        min_frame_number, max_frame_number = result
         return min_frame_number, max_frame_number
 
     async def _get_video_frame(self, video_id: int, frame_id: int) -> Frame:

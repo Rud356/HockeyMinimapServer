@@ -117,6 +117,59 @@ async def test_fetching_all_player_data(video_fps: float, video_frames_count: in
     assert len(list(filter(len, fetched.frames))) == len(frames_data)
 
 
+async def test_fetching_partial_player_data(video_fps: float, video_frames_count: int, repo: RepositorySQLA):
+    async with repo.transaction as tr:
+        video = await repo.video_repo.create_new_video(
+            video_fps, test_video_path.relative_to(test_video_directory)
+        )
+        await tr.commit()
+
+    async with repo.transaction as tr:
+        await repo.frames_repo.create_frames(1, video_frames_count)
+        await tr.commit()
+
+    frames_numbering = range(0, 10)
+    async with repo.transaction as tr:
+        frames_data = [
+            [
+                PlayerDataDTO(
+                    tracking_id=p,
+                    team_id=Team.Home,
+                    player_id=None,
+                    player_name=None,
+                    class_id=PlayerClasses.Player,
+                    player_on_minimap=PointDTO(x=0.35, y=0.3),
+                    player_on_camera=BoxDTO(
+                        top_point=PointDTO(x=0.2, y=0.2),
+                        bottom_point=PointDTO(x=0.35, y=0.4)
+                    )
+                )
+                for p in range(10)
+            ]
+            for _ in frames_numbering
+        ]
+        await repo.player_data_repo.insert_player_data(
+            video.video_id, frames_data
+        )
+
+        await tr.commit()
+
+    async with repo.transaction:
+        fetched = await repo.player_data_repo.get_tracking_from_frames(video.video_id, 10, 10)
+
+    assert all((frame == [] for frame in fetched.frames[0]))
+
+    async with repo.transaction:
+        fetched = await repo.player_data_repo.get_tracking_from_frames(video.video_id, 5, 0)
+
+    assert len(list(filter(len, fetched.frames))) == 5
+
+    async with repo.transaction:
+        fetched = await repo.player_data_repo.get_tracking_from_frames(video.video_id, 5, 7)
+
+    assert len(list(filter(len, fetched.frames))) == 3
+
+
 async def test_inserting_more_data_than_in_video(video_fps: float, video_frames_count: int, repo: RepositorySQLA):
     async with repo.transaction as tr:
         video = await repo.video_repo.create_new_video(
@@ -194,49 +247,6 @@ async def test_inserting_invalid_data(video_fps: float, video_frames_count: int,
             )
 
         await tr.commit()
-
-
-async def test_fetching_partial_player_data(video_fps: float, video_frames_count: int, repo: RepositorySQLA):
-    async with repo.transaction as tr:
-        video = await repo.video_repo.create_new_video(
-            video_fps, test_video_path.relative_to(test_video_directory)
-        )
-        await tr.commit()
-
-    async with repo.transaction as tr:
-        await repo.frames_repo.create_frames(1, video_frames_count)
-        await tr.commit()
-
-    frames_numbering = range(0, 10)
-    async with repo.transaction as tr:
-        frames_data = [
-            [
-                PlayerDataDTO(
-                    tracking_id=p,
-                    team_id=Team.Home,
-                    player_id=None,
-                    player_name=None,
-                    class_id=PlayerClasses.Player,
-                    player_on_minimap=PointDTO(x=0.35, y=0.3),
-                    player_on_camera=BoxDTO(
-                        top_point=PointDTO(x=0.2, y=0.2),
-                        bottom_point=PointDTO(x=0.35, y=0.4)
-                    )
-                )
-                for p in range(100)
-            ]
-            for _ in frames_numbering
-        ]
-        await repo.player_data_repo.insert_player_data(
-            video.video_id, frames_data
-        )
-
-        await tr.commit()
-
-    async with repo.transaction:
-        fetched = await repo.player_data_repo.get_all_tracking_data(video.video_id)
-
-    assert len(list(filter(len, fetched.frames))) == len(frames_data)
 
 
 async def test_modifying_player_team(video_fps: float, video_frames_count: int, repo: RepositorySQLA):

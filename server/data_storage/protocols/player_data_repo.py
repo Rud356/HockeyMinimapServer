@@ -137,6 +137,7 @@ class PlayerDataRepo(Protocol):
         :param limit: Количество кадров для получения.
         :param offset: С какого кадра начинать получение.
         :return: Данные о кадрах.
+        :raise IndexError: Кадры в пределах не существуют.
         """
 
     async def get_all_tracking_data(self, video_id: int) -> FrameDataDTO:
@@ -165,4 +166,5 @@ class PlayerDataRepo(Protocol):
         :param limit: Сколько кадров взять.
         :param offset: Сколько кадров отступить от начала выборки.
         :return: Минимальный и максимальный номер кадра в видео.
+        :raise IndexError: Кадры в пределах не существуют.
         """
