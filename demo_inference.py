@@ -44,7 +44,7 @@ val_dataset = datasets.ImageFolder(os.path.join(data_dir, 'val'), transform=team
 print(Path(os.path.join(data_dir, 'train')).resolve(), Path(os.path.join(data_dir, 'val')).resolve())
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
-trainer = TeamDetectorTeacher(train_dataset, val_dataset, 100, TeamDetectorModel())
+trainer = TeamDetectorTeacher(train_dataset, val_dataset, 100, TeamDetectorModel(), device)
 model = trainer.train_nn()
 predictor: TeamDetectionPredictor = TeamDetectionPredictor(model, team_detector_transform, device)
 

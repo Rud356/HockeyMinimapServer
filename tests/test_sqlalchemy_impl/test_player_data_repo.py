@@ -1,7 +1,5 @@
 from pathlib import Path
 
-import pytest
-
 from server.algorithms.enums import Team
 from server.algorithms.enums.player_classes_enum import PlayerClasses
 from server.algorithms.video_processing import VideoPreprocessingConfig, VideoProcessing
