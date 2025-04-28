@@ -170,6 +170,37 @@ async def test_fetching_partial_player_data(video_fps: float, video_frames_count
     assert len(list(filter(len, fetched.frames))) == 3
 
 
+async def test_get_frames_min_and_max_ids_out_of_range(video_fps: float, video_frames_count: int, repo: RepositorySQLA):
+    async with repo.transaction as tr:
+        video = await repo.video_repo.create_new_video(
+            video_fps, test_video_path.relative_to(test_video_directory)
+        )
+        await tr.commit()
+
+    async with repo.transaction as tr:
+        await repo.frames_repo.create_frames(1, video_frames_count)
+        await tr.commit()
+
+    with pytest.raises(IndexError):
+        async with repo.transaction as tr:
+            await repo.player_data_repo.get_frames_min_and_max_ids_with_limit_offset(
+                video.video_id, 10, 700
+            )
+
+    with pytest.raises(IndexError):
+        async with repo.transaction as tr:
+            await repo.player_data_repo.get_frames_min_and_max_ids_with_limit_offset(
+                video.video_id+100, 10, 700
+            )
+
+
+async def test_get_frames_min_and_max_for_not_found_videos(
+    repo: RepositorySQLA
+):
+    with pytest.raises(NotFoundError):
+        async with repo.transaction as tr:
+            await repo.player_data_repo.get_frames_min_and_max_ids_in_video(100)
+
 async def test_inserting_more_data_than_in_video(video_fps: float, video_frames_count: int, repo: RepositorySQLA):
     async with repo.transaction as tr:
         video = await repo.video_repo.create_new_video(

@@ -115,7 +115,7 @@ class PlayerDataRepo(Protocol):
 
         :param custom_player_id: Идентификатор пользовательского имени игрока.
         :return: Было ли удалено имя игрока.
-        :raise NoResultFound: Имя игрока с представленным идентификатором не найдено.
+        :raise NotFoundError: Имя игрока с представленным идентификатором не найдено.
         """
 
     async def rename_player_alias(self, custom_player_id: int, users_player_alias: str) -> None:
@@ -125,7 +125,7 @@ class PlayerDataRepo(Protocol):
         :param custom_player_id: Идентификатор пользовательского имени игрока.
         :param users_player_alias: Пользовательское имя для игрока.
         :return: Ничего.
-        :raise NoResultFound: Имя игрока с представленным идентификатором не найдено.
+        :raise NotFoundError: Имя игрока с представленным идентификатором не найдено.
         :raise DataIntegrityError: Неправильные входные данные или видео не существует.
         """
 
@@ -154,6 +154,7 @@ class PlayerDataRepo(Protocol):
 
         :param video_id: Идентификатор видео.
         :return: Минимальный и максимальный номер кадра в видео.
+        :raises NotFoundError: Видео не найдено или не найдены кадры видео.
         """
 
     async def get_frames_min_and_max_ids_with_limit_offset(

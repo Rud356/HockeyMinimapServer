@@ -329,6 +329,9 @@ class PlayerDataRepoSQLA(PlayerDataRepo):
         )).tuples()
         (min_frame_number, max_frame_number), *_ = tuple(result)
 
+        if (min_frame_number is None) and (max_frame_number is None):
+            raise NotFoundError("Video frames were not found")
+
         return min_frame_number, max_frame_number
 
     async def get_frames_min_and_max_ids_with_limit_offset(
@@ -344,7 +347,7 @@ class PlayerDataRepoSQLA(PlayerDataRepo):
             )
         )).one_or_none()
 
-        if result is None:
+        if (result is None) or all((item is None for item in result)):
             raise IndexError("Invalid frame indexes")
 
         min_frame_number, max_frame_number = result
