@@ -3,6 +3,7 @@ from typing import Protocol, runtime_checkable
 from server.algorithms.enums.player_classes_enum import PlayerClasses
 from server.algorithms.enums.team import Team
 from server.data_storage.dto.frame_data_dto import FrameDataDTO
+from server.data_storage.dto.player_alias import PlayerAlias
 from server.data_storage.dto.player_data_dto import PlayerDataDTO
 from server.data_storage.protocols.transaction_manager import TransactionManager
 
@@ -85,7 +86,7 @@ class PlayerDataRepo(Protocol):
         :raises NotFoundError: Если не найдено записей.
         """
 
-    async def get_user_ids_for_players(self, video_id: int) -> dict[int, str | None]:
+    async def get_user_alias_for_players(self, video_id: int) -> dict[int, PlayerAlias]:
         """
         Получает все пользовательские идентификаторы игроков, привязанные к видео.
 
@@ -93,7 +94,7 @@ class PlayerDataRepo(Protocol):
         :return: Соотнесение идентификаторов пользовательских назначений к именам этих назначений.
         """
 
-    async def create_user_id_for_players(
+    async def create_user_alias_for_players(
         self,
         video_id: int,
         users_player_alias: str,
@@ -124,6 +125,17 @@ class PlayerDataRepo(Protocol):
 
         :param custom_player_id: Идентификатор пользовательского имени игрока.
         :param users_player_alias: Пользовательское имя для игрока.
+        :return: Ничего.
+        :raise NotFoundError: Имя игрока с представленным идентификатором не найдено.
+        :raise DataIntegrityError: Неправильные входные данные или видео не существует.
+        """
+
+    async def change_player_alias_team(self, custom_player_id: int, users_player_team: Team) -> None:
+        """
+        Изменяет название идентификатора игрока.
+
+        :param custom_player_id: Идентификатор пользовательского имени игрока.
+        :param users_player_team: Пользовательское назначение команды для игрока.
         :return: Ничего.
         :raise NotFoundError: Имя игрока с представленным идентификатором не найдено.
         :raise DataIntegrityError: Неправильные входные данные или видео не существует.

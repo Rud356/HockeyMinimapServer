@@ -170,7 +170,9 @@ async def test_fetching_partial_player_data(video_fps: float, video_frames_count
     assert len(list(filter(len, fetched.frames))) == 3
 
 
-async def test_get_frames_min_and_max_ids_out_of_range(video_fps: float, video_frames_count: int, repo: RepositorySQLA):
+async def test_get_frames_min_and_max_ids_out_of_range(
+    video_fps: float, video_frames_count: int, repo: RepositorySQLA
+):
     async with repo.transaction as tr:
         video = await repo.video_repo.create_new_video(
             video_fps, test_video_path.relative_to(test_video_directory)
@@ -201,7 +203,9 @@ async def test_get_frames_min_and_max_for_not_found_videos(
         async with repo.transaction as tr:
             await repo.player_data_repo.get_frames_min_and_max_ids_in_video(100)
 
-async def test_inserting_more_data_than_in_video(video_fps: float, video_frames_count: int, repo: RepositorySQLA):
+async def test_inserting_more_data_than_in_video(
+    video_fps: float, video_frames_count: int, repo: RepositorySQLA
+):
     async with repo.transaction as tr:
         video = await repo.video_repo.create_new_video(
             video_fps, test_video_path.relative_to(test_video_directory)
@@ -467,3 +471,111 @@ async def test_setting_player_class_to_not_existing(video_fps: float, video_fram
             await repo.player_data_repo.set_player_class_to_tracking_id(
                 video.video_id, 5, 1000, PlayerClasses.Referee
             )
+
+
+async def test_creating_aliases_for_players(video_fps: float, video_frames_count: int, repo: RepositorySQLA):
+    async with repo.transaction as tr:
+        video = await repo.video_repo.create_new_video(
+            video_fps, test_video_path.relative_to(test_video_directory)
+        )
+        await tr.commit()
+
+    async with repo.transaction as tr:
+        await repo.player_data_repo.create_user_alias_for_players(
+            video.video_id, "Hello world"
+        )
+        await repo.player_data_repo.create_user_alias_for_players(
+            video.video_id, "Example", Team.Away
+        )
+        await repo.player_data_repo.create_user_alias_for_players(
+            video.video_id, "Example for home", Team.Home
+        )
+        await tr.commit()
+
+    async with repo.transaction as tr:
+        aliases = await repo.player_data_repo.get_user_alias_for_players(video.video_id)
+
+    assert aliases[1].player_name == "Hello world"
+    assert aliases[2].player_name == "Example" and aliases[2].player_team == Team.Away
+    assert aliases[3].player_name == "Example for home" and aliases[3].player_team == Team.Home
+
+
+async def test_deleting_aliases_for_players(video_fps: float, video_frames_count: int, repo: RepositorySQLA):
+    async with repo.transaction as tr:
+        video = await repo.video_repo.create_new_video(
+            video_fps, test_video_path.relative_to(test_video_directory)
+        )
+        await tr.commit()
+
+    async with repo.transaction as tr:
+        await repo.player_data_repo.create_user_alias_for_players(
+            video.video_id, "Hello world"
+        )
+        await repo.player_data_repo.create_user_alias_for_players(
+            video.video_id, "Example", Team.Away
+        )
+        await repo.player_data_repo.create_user_alias_for_players(
+            video.video_id, "Example for home", Team.Home
+        )
+        await tr.commit()
+
+    async with repo.transaction as tr:
+        aliases_deleted = await repo.player_data_repo.delete_player_alias(2)
+        assert aliases_deleted, "Not deleted"
+        await tr.commit()
+
+    async with repo.transaction as tr:
+        aliases = await repo.player_data_repo.get_user_alias_for_players(video.video_id)
+
+    assert aliases[1].player_name == "Hello world"
+    assert aliases[3].player_name == "Example for home" and aliases[3].player_team == Team.Home
+
+
+async def test_deleting_non_existing_alias_for_players(video_fps: float, video_frames_count: int, repo: RepositorySQLA):
+    with pytest.raises(NotFoundError):
+        async with repo.transaction as tr:
+            await repo.player_data_repo.delete_player_alias(200)
+
+
+async def test_editing_aliases_for_players(video_fps: float, video_frames_count: int, repo: RepositorySQLA):
+    async with repo.transaction as tr:
+        video = await repo.video_repo.create_new_video(
+            video_fps, test_video_path.relative_to(test_video_directory)
+        )
+        await tr.commit()
+
+    async with repo.transaction as tr:
+        await repo.player_data_repo.create_user_alias_for_players(
+            video.video_id, "Hello world"
+        )
+        await repo.player_data_repo.create_user_alias_for_players(
+            video.video_id, "Example", Team.Away
+        )
+        await repo.player_data_repo.create_user_alias_for_players(
+            video.video_id, "Example for home", Team.Away
+        )
+        await tr.commit()
+
+    async with repo.transaction as tr:
+        await repo.player_data_repo.change_player_alias_team(2, Team.Home)
+        await repo.player_data_repo.rename_player_alias(3, "Away 33")
+        await tr.commit()
+
+    async with repo.transaction as tr:
+        aliases = await repo.player_data_repo.get_user_alias_for_players(video.video_id)
+
+    assert aliases[1].player_name == "Hello world" and aliases[1].player_team is None
+    assert aliases[2].player_name == "Example" and aliases[2].player_team == Team.Home
+    assert aliases[3].player_name == "Away 33" and aliases[3].player_team == Team.Away
+
+
+async def test_editing_non_existing_aliases_for_players(
+    video_fps: float, video_frames_count: int, repo: RepositorySQLA
+):
+    with pytest.raises(NotFoundError):
+        async with repo.transaction as tr:
+            await repo.player_data_repo.change_player_alias_team(200, Team.Home)
+
+    with pytest.raises(NotFoundError):
+        async with repo.transaction as tr:
+            await repo.player_data_repo.rename_player_alias(3, "Away 33")

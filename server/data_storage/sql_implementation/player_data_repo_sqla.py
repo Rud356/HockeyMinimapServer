@@ -1,6 +1,6 @@
 from typing import Optional, Sequence, cast
 
-from sqlalchemy import Delete, Select, Update, and_, exists, func
+from sqlalchemy import Delete, Row, Select, Update, and_, exists, func
 from sqlalchemy.engine import TupleResult
 from sqlalchemy.exc import IntegrityError, NoResultFound, ProgrammingError
 from sqlalchemy.ext.asyncio import AsyncScalarResult
@@ -12,6 +12,7 @@ from .tables import Frame, Player, PlayerData, SubsetData
 from .tables.team_assignment import TeamAssignment
 from .transaction_manager_sqla import TransactionManagerSQLA
 from ..dto import FrameDataDTO
+from ..dto.player_alias import PlayerAlias
 from ..dto.player_data_dto import PlayerDataDTO
 from ..exceptions import DataIntegrityError, NotFoundError
 from ..protocols import PlayerDataRepo
@@ -158,16 +159,22 @@ class PlayerDataRepoSQLA(PlayerDataRepo):
 
             await tr.commit()
 
-    async def get_user_ids_for_players(self, video_id: int) -> dict[int, str | None]:
+    async def get_user_alias_for_players(self, video_id: int) -> dict[int, PlayerAlias]:
         players_ids: Sequence[Player] = (await self.transaction.session.scalars(
             Select(Player).where(Player.video_id == video_id)
         )).all()
 
         return {
-            player_id.player_id: player_id.user_id for player_id in players_ids
+            player_id.player_id:
+                PlayerAlias(
+                    alias_id=player_id.player_id,
+                    player_name=player_id.user_id,
+                    player_team=player_id.team_id
+                )
+            for player_id in players_ids
         }
 
-    async def create_user_id_for_players(
+    async def create_user_alias_for_players(
         self,
         video_id: int,
         users_player_alias: str,
@@ -210,6 +217,41 @@ class PlayerDataRepoSQLA(PlayerDataRepo):
 
         except (ProgrammingError, IntegrityError) as err:
             raise DataIntegrityError("Invalid data for modification provided") from err
+
+    async def change_player_alias_team(self, custom_player_id: int, users_player_team: Team) -> None:
+        try:
+            async with await self.transaction.start_nested_transaction() as tr:
+                player_alias: Player = cast(Player, await tr.session.get_one(Player, custom_player_id))
+                player_alias.team_id = users_player_team
+                await tr.commit()
+
+        except NoResultFound as err:
+            raise NotFoundError("Player alias not found") from err
+
+        except (ProgrammingError, IntegrityError) as err:
+            raise DataIntegrityError("Invalid data for modification provided") from err
+
+    async def set_player_identity_to_user_id(self, video_id: int, tracking_id: int, player_id: int) -> int:
+        async with await self.transaction.start_nested_transaction() as tr:
+            player_alias = await tr.session.get_one(
+                Player, {"player_id": player_id, "video_id": video_id}
+            )
+            result = await tr.session.execute(
+                Update(PlayerData).where(
+                    and_(
+                        PlayerData.video_id == video_id,
+                        SubsetData.tracking_id == tracking_id
+                    )
+                ).values(player_id=player_alias.player_id)
+            )
+
+            try:
+                await tr.commit()
+
+            except NoResultFound as err:
+                raise NotFoundError("Player or alias were not found") from err
+
+        return cast(int, result.rowcount)
 
     async def get_tracking_from_frames(
         self, video_id: int, limit: int = 120, offset: int = 0
@@ -297,28 +339,6 @@ class PlayerDataRepoSQLA(PlayerDataRepo):
             frames=frame_data
         )
 
-    async def set_player_identity_to_user_id(self, video_id: int, tracking_id: int, player_id: int) -> int:
-        async with await self.transaction.start_nested_transaction() as tr:
-            player_alias = await tr.session.get_one(
-                Player, {"player_id": player_id, "video_id": video_id}
-            )
-            result = await tr.session.execute(
-                Update(PlayerData).where(
-                    and_(
-                        PlayerData.video_id == video_id,
-                        SubsetData.tracking_id == tracking_id
-                    )
-                ).values(player_id=player_alias.player_id)
-            )
-
-            try:
-                await tr.commit()
-
-            except NoResultFound as err:
-                raise NotFoundError("Player or alias were not found") from err
-
-        return cast(int, result.rowcount)
-
     async def get_frames_min_and_max_ids_in_video(self, video_id: int) -> tuple[int, int]:
         min_frame_number: int
         max_frame_number: int
@@ -339,13 +359,15 @@ class PlayerDataRepoSQLA(PlayerDataRepo):
     ) -> tuple[int, int]:
         min_frame_number: int
         max_frame_number: int
-        result = (await self.transaction.session.execute(
+        result: Row[tuple[int, int] | tuple[None, None]] | None = (
+            await self.transaction.session.execute(
             Select(func.min(Frame.frame_id), func.max(Frame.frame_id))
-            .where(
-                Frame.video_id == video_id,
-                Frame.frame_id.between(offset, offset+limit)
+                .where(
+                    Frame.video_id == video_id,
+                    Frame.frame_id.between(offset, offset+limit)
+                )
             )
-        )).one_or_none()
+        ).one_or_none()
 
         if (result is None) or all((item is None for item in result)):
             raise IndexError("Invalid frame indexes")
