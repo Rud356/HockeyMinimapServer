@@ -2,6 +2,7 @@ from typing import Annotated
 
 from dishka.integrations.fastapi import FromDishka
 from fastapi import APIRouter, Cookie, HTTPException
+from fastapi.params import Query
 
 from server.controllers.dto import CreateUser, EditUser, UserIsDeleted
 from server.controllers.endpoints_base import APIEndpoint
@@ -109,8 +110,8 @@ class UserManagementEndpoint(APIEndpoint):
         repository: FromDishka[Repository],
         user_auth_service: FromDishka[UserAuthorizationService],
         user_token: Annotated[str | None, Cookie()] = None,
-        limit: int = 100,
-        offset: int = 0
+        limit: Annotated[int, Query(ge=1, le=250)] = 100,
+        offset: Annotated[int, Query(ge=0)] = 0
     ) -> list[UserDTO]:
         """
         Выводит список пользователей.
