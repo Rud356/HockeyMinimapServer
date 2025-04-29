@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Optional, cast
+from typing import Optional
 
 from pydantic import ValidationError
 from sqlalchemy import Select
@@ -23,12 +23,13 @@ class VideoRepoSQLA(VideoRepo):
     async def create_new_video(
         self,
         fps: float,
-        source_video_path: Path
+        source_video_path: str
     ) -> VideoDTO:
         video_record = Video(
-            source_video_path=str(source_video_path),
+            source_video_path=source_video_path,
             fps=fps
         )
+
         async with await self.transaction.start_nested_transaction() as tr:
             try:
                 tr.session.add(video_record)
@@ -47,8 +48,8 @@ class VideoRepoSQLA(VideoRepo):
             camera_position=video_record.camera_position,
             is_converted=video_record.is_converted,
             is_processed=video_record.is_processed,
-            source_video_path=Path(video_record.source_video_path),
-            converted_video_path=cast(Path, video_record.converted_video_path),
+            source_video_path=video_record.source_video_path,
+            converted_video_path=video_record.converted_video_path,
             dataset_id=video_record.dataset_id
         )
 
@@ -74,7 +75,7 @@ class VideoRepoSQLA(VideoRepo):
                         camera_position=video_record.camera_position,
                         is_converted=video_record.is_converted,
                         is_processed=video_record.is_processed,
-                        source_video_path=Path(video_record.source_video_path),
+                        source_video_path=video_record.source_video_path,
                         converted_video_path=video_record.converted_video_path,
                         dataset_id=video_record.dataset_id
                     )
@@ -104,8 +105,8 @@ class VideoRepoSQLA(VideoRepo):
                 camera_position=video_record.camera_position,
                 is_converted=video_record.is_converted,
                 is_processed=video_record.is_processed,
-                source_video_path=Path(video_record.source_video_path),
-                converted_video_path=cast(Path, video_record.converted_video_path),
+                source_video_path=video_record.source_video_path,
+                converted_video_path=video_record.converted_video_path,
                 dataset_id=video_record.dataset_id
             )
 

@@ -1,7 +1,6 @@
-from pathlib import Path
-from typing import Any, Optional
+from typing import Optional
 
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel
 
 from server.algorithms.enums.camera_position import CameraPosition
 
@@ -14,12 +13,6 @@ class VideoDTO(BaseModel):
     camera_position: CameraPosition
     is_converted: bool
     is_processed: bool
-    source_video_path: Path
-    converted_video_path: Optional[Path]
+    source_video_path: str
+    converted_video_path: Optional[str]
     dataset_id: Optional[int]
-
-    @field_validator('source_video_path', 'converted_video_path', mode='before')
-    def convert_to_path(cls, value: Any): # noqa: pydantic example, this is run before model is constructed
-        if isinstance(value, str):
-            return Path(value)
-        return value

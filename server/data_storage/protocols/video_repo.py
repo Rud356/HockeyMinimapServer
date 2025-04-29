@@ -16,7 +16,7 @@ class VideoRepo(Protocol):
     async def create_new_video(
         self,
         fps: float,
-        source_video_path: Path
+        source_video_path: str
     ) -> VideoDTO:
         """
         Создает новое видео в базе данных.

@@ -17,8 +17,10 @@ class DiskSpaceAllocator:
     Вспомогательный класс для выделения места на диске и управления местом для хранения данных.
     """
 
-    def __init__(self, directory: pathlib.Path = pathlib.Path(tempfile.gettempdir())):
-        self.directory: pathlib.Path = directory
+    def __init__(
+        self, directory: pathlib.Path = pathlib.Path(tempfile.gettempdir())
+    ):
+        self._directory: pathlib.Path = directory
         self.current_disk_usage: DiskUsage = self.get_disk_usage()
         self.disk_allocation_lock: asyncio.Lock = asyncio.Lock()
         self.active_space_reservations_bins: dict[uuid.UUID, int] = {}
@@ -56,7 +58,7 @@ class DiskSpaceAllocator:
 
         :return: Информация о свободном пространстве на физическом накопителе.
         """
-        return DiskUsage(*shutil.disk_usage(self.directory))
+        return DiskUsage(*shutil.disk_usage(self._directory))
 
     @contextlib.asynccontextmanager
     async def preallocate_disk_space(
@@ -66,7 +68,7 @@ class DiskSpaceAllocator:
         Предварительно выделяет место на диске для использования, и по закрытию контекстного менеджера
             актуализирует реально доступный объем.
 
-        :param preallocate_space: Количество предварительно выделенного места для проекта.
+        :param preallocate_space: Количество предварительно выделенного места для проекта в байтах.
         :param over_proposition_factor: Коэффициент прозапаса места для работы с проектом.
         :return: Генератор выделенного объема на диске.
         :raise InvalidAllocationSize: Когда объем выделяемого места меньше 1 байта или не является целым числом.
@@ -92,7 +94,7 @@ class DiskSpaceAllocator:
 
             else:
                 raise OutOfDiskSpace(
-                    self.directory,
+                    self._directory,
                     preallocate_space,
                     self.current_disk_usage.free,
                     self.total_free_space

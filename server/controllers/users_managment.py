@@ -11,7 +11,7 @@ from server.controllers.services.user_authorization_service import UserAuthoriza
 from server.data_storage.dto import UserDTO, UserPermissionsDTO
 from server.data_storage.exceptions import DataIntegrityError, NotFoundError
 from server.data_storage.protocols import Repository
-from server.views.user_views import UserView
+from server.views.user_view import UserView
 
 
 class UserManagementEndpoint(APIEndpoint):

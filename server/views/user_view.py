@@ -6,6 +6,9 @@ from server.data_storage.protocols import Repository
 
 
 class UserView:
+    """
+    Предоставляет интерфейс получения данных о пользователях и управления ими.
+    """
     def __init__(self, repository: Repository):
         self.repository = repository
 
@@ -116,7 +119,9 @@ class UserView:
             await tr.commit()
         return edited_user
 
-    async def change_user_permissions(self, user_id: int, new_permissions: UserPermissionsDTO) -> UserPermissionsDTO:
+    async def change_user_permissions(
+        self, user_id: int, new_permissions: UserPermissionsDTO
+    ) -> UserPermissionsDTO:
         """
         Изменяет права пользователя на новые права.
 

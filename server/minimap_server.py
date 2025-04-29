@@ -1,4 +1,5 @@
 import asyncio
+import tempfile
 import time
 import typing
 from contextlib import asynccontextmanager
@@ -31,10 +32,13 @@ from server.utils.config import (
     ServerSettings,
     VideoPreprocessingConfig,
 )
-from server.utils.providers import ConfigProvider
-from server.utils.providers.disk_space_allocator_provider import DiskSpaceAllocatorProvider
-from server.utils.providers.render_service_limits_provider import RenderServiceLimitsProvider
-from server.utils.providers.user_auth_provider import UserAuthorizationProvider
+from server.utils.providers import (
+    ConfigProvider,
+    DiskSpaceAllocatorProvider,
+    RenderServiceLimitsProvider,
+    UserAuthorizationProvider,
+    ExecutorsProvider
+)
 
 
 class MinimapServer:
@@ -68,16 +72,36 @@ class MinimapServer:
         self.tmp_repo: RepositorySQLA = typing.cast(RepositorySQLA, sqla_provider.get_repository())
         asyncio.run(self.tmp_repo.init_db(engine))
 
+        temp_dir = Path(tempfile.gettempdir())
+        temp_disk_allocator: DiskSpaceAllocator = DiskSpaceAllocator(temp_dir)
+        static_path_disk_allocator: DiskSpaceAllocator
+
+        if temp_dir.stat().st_dev != config.static_path.stat().st_dev:
+             static_path_disk_allocator = DiskSpaceAllocator(config.static_path)
+        else:
+            static_path_disk_allocator = temp_disk_allocator
+
         container: AsyncContainer = make_async_container(
-            DiskSpaceAllocatorProvider(DiskSpaceAllocator()),
+            DiskSpaceAllocatorProvider(
+                temp_disk_allocator,
+                static_path_disk_allocator
+            ),
             ConfigProvider(config),
             FastapiProvider(),
             sqla_provider,
             UserAuthorizationProvider(
-                UserAuthorizationService(key=config.server_jwt_key, local_mode=config.local_mode)
+                UserAuthorizationService(
+                    key=config.server_jwt_key,
+                    local_mode=config.local_mode
+                )
             ),
             RenderServiceLimitsProvider(
-                config.minimap_rendering_workers, config.minimap_frame_buffer
+                config.minimap_rendering_workers,
+                config.minimap_frame_buffer
+            ),
+            ExecutorsProvider(
+                config.video_processing_workers,
+                config.players_data_extraction_workers
             )
         )
 
@@ -163,12 +187,14 @@ MINIMAP_KEY_POINTS = MinimapKeyPointConfig(**{
 
 server = MinimapServer(
     AppConfig(
+        static_path=Path(__file__).parent.parent / "static",
         local_mode=True,
-        minimap_frame_buffer=10,
+        minimap_frame_buffer=20,
         prefetch_frame_buffer=120,
         enable_gzip_compression=False,
         players_data_extraction_workers=4,
         minimap_rendering_workers=4,
+        video_processing_workers=2,
         debug_visualization=True,
         server_jwt_key="ExamplePassword1234$$5",
         db_connection_string="Helloworld",

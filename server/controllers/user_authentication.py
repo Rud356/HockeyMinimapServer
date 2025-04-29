@@ -8,7 +8,7 @@ from server.controllers.endpoints_base import APIEndpoint
 from server.controllers.services.user_authorization_service import UserAuthorizationService
 from server.data_storage.dto import UserDTO
 from server.data_storage.protocols import Repository
-from server.views.user_views import UserView
+from server.views.user_view import UserView
 
 
 class UserAuthenticationEndpoint(APIEndpoint):

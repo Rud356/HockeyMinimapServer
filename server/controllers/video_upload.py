@@ -110,7 +110,6 @@ class VideoUploadEndpoint(APIEndpoint):
             raise HTTPException(status_code=400, detail='Invalid file format, expecting video')
 
         except OutOfDiskSpace as ran_out_of_disk:
-            # TODO: add more details about error
             raise HTTPException(
                 status_code=507,
                 detail=f"Not enough disk space, only "
