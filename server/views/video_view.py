@@ -40,6 +40,7 @@ class VideoView:
         :param storage_allocator: Объект выделения места для хранения видео на диске в конечной папке.
         :return: Объект, представляющий данные о видео.
         """
+        self.video_processing.probe_video(source_path)
         assert video_directory.is_dir(), "Video directory in config must be a directory"
         current_loop = asyncio.get_running_loop()
 
@@ -47,21 +48,21 @@ class VideoView:
         video_dest_dir = video_directory / str(uuid.uuid1())
         video_dest_dir.mkdir()
 
+        video_path: Path = video_dest_dir / "source_video.mp4"
         async with storage_allocator.preallocate_disk_space(source_path.stat().st_size):
-            with video_processing_worker as worker:
-                # Converting video
-                video_info: dict[str, Any] = await current_loop.run_in_executor(
-                    worker,
-                    self.video_processing.compress_video,
-                    source_path,
-                    video_dest_dir / "source_video.mp4"
-                )
+            # Converting video
+            video_info: dict[str, Any] = await current_loop.run_in_executor(
+                video_processing_worker,
+                self.video_processing.compress_video,
+                source_path,
+                video_path
+            )
 
         # Make db record
         async with self.repository.transaction as tr:
             video_dto: VideoDTO = await self.repository.video_repo.create_new_video(
                 self.video_processing.get_fps_from_probe(video_info),
-                video_dest_dir.relative_to(video_directory).as_posix(),
+                video_path.relative_to(video_directory).as_posix(),
             )
             await tr.commit()
 

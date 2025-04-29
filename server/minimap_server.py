@@ -13,16 +13,18 @@ from dishka.integrations.fastapi import (
     setup_dishka,
 )
 from fastapi import APIRouter, FastAPI, Request, Response
-from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.gzip import GZipMiddleware
+from fastapi.staticfiles import StaticFiles
 from sqlalchemy.ext.asyncio import create_async_engine
 from starlette.middleware.base import BaseHTTPMiddleware
 
 from server.algorithms.disk_space_allocator import DiskSpaceAllocator
+from server.algorithms.video_processing import VideoProcessing
 from server.controllers.services.user_authorization_service import UserAuthorizationService
 from server.controllers.user_authentication import UserAuthenticationEndpoint
 from server.controllers.users_managment import UserManagementEndpoint
-from server.controllers.video_upload import VideoUploadEndpoint
+from server.controllers.video_endpoints import VideoUploadEndpoint
 from server.data_storage.sql_implementation.repository_sqla import RepositorySQLA
 from server.data_storage.sql_implementation.sqla_provider import SQLAlchemyProvider
 from server.utils.config import (
@@ -35,9 +37,9 @@ from server.utils.config import (
 from server.utils.providers import (
     ConfigProvider,
     DiskSpaceAllocatorProvider,
+    ExecutorsProvider,
     RenderServiceLimitsProvider,
     UserAuthorizationProvider,
-    ExecutorsProvider
 )
 
 
@@ -65,12 +67,13 @@ class MinimapServer:
 
         self.app.add_middleware(BaseHTTPMiddleware, dispatch=self.add_process_time_header)
         self.router: APIRouter = APIRouter(route_class=DishkaRoute)
+        self.reload_dirs: list[str] = [str(config.static_path.resolve())]
 
         # temporary init code
         engine = create_async_engine("sqlite+aiosqlite:///:memory:")
         sqla_provider = SQLAlchemyProvider(engine)
-        self.tmp_repo: RepositorySQLA = typing.cast(RepositorySQLA, sqla_provider.get_repository())
-        asyncio.run(self.tmp_repo.init_db(engine))
+        tmp_repo: RepositorySQLA = typing.cast(RepositorySQLA, sqla_provider.get_repository())
+        asyncio.run(tmp_repo.init_db(engine))
 
         temp_dir = Path(tempfile.gettempdir())
         temp_disk_allocator: DiskSpaceAllocator = DiskSpaceAllocator(temp_dir)
@@ -106,6 +109,15 @@ class MinimapServer:
         )
 
         setup_dishka(container=container, app=self.app)
+
+        # Setup routes
+        api = APIRouter(prefix="/api", route_class=DishkaRoute)
+        VideoUploadEndpoint(api, VideoProcessing(config.video_processing))
+        UserManagementEndpoint(api)
+        UserAuthenticationEndpoint(api)
+
+        self.app.mount("/static", StaticFiles(directory=config.static_path), name="static")
+        self.register_routes(api)
 
     def register_routes(self, new_router: APIRouter, prefix: str = "") -> None:
         """
@@ -146,10 +158,14 @@ class MinimapServer:
         await app.state.dishka_container.close()
 
     def start(self) -> None:
-        uvicorn.run(self.app)
+        uvicorn.run(
+            self.app,
+            reload_dirs=self.reload_dirs
+        )
 
 
-MINIMAP_KEY_POINTS = MinimapKeyPointConfig(**{
+# Ignoring mypy arg-type error since it is cast by pydantic
+MINIMAP_KEY_POINTS = MinimapKeyPointConfig(**{  # type: ignore[arg-type]
         "top_left_field_point": {"x": 16, "y": 88},
         "bottom_right_field_point": {"x": 1247, "y": 704},
 
@@ -209,12 +225,6 @@ server = MinimapServer(
     )
 )
 
-api = APIRouter(prefix="/api", route_class=DishkaRoute)
-VideoUploadEndpoint(api)
-UserManagementEndpoint(api)
-UserAuthenticationEndpoint(api)
-
-server.register_routes(api)
 server.finish_setup()
 
 if __name__ == "__main__":

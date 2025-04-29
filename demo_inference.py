@@ -92,7 +92,7 @@ async def main(video_path: Path, field_model: Path, players_model: Path):
 
     team_predictor: TeamDetectionPredictor = predictor
 
-    map_img = cv2.imread("map.png")
+    map_img = cv2.imread("static/map.png")
     # Video output streams
     fourcc = cv2.VideoWriter_fourcc(*'mp4v')
     out_video = cv2.VideoWriter('output.mp4', fourcc, 25.0, (1280, 720))

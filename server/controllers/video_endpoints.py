@@ -4,16 +4,21 @@ import aiofiles
 from dishka.integrations.fastapi import FromDishka
 from fastapi import APIRouter, File, HTTPException, Response, UploadFile
 
-from server.algorithms.disk_space_allocator import DiskSpaceAllocator
+from server.views.video_view import VideoDTO
 from server.algorithms.exceptions.invalid_file_format import InvalidFileFormat
 from server.algorithms.exceptions.out_of_disk_space import OutOfDiskSpace
 from server.algorithms.video_processing import VideoProcessing
 from server.controllers.endpoints_base import APIEndpoint
+from server.data_storage.protocols import Repository
+from server.utils.config import AppConfig
+from server.utils.providers import StaticDirSpaceAllocator, TmpDirSpaceAllocator, VideoProcessingWorker
+from server.views.video_view import VideoView
 
 
 class VideoUploadEndpoint(APIEndpoint):
-    def __init__(self, router: APIRouter):
+    def __init__(self, router: APIRouter, video_processing: VideoProcessing):
         super().__init__(router)
+        self.video_processing: VideoProcessing = video_processing
         self.router.add_api_route(
             "/videos_upload",
             self.upload_page,
@@ -81,9 +86,13 @@ class VideoUploadEndpoint(APIEndpoint):
 
     async def upload_video(
         self,
-        disk_space_allocator: FromDishka[DiskSpaceAllocator],
+        repository: FromDishka[Repository],
+        app_config: FromDishka[AppConfig],
+        temp_disk_space_allocator: FromDishka[TmpDirSpaceAllocator],
+        dest_disk_space_allocator: FromDishka[StaticDirSpaceAllocator],
+        video_processing_worker: FromDishka[VideoProcessingWorker],
         video_upload: UploadFile = File(...),
-    ) -> dict[str, str]:
+    ) -> VideoDTO:
         if video_upload.filename is None or video_upload.size is None:
             raise HTTPException(
                 status_code=400,
@@ -93,17 +102,18 @@ class VideoUploadEndpoint(APIEndpoint):
         try:
             async with (
                 aiofiles.tempfile.TemporaryDirectory(prefix="hmms_uploads_") as tmp_dir,
-                disk_space_allocator.preallocate_disk_space(video_upload.size)
+                temp_disk_space_allocator.preallocate_disk_space(video_upload.size)
             ):
                 temp_file: pathlib.Path = pathlib.Path(tmp_dir) / video_upload.filename
                 async with aiofiles.open(temp_file, 'wb') as f:
                     while contents := await video_upload.read(1024 * 1024):
                         await f.write(contents)
 
-
-                print(temp_file)
-                print(
-                    VideoProcessing.probe_video(temp_file)
+                return await VideoView(repository, self.video_processing).create_new_video_from_upload(
+                    temp_file,
+                    app_config.static_path / "videos",
+                    video_processing_worker,
+                    dest_disk_space_allocator
                 )
 
         except InvalidFileFormat:
@@ -116,9 +126,8 @@ class VideoUploadEndpoint(APIEndpoint):
                        f"{ran_out_of_disk.free_runtime_disk_space} is currently unreserved"
             )
 
-        except Exception:
-            raise HTTPException(status_code=500, detail='Something went wrong')
+        except Exception as err:
+            raise HTTPException(status_code=500, detail='Something went wrong') from err
 
         finally:
             await video_upload.close()
-            return {"message": f"Successfuly uploaded {video_upload.filename}"}
