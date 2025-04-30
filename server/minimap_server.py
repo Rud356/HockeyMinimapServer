@@ -221,7 +221,7 @@ server = MinimapServer(
         ),
         minimap_config=MINIMAP_KEY_POINTS,
         server_settings=ServerSettings(host="localhost", port=1080, is_local_instance=True),
-        video_processing=VideoPreprocessingConfig(video_width=1280, video_height=720, crf=27)
+        video_processing=VideoPreprocessingConfig(video_width=1280, video_height=720, crf=23)
     )
 )
 

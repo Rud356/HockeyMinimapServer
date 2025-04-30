@@ -19,6 +19,8 @@ from server.data_storage.dto import PointDTO
 from server.data_storage.dto.player_data_dto import PlayerDataDTO
 from server.utils.config import VideoPreprocessingConfig
 
+FILL_CIRCLE_THICKNESS: int = -1
+
 
 class MapVideoRendererService:
     """
@@ -168,85 +170,127 @@ class MapVideoRendererService:
         point_position: tuple[int, int] = int(map_point_position.x), int(map_point_position.y)
         outline_thickness: int = 1
 
+        # Unknown player team color and text color
+        team_color: tuple[int, int, int] = (232, 232, 232)
+        team_text_color: tuple[int, int, int] = (0, 0, 0)
+
         match class_id:
             case PlayerClasses.Referee:
-                map_frame = typing.cast(CV_Image,
-                    cv2.circle(
-                        map_frame,
-                        point_position,
-                        self.point_size,
-                        self.referee_color,
-                        thickness=-1
-                    )
+                map_frame = self.draw_point(
+                    map_frame,
+                    "R",
+                    self.referee_color,
+                    (255, 255, 255),
+                    point_position
                 )
-                map_frame = typing.cast(CV_Image,
-                    cv2.circle(
-                        map_frame, point_position, self.point_size,
-                        (16, 16, 16), thickness=outline_thickness, lineType=cv2.LINE_AA
-                    )
-                )
-                map_frame = self.draw_text(map_frame, point_position, "R", (255, 255, 255))
 
             case PlayerClasses.Player:
+                # Overriding default unknown team color
                 if team_id == Team.Home:
-                    map_frame = typing.cast(CV_Image,
-                        cv2.circle(map_frame, point_position, self.point_size, self.home_color, thickness=-1)
-                    )
+                    team_color = self.home_color
 
                 elif team_id == Team.Away:
-                    map_frame = typing.cast(CV_Image,
-                        cv2.circle(map_frame, point_position, self.point_size, self.away_color, thickness=-1)
-                    )
+                    team_color = self.away_color
 
-                else:
-                    # Grey for unknown team
-                    map_frame = typing.cast(CV_Image,
-                        cv2.circle(map_frame, point_position, self.point_size, (127, 127, 127), thickness=-1)
-                    )
-
-                # draw text with player name or id
-                map_frame = typing.cast(CV_Image,
-                    cv2.circle(
-                        map_frame, point_position, self.point_size,
-                        (16, 16, 16), thickness=outline_thickness, lineType=cv2.LINE_AA
-                    )
-                )
-
+                # Choosing what to render as player name
                 if player_name:
-                    map_frame = self.draw_text(map_frame, point_position, str(player_name))
+                    map_frame = self.draw_point(
+                        map_frame,
+                        str(player_name),
+                        team_color,
+                        team_text_color,
+                        point_position
+                    )
 
                 else:
-                    map_frame = self.draw_text(map_frame, point_position, str(tracking_id))
+                    map_frame = self.draw_point(
+                        map_frame,
+                        str(tracking_id),
+                        team_color,
+                        team_text_color,
+                        point_position
+                    )
 
             case PlayerClasses.Goalie:
+                # Overriding default unknown team color
                 if team_id == Team.Home:
-                    map_frame = typing.cast(CV_Image,
-                        cv2.circle(map_frame, point_position, self.point_size, self.home_color, thickness=-1)
-                    )
+                    team_color = self.home_color
 
                 elif team_id == Team.Away:
-                    map_frame = typing.cast(CV_Image,
-                        cv2.circle(map_frame, point_position, self.point_size, self.away_color, thickness=-1)
+                    team_color = self.away_color
+
+                # Choosing what to render as player name
+                if player_name:
+                    map_frame = self.draw_point(
+                        map_frame,
+                        str(player_name),
+                        team_color,
+                        team_text_color,
+                        point_position
                     )
 
                 else:
-                    # Grey for unknown team
-                    map_frame = typing.cast(CV_Image,
-                        cv2.circle(
-                            map_frame, point_position, self.point_size, (127, 127, 127), thickness=-1
-                        )
+                    map_frame = self.draw_point(
+                        map_frame,
+                        "G",
+                        team_color,
+                        team_text_color,
+                        point_position
                     )
-
-                # draw text with G for goalie
-                map_frame = typing.cast(CV_Image,
-                    cv2.circle(
-                        map_frame, point_position, self.point_size,
-                        (16, 16, 16), thickness=outline_thickness, lineType=cv2.LINE_AA
-                    )
-                )
-                map_frame = self.draw_text(map_frame, point_position, "G")
 
         return map_frame
+
+    def draw_point(
+        self,
+        map_frame: CV_Image,
+        text: str,
+        color: tuple[int, int, int],
+        text_color: tuple[int, int, int],
+        position: tuple[int, int],
+        outline_thickness: int = 1
+    ) -> CV_Image:
+        """
+        Рисует точку игрока на мини-карте.
+
+        :param map_frame: Кадр карты.
+        :param text: Текст отрисованной точки.
+        :param color: Цвет точки.
+        :param text_color: Цвет текста.
+        :param position: Положение точки.
+        :param outline_thickness: Ширина обводки.
+        :return: Обновленный кадр мини-карты с новой точкой.
+        """
+
+        # Main circle
+        map_frame = typing.cast(
+            CV_Image,
+            cv2.circle(
+                map_frame,
+                position,
+                self.point_size,
+                color,
+                thickness=FILL_CIRCLE_THICKNESS
+            )
+        )
+
+        # Outline circle
+        map_frame = typing.cast(
+            CV_Image,
+            cv2.circle(
+                map_frame,
+                position,
+                self.point_size,
+                (16, 16, 16),
+                thickness=outline_thickness,
+                lineType=cv2.LINE_AA
+            )
+        )
+
+        # Text
+        map_frame = self.draw_text(map_frame, position, text, text_color)
+
+        return map_frame
+
 
     def draw_text(
         self,
