@@ -34,9 +34,9 @@ class MapVideoRendererService:
         video_processing_config: VideoPreprocessingConfig,
         frame_buffer_limit: int = 10,
         point_size: int = 25,
-        home_color: tuple[int, int, int] = (135, 206, 235),
-        away_color: tuple[int, int, int] = (250, 224, 51),
-        referee_color: tuple[int, int, int] = (128, 77, 65)
+        home_color: tuple[int, int, int] = (0, 157, 255),
+        away_color: tuple[int, int, int] = (255, 138, 0),
+        referee_color: tuple[int, int, int] = (156, 156, 156)
     ):
         assert frame_buffer_limit >= 1, "Must always have frame buffer limit set to 1 or more as integer"
         assert fps > 5, "Must specify fps at least"
@@ -166,6 +166,7 @@ class MapVideoRendererService:
         :return: Нарисованный кадр.
         """
         point_position: tuple[int, int] = int(map_point_position.x), int(map_point_position.y)
+        outline_thickness: int = 1
 
         match class_id:
             case PlayerClasses.Referee:
@@ -180,10 +181,11 @@ class MapVideoRendererService:
                 )
                 map_frame = typing.cast(CV_Image,
                     cv2.circle(
-                        map_frame, point_position, self.point_size, (16, 16, 16), thickness=2, lineType=cv2.LINE_AA
+                        map_frame, point_position, self.point_size,
+                        (16, 16, 16), thickness=outline_thickness, lineType=cv2.LINE_AA
                     )
                 )
-                map_frame = self.draw_text(map_frame, point_position, "R")
+                map_frame = self.draw_text(map_frame, point_position, "R", (255, 255, 255))
 
             case PlayerClasses.Player:
                 if team_id == Team.Home:
@@ -206,7 +208,7 @@ class MapVideoRendererService:
                 map_frame = typing.cast(CV_Image,
                     cv2.circle(
                         map_frame, point_position, self.point_size,
-                        (16, 16, 16), thickness=2, lineType=cv2.LINE_AA
+                        (16, 16, 16), thickness=outline_thickness, lineType=cv2.LINE_AA
                     )
                 )
 
@@ -238,20 +240,28 @@ class MapVideoRendererService:
                 # draw text with G for goalie
                 map_frame = typing.cast(CV_Image,
                     cv2.circle(
-                        map_frame, point_position, self.point_size, (16, 16, 16), thickness=2, lineType=cv2.LINE_AA
+                        map_frame, point_position, self.point_size,
+                        (16, 16, 16), thickness=outline_thickness, lineType=cv2.LINE_AA
                     )
                 )
                 map_frame = self.draw_text(map_frame, point_position, "G")
 
         return map_frame
 
-    def draw_text(self, image: CV_Image, center: tuple[int, int], text: str) -> CV_Image:
+    def draw_text(
+        self,
+        image: CV_Image,
+        center: tuple[int, int],
+        text: str,
+        color: tuple[int, int, int] = (0, 0, 0)
+    ) -> CV_Image:
         """
         Рисует текст на игроке.
 
         :param image: Изображение, на котором рисуется.
         :param center: Центр текста.
         :param text: Текст для рисования.
+        :param color: Цвет текста.
         :return: Обновленное изображение.
         """
         font = cv2.FONT_HERSHEY_SIMPLEX
@@ -268,7 +278,7 @@ class MapVideoRendererService:
                 (text_x, text_y),
                 font,
                 font_scale,
-                (200, 200, 200),
+                color,
                 font_thickness,
                 lineType=cv2.LINE_AA
             )
