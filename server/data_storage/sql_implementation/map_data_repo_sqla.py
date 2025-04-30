@@ -104,6 +104,8 @@ class MapDataRepoSQLA(MapDataRepo):
                 await tr.commit()
 
             except (IntegrityError, ProgrammingError) as err:
-                raise DataIntegrityError("Constraints are broken when updating map data point") from err
+                raise DataIntegrityError(
+                    "Constraints are broken when updating map data point"
+                ) from err
 
         return modified

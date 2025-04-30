@@ -101,7 +101,7 @@ async def test_setting_converted_flag(video_fps: float, repo: RepositorySQLA):
             video_id=video.video_id
         )
 
-    assert video_fetched.converted_video_path == test_video_path.relative_to(test_video_directory)
+    assert Path(video_fetched.converted_video_path) == test_video_path.relative_to(test_video_directory)
 
 
 async def test_setting_processed_flag(video_fps: float, repo: RepositorySQLA):

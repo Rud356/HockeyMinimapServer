@@ -60,7 +60,9 @@ class UserRepo(Protocol):
         :raises NotFoundError: Пользователь не найден.
         """
 
-    async def change_user_permissions(self, user_id: int, new_permissions: UserPermissionsData) -> UserPermissionsDTO:
+    async def change_user_permissions(
+        self, user_id: int, new_permissions: UserPermissionsData
+    ) -> UserPermissionsDTO:
         """
         Изменяет права пользователя на новые права.
 

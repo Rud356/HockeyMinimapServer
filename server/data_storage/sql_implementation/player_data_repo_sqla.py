@@ -208,7 +208,9 @@ class PlayerDataRepoSQLA(PlayerDataRepo):
     async def rename_player_alias(self, custom_player_id: int, users_player_alias: str) -> None:
         try:
             async with await self.transaction.start_nested_transaction() as tr:
-                player_alias: Player = cast(Player, await tr.session.get_one(Player, custom_player_id))
+                player_alias: Player = cast(
+                    Player, await tr.session.get_one(Player, custom_player_id)
+                )
                 player_alias.user_id = users_player_alias
                 await tr.commit()
 
@@ -263,7 +265,10 @@ class PlayerDataRepoSQLA(PlayerDataRepo):
         ).where(Frame.video_id == video_id)
 
         result: AsyncScalarResult[Frame] = await self.transaction.session.stream_scalars(query)
-        from_frame, to_frame = await self.get_frames_min_and_max_ids_with_limit_offset(video_id, limit, offset)
+
+        from_frame, to_frame = await self.get_frames_min_and_max_ids_with_limit_offset(
+            video_id, limit, offset
+        )
 
         frame_data: list[list[PlayerDataDTO]] = []
 

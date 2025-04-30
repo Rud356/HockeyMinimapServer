@@ -54,7 +54,9 @@ class UserRepoSQLA(UserRepo):
             )
 
         except (IntegrityError, ProgrammingError, AttributeError, ValidationError) as err:
-            raise DataIntegrityError("User creation had database constraints broken or data is invalid") from err
+            raise DataIntegrityError(
+                "User creation had database constraints broken or data is invalid"
+            ) from err
 
     async def get_user(self, user_id: int) -> UserDTO:
         try:
@@ -197,8 +199,7 @@ class UserRepoSQLA(UserRepo):
                     )
                 )
 
-            else:
-                raise ValueError("Invalid user password")
+            raise ValueError("Invalid user password")
 
         except ProgrammingError as err:
             raise ValueError("Invalid input data") from err

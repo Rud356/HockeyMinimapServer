@@ -19,7 +19,12 @@ class KeyPointPlacer:
     minimap_key_points: MinimapKeyPointConfig
     resolution: tuple[int, int]
 
-    def __init__(self, key_points: MinimapKeyPointConfig, camera_position: CameraPosition, resolution: tuple[int, int]):
+    def __init__(
+        self,
+        key_points: MinimapKeyPointConfig,
+        camera_position: CameraPosition,
+        resolution: tuple[int, int]
+    ):
         self.minimap_key_points = key_points
         self.camera_position = camera_position
 
@@ -425,12 +430,18 @@ class KeyPointPlacer:
 
         # Перечисление пар для ключевых точек
         unused_line_points_mapping = {
-            self.minimap_key_points.left_goal_line_top: self.minimap_key_points.left_goal_line_bottom,
-            self.minimap_key_points.left_goal_line_after_zone_top: self.minimap_key_points.left_goal_line_after_zone_bottom,
-            self.minimap_key_points.left_goal_line_after_zone_bottom: self.minimap_key_points.left_goal_line_after_zone_top,
-            self.minimap_key_points.right_goal_line_top: self.minimap_key_points.right_goal_line_bottom,
-            self.minimap_key_points.right_goal_line_after_zone_top: self.minimap_key_points.right_goal_line_after_zone_bottom,
-            self.minimap_key_points.right_goal_line_after_zone_bottom: self.minimap_key_points.right_goal_line_after_zone_top
+            self.minimap_key_points.left_goal_line_top:
+                self.minimap_key_points.left_goal_line_bottom,
+            self.minimap_key_points.left_goal_line_after_zone_top:
+                self.minimap_key_points.left_goal_line_after_zone_bottom,
+            self.minimap_key_points.left_goal_line_after_zone_bottom:
+                self.minimap_key_points.left_goal_line_after_zone_top,
+            self.minimap_key_points.right_goal_line_top:
+                self.minimap_key_points.right_goal_line_bottom,
+            self.minimap_key_points.right_goal_line_after_zone_top:
+                self.minimap_key_points.right_goal_line_after_zone_bottom,
+            self.minimap_key_points.right_goal_line_after_zone_bottom:
+                self.minimap_key_points.right_goal_line_after_zone_top
         }
         mapped_new_points: dict[KeyPoint, Point] = mapped_points.copy()
 

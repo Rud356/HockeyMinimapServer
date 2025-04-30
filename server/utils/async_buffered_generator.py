@@ -5,7 +5,9 @@ from typing import TypeVar
 StreamedT = TypeVar("StreamedT")
 
 
-async def _fetch_data_into_buffer(queue: asyncio.Queue[StreamedT], stream: AsyncGenerator[StreamedT, None]) -> None:
+async def _fetch_data_into_buffer(
+    queue: asyncio.Queue[StreamedT], stream: AsyncGenerator[StreamedT, None]
+) -> None:
     """
     Получает значения из генератора и помещает их в буфер.
 
@@ -17,7 +19,9 @@ async def _fetch_data_into_buffer(queue: asyncio.Queue[StreamedT], stream: Async
         await queue.put(data)
 
 
-async def buffered_generator(stream: AsyncGenerator[StreamedT, None], size: int) -> AsyncGenerator[StreamedT, None]:
+async def buffered_generator(
+    stream: AsyncGenerator[StreamedT, None], size: int
+) -> AsyncGenerator[StreamedT, None]:
     """
     Создает буферизованный итератор из асинхронного генератора.
 

@@ -51,7 +51,9 @@ class PlayerDataRepo(Protocol):
         :raises NotFoundError: Если не найдено записей.
         """
 
-    async def set_player_identity_to_user_id(self, video_id: int, tracking_id: int, player_id: int) -> int:
+    async def set_player_identity_to_user_id(
+        self, video_id: int, tracking_id: int, player_id: int
+    ) -> int:
         """
         Устанавливает отслеживанию пользовательский идентификатор.
 
@@ -61,7 +63,9 @@ class PlayerDataRepo(Protocol):
         :return: Количество изменённых записей.
         """
 
-    async def set_team_to_tracking_id(self, video_id: int, frame_id: int, tracking_id: int, team: Team) -> None:
+    async def set_team_to_tracking_id(
+        self, video_id: int, frame_id: int, tracking_id: int, team: Team
+    ) -> None:
         """
         Устанавливает команду для отслеживания игрока, если не было назначений до этого.
 
@@ -119,7 +123,9 @@ class PlayerDataRepo(Protocol):
         :raise NotFoundError: Имя игрока с представленным идентификатором не найдено.
         """
 
-    async def rename_player_alias(self, custom_player_id: int, users_player_alias: str) -> None:
+    async def rename_player_alias(
+        self, custom_player_id: int, users_player_alias: str
+    ) -> None:
         """
         Изменяет название идентификатора игрока.
 
@@ -130,7 +136,9 @@ class PlayerDataRepo(Protocol):
         :raise DataIntegrityError: Неправильные входные данные или видео не существует.
         """
 
-    async def change_player_alias_team(self, custom_player_id: int, users_player_team: Team) -> None:
+    async def change_player_alias_team(
+        self, custom_player_id: int, users_player_team: Team
+    ) -> None:
         """
         Изменяет название идентификатора игрока.
 
@@ -141,7 +149,9 @@ class PlayerDataRepo(Protocol):
         :raise DataIntegrityError: Неправильные входные данные или видео не существует.
         """
 
-    async def get_tracking_from_frames(self, video_id: int, limit: int = 120, offset: int = 0) -> FrameDataDTO:
+    async def get_tracking_from_frames(
+        self, video_id: int, limit: int = 120, offset: int = 0
+    ) -> FrameDataDTO:
         """
         Получает все отслеживания игроков начиная с кадра по n кадр.
 

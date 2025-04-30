@@ -115,7 +115,9 @@ class PlayerDataExtractionService:
 
         for n, (player_data, map_point) in enumerate(zip(tracking_data, map_points)):
             # Choose source of team (detected now, or detected before)
-            player_team: Optional[Team] = teams.get(n) or self.known_tracked_players_teams.get(player_data.tracking_id)
+            player_team: Optional[Team] = teams.get(n) or self.known_tracked_players_teams.get(
+                player_data.tracking_id
+            )
 
             if (player_team is not None) and (player_data.tracking_id not in self.known_tracked_players_teams):
                 self.known_tracked_players_teams[player_data.tracking_id] = player_team

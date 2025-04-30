@@ -21,9 +21,8 @@ class NeuralNetworkConfig(BaseModel):
         if isinstance(v, Path) and v.is_file():
             return v
 
-        else:
-            raise PydanticCustomError(
-                'path_validation_error',
-                '{path} not a valid path to a neural network weights!',
-                {'path': v},
-            )
+        raise PydanticCustomError(
+            'path_validation_error',
+            '{path} not a valid path to a neural network weights!',
+            {'path': v},
+        )

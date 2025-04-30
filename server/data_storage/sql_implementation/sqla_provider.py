@@ -38,8 +38,7 @@ class SQLAlchemyProvider(Provider):
         if (transaction_init := session.get_transaction()) is not None:
             return TransactionManagerSQLA(session, transaction_init)
 
-        else:
-            return TransactionManagerSQLA(session, session.begin())
+        return TransactionManagerSQLA(session, session.begin())
 
     @provide(scope=Scope.REQUEST)
     def get_transaction_manager_protocol(self, session: AsyncSession) -> TransactionManager:

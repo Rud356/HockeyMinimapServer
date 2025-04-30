@@ -7,6 +7,10 @@ from typing import AsyncGenerator, NoReturn
 
 
 class FileLock:
+    """
+    Блокирует доступ к конкретному файлу в рамках всего приложения.
+    """
+
     def __init__(self, cleanup_time: float = 120):
         self.modification_lock = Lock()
         self.locks: dict[str | Path, tuple[Lock, float]] = {}
@@ -20,7 +24,7 @@ class FileLock:
         :param path: Путь до файла.
         :return: Контекстный менеджер блокировки.
         """
-        current_lock, created_at = self.locks.get(path, (None, None))
+        current_lock, _ = self.locks.get(path, (None, None))
 
         if current_lock is None:
             current_lock = Lock()

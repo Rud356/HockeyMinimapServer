@@ -37,12 +37,11 @@ class AppConfig(BaseModel):
         if isinstance(v, Path) and v.is_dir():
             return v
 
-        elif isinstance(v, str) and (path := Path(v)).is_dir():
+        if isinstance(v, str) and (path := Path(v)).is_dir():
             return path
 
-        else:
-            raise PydanticCustomError(
-                'path_validation_error',
-                '{path} not a valid path to directory!',
-                {'path': v},
-            )
+        raise PydanticCustomError(
+            'path_validation_error',
+            '{path} not a valid path to directory!',
+            {'path': v},
+        )

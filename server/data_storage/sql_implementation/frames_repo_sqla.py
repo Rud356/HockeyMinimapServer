@@ -19,7 +19,7 @@ class FramesRepoSQLA(FramesRepo):
             try:
                 results = await tr.session.execute(
                     Insert(Frame).returning(Frame.frame_id), [
-                        dict(frame_id=frame_n, video_id=video_id) for frame_n in range(frames_count)
+                        {"frame_id": frame_n, "video_id": video_id} for frame_n in range(frames_count)
                     ]
                 )
                 await tr.commit()

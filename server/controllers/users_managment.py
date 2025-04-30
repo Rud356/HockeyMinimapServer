@@ -27,7 +27,10 @@ class UserManagementEndpoint(APIEndpoint):
             methods=["get"],
             responses={
                 200: {"description": "Возвращает список пользователей"},
-                401: {"description": "Нет валидного токена авторизации или нет прав на доступ к ресурса"}
+                401: {
+                    "description":
+                        "Нет валидного токена авторизации или нет прав на доступ к ресурса"
+                }
             },
             tags=["users", "admin"]
         )
@@ -322,8 +325,8 @@ class UserManagementEndpoint(APIEndpoint):
                 user_id, new_permissions
             )
 
-        except NotFoundError:
-            raise HTTPException(404, detail="User was not found")
+        except NotFoundError as err:
+            raise HTTPException(404, detail="User was not found") from err
 
-        except ValueError:
-            raise HTTPException(400, detail="Invalid body")
+        except ValueError as err:
+            raise HTTPException(400, detail="Invalid body") from err

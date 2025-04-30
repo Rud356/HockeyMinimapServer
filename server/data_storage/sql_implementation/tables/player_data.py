@@ -73,13 +73,29 @@ class PlayerData(Base):
 
     @property
     def box(self) -> BoxDTO:
+        """
+        Получает представление позиций точек в виде охватывающего прямоугольника.
+
+        :return: Охватывающий прямоугольник.
+        """
         return BoxDTO(
-            top_point=PointDTO(x=self.player_on_camera_top_x, y=self.player_on_camera_top_y),
-            bottom_point=PointDTO(x=self.player_on_camera_bottom_x, y=self.player_on_camera_bottom_y)
+            top_point=PointDTO(
+                x=self.player_on_camera_top_x,
+                y=self.player_on_camera_top_y
+            ),
+            bottom_point=PointDTO(
+                x=self.player_on_camera_bottom_x,
+                y=self.player_on_camera_bottom_y
+            )
         )
 
     @property
     def point_on_minimap(self) -> PointDTO:
+        """
+        Получает представление позиции игрока на карте.
+
+        :return: Точка позиции на карте.
+        """
         return PointDTO(
             x=self.point_on_minimap_x,
             y=self.point_on_minimap_y

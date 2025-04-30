@@ -2,7 +2,6 @@ import argparse
 import asyncio
 import tempfile
 import time
-import tomllib
 import typing
 from argparse import Namespace
 from contextlib import asynccontextmanager
@@ -232,35 +231,3 @@ class MinimapServer:
             reload_dirs=self.reload_dirs
         )
 
-
-args: Namespace = MinimapServer.parse_launch_arguments()
-
-with open(args.config_path, mode="rb") as f:
-    config_data = AppConfig(**tomllib.load(f))
-
-config_data.local_mode = args.local_mode
-server = MinimapServer(config_data)
-
-if args.drop_db and args.init_db:
-    tmp_engine: AsyncEngine = create_async_engine(config_data.db_connection_string)
-    tmp_sqla_provider: SQLAlchemyProvider = SQLAlchemyProvider(tmp_engine)
-    server.drop_db(tmp_engine, tmp_sqla_provider)
-    server.init_db(tmp_engine, tmp_sqla_provider)
-    exit(0)
-
-elif args.drop_db:
-    tmp_engine = create_async_engine(config_data.db_connection_string)
-    tmp_sqla_provider = SQLAlchemyProvider(tmp_engine)
-    server.drop_db(tmp_engine, tmp_sqla_provider)
-    exit(0)
-
-elif args.init_db:
-    tmp_engine = create_async_engine(config_data.db_connection_string)
-    tmp_sqla_provider = SQLAlchemyProvider(tmp_engine)
-    server.init_db(tmp_engine, tmp_sqla_provider)
-    exit(0)
-
-server.finish_setup()
-
-if __name__ == "__main__":
-    server.start()

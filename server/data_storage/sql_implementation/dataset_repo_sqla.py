@@ -112,7 +112,8 @@ class DatasetRepoSQLA(DatasetRepo):
 
         if len(subset_data) != (to_frame - from_frame):
             raise ValueError(
-                f"Invalid subset_data list length: got {len(subset_data)}, expected {to_frame - from_frame}"
+                f"Invalid subset_data list length: got {len(subset_data)}, "
+                f"expected {to_frame - from_frame}"
             )
 
         try:
@@ -185,7 +186,9 @@ class DatasetRepoSQLA(DatasetRepo):
 
         return True
 
-    async def set_player_class(self, subset_id: int, tracking_id: int, player_class: PlayerClasses) -> bool:
+    async def set_player_class(
+        self, subset_id: int, tracking_id: int, player_class: PlayerClasses
+    ) -> bool:
         dataset_points_found: bool = await self._data_point_exists(subset_id, tracking_id)
 
         if not dataset_points_found:
