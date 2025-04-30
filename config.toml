@@ -1,0 +1,119 @@
+local_mode = true
+db_connection_string = "sqlite+aiosqlite:///:memory:"
+enable_gzip_compression = false
+server_jwt_key = "ExamplePassword1234$$5"
+static_path = "./static"
+players_data_extraction_workers = 4
+minimap_frame_buffer = 20
+prefetch_frame_buffer = 20
+minimap_rendering_workers = 4
+video_processing_workers = 2
+
+[nn_config]
+field_detection_model_path = "./models/FieldDetector.pth"
+player_detection_model_path = "./models/PlayersDetector.pth"
+max_batch_size = 5
+
+[server_settings]
+host = "localhost"
+port = 8000
+is_local_instance = true
+
+[video_processing]
+hwaccel = "auto"
+video_width = 1280
+video_height = 720
+preset = "fast"
+crf = 23
+
+[minimap_config.top_left_field_point]
+x = 16
+y = 88
+
+[minimap_config.bottom_right_field_point]
+x = 1247
+y = 704
+
+[minimap_config.left_goal_zone]
+x = 116
+y = 396
+
+[minimap_config.right_goal_zone]
+x = 1144
+y = 396
+
+[minimap_config.center_line_top]
+x = 630
+y = 92
+
+[minimap_config.center_line_bottom]
+x = 630
+y = 700
+
+[minimap_config.left_blue_line_top]
+x = 423
+y = 92
+
+[minimap_config.left_blue_line_bottom]
+x = 423
+y = 700
+
+[minimap_config.right_blue_line_top]
+x = 838
+y = 92
+
+[minimap_config.right_blue_line_bottom]
+x = 838
+y = 700
+
+[minimap_config.left_goal_line_top]
+x = 99
+y = 105
+
+[minimap_config.left_goal_line_bottom]
+x = 99
+y = 360
+
+[minimap_config.left_goal_line_after_zone_top]
+x = 99
+y = 433
+
+[minimap_config.left_goal_line_after_zone_bottom]
+x = 99
+y = 688
+
+[minimap_config.right_goal_line_top]
+x = 1162
+y = 105
+
+[minimap_config.right_goal_line_bottom]
+x = 1162
+y = 360
+
+[minimap_config.right_goal_line_after_zone_top]
+x = 1162
+y = 433
+
+[minimap_config.right_goal_line_after_zone_bottom]
+x = 1162
+y = 688
+
+[minimap_config.red_circle_top_left]
+x = 241
+y = 243
+
+[minimap_config.red_circle_top_right]
+x = 1020
+y = 243
+
+[minimap_config.red_circle_bottom_left]
+x = 241
+y = 550
+
+[minimap_config.red_circle_bottom_right]
+x = 1020
+y = 550
+
+[minimap_config.center_circle]
+x = 630
+y = 396

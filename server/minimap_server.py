@@ -1,9 +1,13 @@
+import argparse
 import asyncio
 import tempfile
 import time
+import tomllib
 import typing
+from argparse import Namespace
 from contextlib import asynccontextmanager
 from pathlib import Path
+from typing import Any, AsyncGenerator
 
 import uvicorn
 from dishka import AsyncContainer, make_async_container
@@ -16,7 +20,7 @@ from fastapi import APIRouter, FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.staticfiles import StaticFiles
-from sqlalchemy.ext.asyncio import create_async_engine
+from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
 from starlette.middleware.base import BaseHTTPMiddleware
 
 from server.algorithms.disk_space_allocator import DiskSpaceAllocator
@@ -27,13 +31,7 @@ from server.controllers.users_managment import UserManagementEndpoint
 from server.controllers.video_endpoints import VideoUploadEndpoint
 from server.data_storage.sql_implementation.repository_sqla import RepositorySQLA
 from server.data_storage.sql_implementation.sqla_provider import SQLAlchemyProvider
-from server.utils.config import (
-    AppConfig,
-    MinimapKeyPointConfig,
-    NeuralNetworkConfig,
-    ServerSettings,
-    VideoPreprocessingConfig,
-)
+from server.utils.config import AppConfig
 from server.utils.providers import (
     ConfigProvider,
     DiskSpaceAllocatorProvider,
@@ -53,6 +51,7 @@ class MinimapServer:
             port=config.server_settings.port,
             **fastapi_app_config
         )
+        self.config: AppConfig = config
         self.app.add_middleware(
             CORSMiddleware,
             allow_origins=["*"],
@@ -69,21 +68,26 @@ class MinimapServer:
         self.router: APIRouter = APIRouter(route_class=DishkaRoute)
         self.reload_dirs: list[str] = [str(config.static_path.resolve())]
 
-        # temporary init code
-        engine = create_async_engine("sqlite+aiosqlite:///:memory:")
+        # Initialize engine and provider
+        engine: AsyncEngine = create_async_engine(config.db_connection_string)
         sqla_provider = SQLAlchemyProvider(engine)
-        tmp_repo: RepositorySQLA = typing.cast(RepositorySQLA, sqla_provider.get_repository())
-        asyncio.run(tmp_repo.init_db(engine))
+
+        # Init if database is in memory automatically
+        if "sqlite+aiosqlite:///:memory:" in config.db_connection_string:
+            self.init_db(engine, sqla_provider)
 
         temp_dir = Path(tempfile.gettempdir())
         temp_disk_allocator: DiskSpaceAllocator = DiskSpaceAllocator(temp_dir)
         static_path_disk_allocator: DiskSpaceAllocator
 
+        # Check if folders are on same disk to know if it needs to be single or two different disk
+        # space allocators
         if temp_dir.stat().st_dev != config.static_path.stat().st_dev:
              static_path_disk_allocator = DiskSpaceAllocator(config.static_path)
         else:
             static_path_disk_allocator = temp_disk_allocator
 
+        # Initialize container for providers
         container: AsyncContainer = make_async_container(
             DiskSpaceAllocatorProvider(
                 temp_disk_allocator,
@@ -152,78 +156,109 @@ class MinimapServer:
         response.headers["Server-Timing"] = f"app;dur={round(process_time * 1000, 4)}"
         return response
 
+    @staticmethod
+    def parse_launch_arguments() -> Namespace:
+        """
+        Получает параметры запуска при инициализации приложения.
+
+        :return: Пространство имен с полученными переменными.
+        """
+        parser: argparse.ArgumentParser = argparse.ArgumentParser(
+            prog="server",
+            add_help=False,
+            description="Сервер разметки видео для поиска позиций игроков на видеозаписях хоккейных игр"
+        )
+        parser.add_argument(
+            '-h', '--help', action='help', default=argparse.SUPPRESS,
+            help='Показывает сообщение с помощью и закрывает программу'
+        )
+        parser.add_argument(
+            "--init-db", action="store_true", default=False,
+            dest="init_db",
+            help="Инициализирует базу данных при запуске, не запуская сервер"
+        )
+        parser.add_argument(
+            "--drop-db", action="store_true", default=False,
+            dest="drop_db",
+            help="Удаляет базу данных при запуске, не запуская сервер"
+        )
+        parser.add_argument(
+            "--config", "-c", default=Path("./config.toml"), type=Path,
+            dest="config_path",
+            help="Устанавливает путь до файла конфигурации приложения"
+        )
+        parser.add_argument(
+            "--local-mode", action="store_true", default=False,
+            dest="local_mode",
+            help="Запускает сервер в локальном режиме работы с пользователем по умолчанию под логином Admin"
+        )
+
+        return parser.parse_args()
+
     @asynccontextmanager
-    async def lifespan(self, app: FastAPI):
+    async def lifespan(self, app: FastAPI) -> AsyncGenerator[None, Any]:
         yield
         await app.state.dishka_container.close()
+
+    @staticmethod
+    def init_db(engine: AsyncEngine, sqla_provider: SQLAlchemyProvider) -> None:
+        """
+        Инициализирует базу данных.
+
+        :param engine: Подключение к базе данных.
+        :param sqla_provider: Объект получения других объектов взаимодействия с БД.
+        :return: Ничего.
+        """
+        tmp_repo: RepositorySQLA = typing.cast(RepositorySQLA, sqla_provider.get_repository())
+        asyncio.run(tmp_repo.init_db(engine))
+
+    @staticmethod
+    def drop_db(engine: AsyncEngine, sqla_provider: SQLAlchemyProvider) -> None:
+        """
+        Удаляет базу данных.
+
+        :param engine: Подключение к базе данных.
+        :param sqla_provider: Объект получения других объектов взаимодействия с БД.
+        :return: Ничего.
+        """
+        tmp_repo: RepositorySQLA = typing.cast(RepositorySQLA, sqla_provider.get_repository())
+        asyncio.run(tmp_repo.drop_db(engine))
 
     def start(self) -> None:
         uvicorn.run(
             self.app,
+            host=self.config.server_settings.host,
+            port=self.config.server_settings.port,
             reload_dirs=self.reload_dirs
         )
 
 
-# Ignoring mypy arg-type error since it is cast by pydantic
-MINIMAP_KEY_POINTS = MinimapKeyPointConfig(**{  # type: ignore[arg-type]
-        "top_left_field_point": {"x": 16, "y": 88},
-        "bottom_right_field_point": {"x": 1247, "y": 704},
+args: Namespace = MinimapServer.parse_launch_arguments()
 
-        "left_goal_zone": {"x": 116, "y": 396},
-        "right_goal_zone": {"x": 1144, "y": 396},
+with open(args.config_path, mode="rb") as f:
+    config_data = AppConfig(**tomllib.load(f))
 
-        "center_line_top": {"x": 630, "y": 92},
-        "center_line_bottom": {"x": 630, "y": 700},
+config_data.local_mode = args.local_mode
+server = MinimapServer(config_data)
 
-        "left_blue_line_top": {"x": 423, "y": 92},
-        "left_blue_line_bottom": {"x": 423, "y": 700},
+if args.drop_db and args.init_db:
+    tmp_engine: AsyncEngine = create_async_engine(config_data.db_connection_string)
+    tmp_sqla_provider: SQLAlchemyProvider = SQLAlchemyProvider(tmp_engine)
+    server.drop_db(tmp_engine, tmp_sqla_provider)
+    server.init_db(tmp_engine, tmp_sqla_provider)
+    exit(0)
 
-        "right_blue_line_top": {"x": 838, "y": 92},
-        "right_blue_line_bottom": {"x": 838, "y": 700},
+elif args.drop_db:
+    tmp_engine = create_async_engine(config_data.db_connection_string)
+    tmp_sqla_provider = SQLAlchemyProvider(tmp_engine)
+    server.drop_db(tmp_engine, tmp_sqla_provider)
+    exit(0)
 
-        "left_goal_line_top": {"x": 99, "y": 105},
-        "left_goal_line_bottom": {"x": 99, "y": 360},
-
-        "left_goal_line_after_zone_top": {"x": 99, "y": 433},
-        "left_goal_line_after_zone_bottom": {"x": 99, "y": 688},
-
-        "right_goal_line_top": {"x": 1162, "y": 105},
-        "right_goal_line_bottom": {"x": 1162, "y": 360},
-
-        "right_goal_line_after_zone_top": {"x": 1162, "y": 433},
-        "right_goal_line_after_zone_bottom": {"x": 1162, "y": 688},
-
-        "center_circle": {"x": 630, "y": 396},
-        "red_circle_top_left": {"x": 241, "y": 243},
-        "red_circle_top_right": {"x": 1020, "y": 243},
-        "red_circle_bottom_left": {"x": 241, "y": 550},
-        "red_circle_bottom_right": {"x": 1020, "y": 550}
-    }
-)
-
-server = MinimapServer(
-    AppConfig(
-        static_path=Path(__file__).parent.parent / "static",
-        local_mode=True,
-        minimap_frame_buffer=20,
-        prefetch_frame_buffer=120,
-        enable_gzip_compression=False,
-        players_data_extraction_workers=4,
-        minimap_rendering_workers=4,
-        video_processing_workers=2,
-        debug_visualization=True,
-        server_jwt_key="ExamplePassword1234$$5",
-        db_connection_string="Helloworld",
-        nn_config=NeuralNetworkConfig(
-            field_detection_model_path=Path(""),
-            player_detection_model_path=Path(""),
-            max_batch_size=5
-        ),
-        minimap_config=MINIMAP_KEY_POINTS,
-        server_settings=ServerSettings(host="localhost", port=1080, is_local_instance=True),
-        video_processing=VideoPreprocessingConfig(video_width=1280, video_height=720, crf=23)
-    )
-)
+elif args.init_db:
+    tmp_engine = create_async_engine(config_data.db_connection_string)
+    tmp_sqla_provider = SQLAlchemyProvider(tmp_engine)
+    server.init_db(tmp_engine, tmp_sqla_provider)
+    exit(0)
 
 server.finish_setup()
 

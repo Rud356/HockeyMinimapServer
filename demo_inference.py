@@ -25,12 +25,13 @@ from server.algorithms.services.player_data_extraction_service import PlayerData
 from server.algorithms.services.player_predictor_service import PlayerPredictorService
 from server.data_storage.dto import BoxDTO, PointDTO
 from server.data_storage.dto.player_data_dto import PlayerDataDTO
-from server.minimap_server import MINIMAP_KEY_POINTS
+from server.minimap_server import config
 from server.utils.async_buffered_generator import buffered_generator
 from server.utils.async_video_reader import async_video_reader
 from server.utils.config import VideoPreprocessingConfig
 from server.utils.config.key_point import KeyPoint
 
+MINIMAP_KEY_POINTS = config.minimap_config
 torch.set_float32_matmul_precision('medium')
 os.environ["OPENCV_VIDEO_ACCELERATION"] = "ANY"
 source_video: Path = Path("tests/videos/converted_demo.mp4")
@@ -245,8 +246,8 @@ if __name__ == "__main__":
     asyncio.run(
         main(
             source_video,
-            (Path(__file__).parent / "models/FieldDetector_new_based_on_old.pth").resolve(),
-            (Path(__file__).parent / "models/PlayersClassification_720_1.pth").resolve()
+            (Path(__file__).parent / "models/FieldDetector.pth").resolve(),
+            (Path(__file__).parent / "models/PlayersDetector.pth").resolve()
         )
     )
     print(f"Took {round(time.time() - start, 3)}s to render")

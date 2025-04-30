@@ -1,4 +1,4 @@
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class KeyPoint(BaseModel):
@@ -8,7 +8,7 @@ class KeyPoint(BaseModel):
     :param x: Координата X.
     :param y: Координата Y.
     """
-    x: int
-    y: int
+    x: int = Field(ge=0)
+    y: int = Field(ge=0)
 
     model_config = ConfigDict(frozen=True)

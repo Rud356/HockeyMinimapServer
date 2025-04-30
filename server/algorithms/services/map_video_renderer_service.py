@@ -168,7 +168,6 @@ class MapVideoRendererService:
         :return: Нарисованный кадр.
         """
         point_position: tuple[int, int] = int(map_point_position.x), int(map_point_position.y)
-        outline_thickness: int = 1
 
         # Unknown player team color and text color
         team_color: tuple[int, int, int] = (232, 232, 232)
