@@ -95,13 +95,7 @@ class MinimapServer:
             ConfigProvider(config),
             FastapiProvider(),
             sqla_provider,
-            UserAuthorizationProvider(
-                sqla_provider.get_repository(),
-                UserAuthorizationService(
-                    key=config.server_jwt_key,
-                    local_mode=config.local_mode
-                )
-            ),
+            UserAuthorizationProvider(),
             RenderServiceLimitsProvider(
                 config.minimap_rendering_workers,
                 config.minimap_frame_buffer

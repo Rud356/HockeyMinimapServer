@@ -1,29 +1,29 @@
-from dishka import Provider, Scope, from_context, provide
+from dishka import FromDishka, Provider, Scope, from_context, provide
 from fastapi import Request
 
 from server.controllers.services.user_authorization_service import UserAuthorizationService
 from server.data_storage.dto import UserDTO
 from server.data_storage.protocols import Repository
+from server.utils.config import AppConfig
 
 
 class UserAuthorizationProvider(Provider):
     request = from_context(provides=Request, scope=Scope.REQUEST)
 
-    def __init__(self, repository: Repository, user_auth_service: UserAuthorizationService):
-        super().__init__()
-        self.user_auth_service = user_auth_service
-        self.repository = repository
-
     @provide(scope=Scope.REQUEST)
-    def get_user_auth_service(self) -> UserAuthorizationService:
-        return self.user_auth_service
+    def get_user_auth_service(self, config: FromDishka[AppConfig]) -> UserAuthorizationService:
+        return UserAuthorizationService(
+            key=config.server_jwt_key,
+            local_mode=config.local_mode
+        )
 
     @provide(scope=Scope.REQUEST)
     async def authenticated_user(
         self,
         request: Request,
-        repository: Repository
+        user_auth_service: UserAuthorizationService,
+        repository: FromDishka[Repository]
     ) -> UserDTO:
-        return await self.user_auth_service.authenticate_by_token(
-            request.cookies.get("user_token"), self.repository
+        return await user_auth_service.authenticate_by_token(
+            request.cookies.get("user_token"), repository
         )
