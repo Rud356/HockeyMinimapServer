@@ -96,6 +96,7 @@ class MinimapServer:
             FastapiProvider(),
             sqla_provider,
             UserAuthorizationProvider(
+                sqla_provider.get_repository(),
                 UserAuthorizationService(
                     key=config.server_jwt_key,
                     local_mode=config.local_mode
@@ -187,7 +188,7 @@ class MinimapServer:
             help="Устанавливает путь до файла конфигурации приложения"
         )
         parser.add_argument(
-            "--local-mode", action="store_true", default=False,
+            "--local-mode", action="store_true", default=None,
             dest="local_mode",
             help="Запускает сервер в локальном режиме работы с пользователем по умолчанию под логином Admin"
         )

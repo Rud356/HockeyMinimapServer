@@ -1,13 +1,12 @@
 from typing import Annotated
 
 from dishka.integrations.fastapi import FromDishka
-from fastapi import APIRouter, Cookie, HTTPException
+from fastapi import APIRouter, HTTPException
 from fastapi.params import Query
 
 from server.controllers.dto import CreateUser, EditUser, UserIsDeleted
 from server.controllers.endpoints_base import APIEndpoint
 from server.controllers.exceptions import UnauthorizedResourceAccess
-from server.controllers.services.user_authorization_service import UserAuthorizationService
 from server.data_storage.dto import UserDTO, UserPermissionsDTO
 from server.data_storage.exceptions import DataIntegrityError, NotFoundError
 from server.data_storage.protocols import Repository
@@ -111,8 +110,7 @@ class UserManagementEndpoint(APIEndpoint):
     async def list_users(
         self,
         repository: FromDishka[Repository],
-        user_auth_service: FromDishka[UserAuthorizationService],
-        user_token: Annotated[str | None, Cookie()] = None,
+        current_user: FromDishka[UserDTO],
         limit: Annotated[int, Query(ge=1, le=250)] = 100,
         offset: Annotated[int, Query(ge=0)] = 0
     ) -> list[UserDTO]:
@@ -120,17 +118,12 @@ class UserManagementEndpoint(APIEndpoint):
         Выводит список пользователей.
 
         :param repository: Объект взаимодействия с БД.
-        :param user_auth_service: Сервис авторизации пользователя.
-        :param user_token: Токен пользователя.
+        :param current_user: Пользователь системы.
         :param limit: Сколько записей получить.
         :param offset: Сколько записей отступить от начала.
         :return: Список пользователей.
         """
-        user: UserDTO = await user_auth_service.authenticate_by_token(
-            user_token, repository
-        )
-
-        if not user.user_permissions.can_administrate_users:
+        if not current_user.user_permissions.can_administrate_users:
             raise UnauthorizedResourceAccess(
                 "User is required to have access to administrating rights"
             )
@@ -141,23 +134,17 @@ class UserManagementEndpoint(APIEndpoint):
         self,
         user_id: int,
         repository: FromDishka[Repository],
-        user_auth_service: FromDishka[UserAuthorizationService],
-        user_token: Annotated[str | None, Cookie()] = None
+        current_user: FromDishka[UserDTO]
     ) -> UserDTO:
         """
         Получает информацию о пользователе.
 
+        :param current_user: Пользователь системы.
         :param repository: Объект взаимодействия с БД.
-        :param user_auth_service: Сервис авторизации пользователя.
-        :param user_token: Токен пользователя.
         :param user_id: О каком пользователе получить информацию.
         :return: Информация о пользователе.
         """
-        user: UserDTO = await user_auth_service.authenticate_by_token(
-            user_token, repository
-        )
-
-        if not user.user_permissions.can_administrate_users:
+        if not current_user.user_permissions.can_administrate_users:
             raise UnauthorizedResourceAccess(
                 "User is required to have access to administrating rights"
             )
@@ -169,45 +156,31 @@ class UserManagementEndpoint(APIEndpoint):
 
     async def get_current_user_information(
         self,
-        repository: FromDishka[Repository],
-        user_auth_service: FromDishka[UserAuthorizationService],
-        user_token: Annotated[str | None, Cookie()] = None
+        current_user: FromDishka[UserDTO]
     ) -> UserDTO:
         """
         Получает информацию о текущем пользователе.
 
-        :param repository: Объект взаимодействия с БД.
-        :param user_auth_service: Сервис авторизации пользователя.
-        :param user_token: Токен пользователя.
+        :param current_user: Пользователь системы.
         :return: Информация о пользователе.
         """
-        user: UserDTO = await user_auth_service.authenticate_by_token(
-            user_token, repository
-        )
-
-        return user
+        return current_user
 
     async def delete_user(
         self,
         user_id: int,
         repository: FromDishka[Repository],
-        user_auth_service: FromDishka[UserAuthorizationService],
-        user_token: Annotated[str | None, Cookie()] = None
+        current_user: FromDishka[UserDTO]
     ) -> UserIsDeleted:
         """
         Удаляет пользователя из БД.
 
         :param user_id: Идентификатор.
         :param repository: Объект взаимодействия с БД.
-        :param user_auth_service: Сервис авторизации пользователя.
-        :param user_token: Токен пользователя.
+        :param current_user: Пользователь системы.
         :return: Сообщения об удалении.
         """
-        user: UserDTO = await user_auth_service.authenticate_by_token(
-            user_token, repository
-        )
-
-        if not user.user_permissions.can_administrate_users:
+        if not current_user.user_permissions.can_administrate_users:
             raise UnauthorizedResourceAccess(
                 "User is required to have access to administrating rights"
             )
@@ -220,24 +193,18 @@ class UserManagementEndpoint(APIEndpoint):
     async def create_user(
         self,
         repository: FromDishka[Repository],
-        user_auth_service: FromDishka[UserAuthorizationService],
+        current_user: FromDishka[UserDTO],
         user_data: CreateUser,
-        user_token: Annotated[str | None, Cookie()] = None,
     ) -> UserDTO:
         """
         Создает нового пользователя в системе.
 
         :param repository: Объект для взаимодействия с БД.
-        :param user_auth_service: Сервис авторизации пользователя.
         :param user_data: Данные нового пользователя.
-        :param user_token: Токен пользователя, запрашивающего создание.
+        :param current_user: Пользователь системы.
         :return:
         """
-        user: UserDTO = await user_auth_service.authenticate_by_token(
-            user_token, repository
-        )
-
-        if not user.user_permissions.can_administrate_users:
+        if not current_user.user_permissions.can_administrate_users:
             raise UnauthorizedResourceAccess(
                 "User is required to have access to administrating rights"
             )
@@ -259,25 +226,19 @@ class UserManagementEndpoint(APIEndpoint):
         self,
         user_id: int,
         repository: FromDishka[Repository],
-        user_auth_service: FromDishka[UserAuthorizationService],
-        user_edit: EditUser,
-        user_token: Annotated[str | None, Cookie()] = None,
+        current_user: FromDishka[UserDTO],
+        user_edit: EditUser
     ) -> UserDTO:
         """
         Изменяет пользователя.
 
         :param user_id: Какой пользователь изменяется.
         :param repository: Объект для взаимодействия с БД.
-        :param user_auth_service: Сервис авторизации пользователя.
         :param user_edit: Изменения в объекте пользователя.
-        :param user_token: Токен пользователя, запрашивающего изменение.
+        :param current_user: Пользователь системы.
         :return: Обновленные данные.
         """
-        user: UserDTO = await user_auth_service.authenticate_by_token(
-            user_token, repository
-        )
-
-        if not user.user_permissions.can_administrate_users:
+        if not current_user.user_permissions.can_administrate_users:
             raise UnauthorizedResourceAccess(
                 "User is required to have access to administrating rights"
             )
@@ -298,8 +259,7 @@ class UserManagementEndpoint(APIEndpoint):
         user_id: int,
         new_permissions: UserPermissionsDTO,
         repository: FromDishka[Repository],
-        user_auth_service: FromDishka[UserAuthorizationService],
-        user_token: Annotated[str | None, Cookie()] = None
+        current_user: FromDishka[UserDTO],
     ) -> UserPermissionsDTO:
         """
         Обновляет права пользователя.
@@ -307,15 +267,10 @@ class UserManagementEndpoint(APIEndpoint):
         :param user_id: Идентификатор.
         :param new_permissions:
         :param repository: Объект взаимодействия с БД.
-        :param user_auth_service: Сервис авторизации пользователя.
-        :param user_token: Токен пользователя.
+        :param current_user: Пользователь системы.
         :return: Обновленные права.
         """
-        user: UserDTO = await user_auth_service.authenticate_by_token(
-            user_token, repository
-        )
-
-        if not user.user_permissions.can_administrate_users:
+        if not current_user.user_permissions.can_administrate_users:
             raise UnauthorizedResourceAccess(
                 "User is required to have access to administrating rights"
             )

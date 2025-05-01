@@ -11,7 +11,7 @@ args: Namespace = MinimapServer.parse_launch_arguments()
 with open(args.config_path, mode="rb") as f:
     config_data = AppConfig(**tomllib.load(f))
 
-config_data.local_mode = args.local_mode
+config_data.local_mode = args.local_mode or config_data.local_mode
 server = MinimapServer(config_data)
 
 if args.drop_db and args.init_db:

@@ -2,16 +2,19 @@ import pathlib
 
 import aiofiles
 from dishka.integrations.fastapi import FromDishka
-from fastapi import APIRouter, File, HTTPException, Response, UploadFile
+from fastapi import APIRouter, File, HTTPException, UploadFile
+from starlette.responses import HTMLResponse
 
-from server.views.video_view import VideoDTO
 from server.algorithms.exceptions.invalid_file_format import InvalidFileFormat
 from server.algorithms.exceptions.out_of_disk_space import OutOfDiskSpace
 from server.algorithms.video_processing import VideoProcessing
 from server.controllers.endpoints_base import APIEndpoint
+from server.controllers.exceptions import UnauthorizedResourceAccess
+from server.data_storage.dto import UserDTO
 from server.data_storage.protocols import Repository
 from server.utils.config import AppConfig
 from server.utils.providers import StaticDirSpaceAllocator, TmpDirSpaceAllocator, VideoProcessingWorker
+from server.views.video_view import VideoDTO
 from server.views.video_view import VideoView
 
 
@@ -30,8 +33,8 @@ class VideoUploadEndpoint(APIEndpoint):
             methods=["post"]
         )
 
-    async def upload_page(self) -> Response:
-        return Response(content="""
+    async def upload_page(self) -> HTMLResponse:
+        return HTMLResponse(content="""
         <html lang="en">
         <head>
             <meta charset="UTF-8">
@@ -88,11 +91,17 @@ class VideoUploadEndpoint(APIEndpoint):
         self,
         repository: FromDishka[Repository],
         app_config: FromDishka[AppConfig],
+        current_user: FromDishka[UserDTO],
         temp_disk_space_allocator: FromDishka[TmpDirSpaceAllocator],
         dest_disk_space_allocator: FromDishka[StaticDirSpaceAllocator],
         video_processing_worker: FromDishka[VideoProcessingWorker],
         video_upload: UploadFile = File(...),
-    ) -> VideoDTO:
+    ) -> VideoDTO | None:
+        if not current_user.user_permissions.can_create_projects:
+            raise UnauthorizedResourceAccess(
+                "User is required to have access to administrating rights"
+            )
+
         if video_upload.filename is None or video_upload.size is None:
             raise HTTPException(
                 status_code=400,
@@ -131,3 +140,10 @@ class VideoUploadEndpoint(APIEndpoint):
 
         finally:
             await video_upload.close()
+
+    async def change_correction_coefficients(
+        self,
+        repository: FromDishka[Repository],
+
+    ) -> None:
+        ...

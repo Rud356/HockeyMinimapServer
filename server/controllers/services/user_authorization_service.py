@@ -1,7 +1,8 @@
-from typing import Any
+from typing import Annotated, Any
 
 import jwt
-from fastapi import Response
+from dishka import FromDishka
+from fastapi import Cookie, Response
 from pydantic import ValidationError
 
 from server.controllers.exceptions import BadTokenPayload, UnauthorizedResourceAccess
@@ -63,8 +64,8 @@ class UserAuthorizationService:
         Производит аутентификацию пользователя.
 
         :param token: Токен пользователя.
-        :param repository:
-        :return:
+        :param repository: Репозиторий для работы с БД.
+        :return: Объект данных о пользователе.
         """
         decoded_token: UserDTO = self.decode_user_auth_token(token)
 
