@@ -61,8 +61,10 @@ class MapVideoRendererService:
         """
         loop: asyncio.AbstractEventLoop = asyncio.get_running_loop()
         height, width, *_ = self.map_frame.shape
-        additional_options = {}
+
+        additional_options = {"b:v": self.video_processing_config.target_bitare}
         additional_input_options = {}
+
         if len(self.video_processing_config.preset):
             additional_options["preset"] = self.video_processing_config.preset
 
@@ -75,7 +77,6 @@ class MapVideoRendererService:
                 ffmpeg.input("pipe:", format="rawvideo", pix_fmt="bgr24",
                     s='{}x{}'.format(width, height),
                     hwaccel=self.video_processing_config.hwaccel,
-                    loglevel="quiet",
                     **additional_input_options
                 )
                 .filter('pad', width='ceil(iw/2)*2', height='ceil(ih/2)*2')
@@ -85,6 +86,9 @@ class MapVideoRendererService:
                     vcodec=f"{self.video_processing_config.codec}",
                     crf=f"{self.video_processing_config.crf}",
                     movflags='faststart',
+                    loglevel=self.video_processing_config.loglevel,
+                    maxrate=self.video_processing_config.maxrate,
+                    bufsize=self.video_processing_config.bufsize,
                     **additional_options
                 )
                 .global_args("-y")

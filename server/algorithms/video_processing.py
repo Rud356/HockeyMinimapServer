@@ -105,7 +105,7 @@ class VideoProcessing:
         """
         # Checking video does exist and has correct file format that can be processed
         self.probe_video(source_file)
-        additional_options = {}
+        additional_options = {"b:v": self.processing_config.target_bitare}
         additional_input_options = {}
         if len(self.processing_config.preset):
             additional_options["preset"] = self.processing_config.preset
@@ -133,7 +133,9 @@ class VideoProcessing:
                     vf=f"{scale_filter},lenscorrection=k1={k1}:k2={k2}",
                     vcodec=f"{self.processing_config.codec}",
                     crf=f"{self.processing_config.crf}",
-                    loglevel="quiet",
+                    loglevel=self.processing_config.loglevel,
+                    maxrate=self.processing_config.maxrate,
+                    bufsize=self.processing_config.bufsize,
                     movflags='faststart',
                     **additional_options
                 )
@@ -158,7 +160,7 @@ class VideoProcessing:
         """
         # Checking video does exist and has correct file format that can be processed
         self.probe_video(source_file)
-        additional_options = {}
+        additional_options = {"b:v": self.processing_config.target_bitare}
         additional_input_options = {}
         if len(self.processing_config.preset):
             additional_options["preset"] = self.processing_config.preset
@@ -181,7 +183,9 @@ class VideoProcessing:
                     str(temp_video),
                     vcodec=f"{self.processing_config.codec}",
                     crf=f"{self.processing_config.crf}",
-                    loglevel="quiet",
+                    loglevel=self.processing_config.loglevel,
+                    maxrate=self.processing_config.maxrate,
+                    bufsize=self.processing_config.bufsize,
                     movflags='faststart',
                     **additional_options
                 )

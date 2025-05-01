@@ -27,6 +27,10 @@ video_width = 1280
 video_height = 720
 preset = "fast"
 crf = 27
+target_bitrate="2.5M"
+maxrate="5M"
+bufsize="10M"
+loglevel="quiet"
 
 [minimap_config.top_left_field_point]
 x = 16

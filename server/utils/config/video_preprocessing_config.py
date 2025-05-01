@@ -12,3 +12,7 @@ class VideoPreprocessingConfig(BaseModel):
     video_height: int = Field(default=720)
     preset: str = Field(default="fast")
     crf: int = Field(default=27)
+    target_bitare: str = Field(default="2.5M")
+    maxrate: str = Field(default="5M")
+    bufsize: str = Field("10M")
+    loglevel: str = Field(default="quiet")
