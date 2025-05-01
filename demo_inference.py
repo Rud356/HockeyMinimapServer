@@ -25,13 +25,13 @@ from server.algorithms.services.player_data_extraction_service import PlayerData
 from server.algorithms.services.player_predictor_service import PlayerPredictorService
 from server.data_storage.dto import BoxDTO, PointDTO
 from server.data_storage.dto.player_data_dto import PlayerDataDTO
-from server.minimap_server import config
+from server import config_data
 from server.utils.async_buffered_generator import buffered_generator
 from server.utils.async_video_reader import async_video_reader
 from server.utils.config import VideoPreprocessingConfig
 from server.utils.config.key_point import KeyPoint
 
-MINIMAP_KEY_POINTS = config.minimap_config
+MINIMAP_KEY_POINTS = config_data.minimap_config
 torch.set_float32_matmul_precision('medium')
 os.environ["OPENCV_VIDEO_ACCELERATION"] = "ANY"
 source_video: Path = Path("tests/videos/converted_demo.mp4")
