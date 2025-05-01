@@ -92,7 +92,7 @@ async def test_setting_converted_flag(video_fps: float, repo: RepositorySQLA):
 
     async with repo.transaction:
         flagged = await repo.video_repo.set_flag_video_is_converted(
-            video.video_id, True, test_video_directory, test_video_path.relative_to(test_video_directory)
+            video.video_id, True, test_video_directory, test_video_path
         )
         assert flagged == True
 
@@ -112,10 +112,10 @@ async def test_setting_processed_flag(video_fps: float, repo: RepositorySQLA):
 
     async with repo.transaction:
         await repo.video_repo.set_flag_video_is_converted(
-            video.video_id, True, test_video_directory, test_video_path.relative_to(test_video_directory)
+            video.video_id, True, test_video_directory, test_video_path
         )
         flagged = await repo.video_repo.set_flag_video_is_converted(
-            video.video_id, True, test_video_directory, test_video_path.relative_to(test_video_directory)
+            video.video_id, True, test_video_directory, test_video_path
         )
         assert flagged == True
 

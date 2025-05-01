@@ -157,7 +157,7 @@ class VideoProcessing:
         :param k1: Коэффициент коррекции видео 1.
         :param k2: Коэффициент коррекции видео 2.
         :return: техническая информация о видео.
-        :raise FileNotFound: Файл не найден на диске.
+        :raise FileNotFoundError: Файл не найден на диске.
         :raise InvalidFileFormat: Неподдерживаемый формат файла предоставлен в качестве файла.
         """
         # Checking video does exist and has correct file format that can be processed
@@ -201,7 +201,7 @@ class VideoProcessing:
         :param source_file: Исходный файл.
         :param dest_file: Целевой файл.
         :return: Информация о выведенном видео.
-        :raise FileNotFound: Файл не найден на диске.
+        :raise FileNotFoundError: Файл не найден на диске.
         :raise InvalidFileFormat: Неподдерживаемый формат файла предоставлен в качестве файла.
         """
         # Checking video does exist and has correct file format that can be processed
@@ -240,7 +240,7 @@ class VideoProcessing:
 
         :param file: Путь до файла.
         :return: Информация о файле
-        :raise FileNotFound: Файл не найден на диске.
+        :raise FileNotFoundError: Файл не найден на диске.
         :raise InvalidFileFormat: Неподдерживаемый формат видео.
         """
         if not file.is_file():

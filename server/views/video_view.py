@@ -2,11 +2,9 @@ import asyncio
 import uuid
 from concurrent.futures import Executor
 from pathlib import Path
-from typing import Any, Optional, cast
-from functools import partial
+from typing import Any, Optional
 
 import cv2
-from cv2 import Mat
 
 from server.algorithms.data_types import CV_Image
 from server.algorithms.disk_space_allocator import DiskSpaceAllocator
@@ -14,6 +12,7 @@ from server.algorithms.video_processing import VideoProcessing
 from server.data_storage.dto import VideoDTO
 from server.data_storage.exceptions import NotFoundError
 from server.data_storage.protocols import Repository
+from server.utils.providers import StaticDirSpaceAllocator, TmpDirSpaceAllocator
 
 
 class VideoView:
@@ -172,10 +171,79 @@ class VideoView:
             frame_timestamp
         )
 
-
         await loop.run_in_executor(
             executor,
             cv2.imwrite,
             str(dest.resolve()),
             image
         )
+
+    async def apply_video_correction(
+        self,
+        video_id: int,
+        executor: Executor,
+        video_processing: VideoProcessing,
+        static_directory: Path,
+        render_again: bool,
+        temp_disk_space_allocator: TmpDirSpaceAllocator,
+        dest_disk_space_allocator: StaticDirSpaceAllocator,
+    ) -> None:
+        """
+        Применяет коррекцию ко всему видео.
+
+        :param video_id: Идентификатор видео.
+        :param executor: Исполнитель синхронных задач.
+        :param video_processing: Объект обработки видео.
+        :param static_directory: Директория со статическими файлами.
+        :param render_again: Нужно ли корректировать видео заново, если файл уже был откорректирован.
+        :param temp_disk_space_allocator: Аллокатор места во временной папке.
+        :param dest_disk_space_allocator: Аллокатор места в конечной папке.
+        :return:
+        """
+        loop = asyncio.get_running_loop()
+
+        async with self.repository.transaction:
+            video: VideoDTO = await self.repository.video_repo.get_video(video_id)
+
+            if video is None:
+                raise NotFoundError("Video was not found")
+
+        if video.is_converted and not render_again:
+            raise ValueError("Video is already corrected")
+
+        video_dir: Path = static_directory / "videos"
+        source_video: Path = video_dir / video.source_video_path
+        dest_file: Path = source_video.parent / "corrected_video.mp4"
+
+        if video.corrective_coefficient_k1 == 0 and video.corrective_coefficient_k2 == 0:
+            async with self.repository.transaction as tr:
+                await self.repository.video_repo.set_flag_video_is_converted(
+                    video_id,
+                    True,
+                    video_dir,
+                    source_video
+                )
+                await tr.commit()
+                return
+
+        async with (
+            temp_disk_space_allocator.preallocate_disk_space(source_video.stat().st_size),
+            dest_disk_space_allocator.preallocate_disk_space(source_video.stat().st_size)
+        ):
+            await loop.run_in_executor(
+                executor,
+                video_processing.render_corrected_video,
+                source_video,
+                dest_file,
+                video.corrective_coefficient_k1,
+                video.corrective_coefficient_k2
+            )
+
+        async with self.repository.transaction as tr:
+            await self.repository.video_repo.set_flag_video_is_converted(
+                video_id,
+                True,
+                video_dir,
+                dest_file
+            )
+            await tr.commit()

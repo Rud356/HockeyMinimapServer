@@ -19,8 +19,7 @@ from server.data_storage.exceptions import DataIntegrityError, NotFoundError
 from server.data_storage.protocols import Repository
 from server.utils.config import AppConfig
 from server.utils.providers import StaticDirSpaceAllocator, TmpDirSpaceAllocator, VideoProcessingWorker
-from server.views.video_view import VideoDTO
-from server.views.video_view import VideoView
+from server.views.video_view import VideoDTO, VideoView
 
 
 class VideoUploadEndpoint(APIEndpoint):
@@ -85,6 +84,19 @@ class VideoUploadEndpoint(APIEndpoint):
                 400: {"description": "Неверные данные о коэффициенте коррекции"},
                 404: {"description": "Видео с предоставленным ID не найдено"},
                 409: {"description": "Видео было конвертировано с предыдущими коэффициентами коррекции"}
+            }
+        )
+        self.router.add_api_route(
+            "/videos/{video_id}/correction",
+            self.apply_correction_to_video,
+            description="Применяет коррекцию на все видео",
+            methods=["put"],
+            tags=["video"],
+            responses={
+                401: {"description": "Нет прав на выполнение коррекции"},
+                404: {"description": "Видео с предоставленным ID не найдено или файл утерян/испорчен"},
+                409: {"description": "Видео было конвертировано с текущим коэффициентами коррекции"},
+                507: {"description": "Не удалось выделить достаточно места на диске для сохранения файла"}
             }
         )
 
@@ -166,7 +178,7 @@ class VideoUploadEndpoint(APIEndpoint):
         try:
             async with (
                 aiofiles.tempfile.TemporaryDirectory(prefix="hmms_uploads_") as tmp_dir,
-                temp_disk_space_allocator.preallocate_disk_space(video_upload.size)
+                temp_disk_space_allocator.preallocate_disk_space(video_upload.size),
             ):
                 temp_file: pathlib.Path = pathlib.Path(tmp_dir) / video_upload.filename
                 async with aiofiles.open(temp_file, 'wb') as f:
@@ -334,3 +346,64 @@ class VideoUploadEndpoint(APIEndpoint):
             )
 
         return video
+
+    async def apply_correction_to_video(
+        self,
+        repository: FromDishka[Repository],
+        current_user: FromDishka[UserDTO],
+        video_processing_worker: FromDishka[VideoProcessingWorker],
+        temp_disk_space_allocator: FromDishka[TmpDirSpaceAllocator],
+        dest_disk_space_allocator: FromDishka[StaticDirSpaceAllocator],
+        app_config: FromDishka[AppConfig],
+        video_id: int,
+        render_again: Annotated[
+            bool,
+            Query(description="Требуется ли повторная коррекция для видео")
+        ] = False
+    ) -> VideoDTO:
+        """
+        Корректирует все видео в соответствии с коэффициентами.
+
+        :param dest_disk_space_allocator: Аллокатор места в конечной папки для хранения файлов.
+        :param temp_disk_space_allocator: Аллокатор места во временной папки для хранения файлов.
+        :param video_processing_worker: Обработчик видео в потоках.
+        :param app_config: Конфигурация приложения.
+        :param repository: Объект взаимодействия с БД.
+        :param current_user: Пользователь системы.
+        :param video_id: Идентификатор видео.
+        :param render_again: Обработать ли видео заново.
+        :return: Объект с информацией о видео.
+        """
+        if not current_user.user_permissions.can_create_projects:
+            raise UnauthorizedResourceAccess(
+                "User is required to have permission to create projects to modify project"
+            )
+
+        try:
+            view: VideoView = VideoView(repository)
+            await view.apply_video_correction(
+                video_id,
+                video_processing_worker,
+                self.video_processing,
+                app_config.static_path,
+                render_again,
+                temp_disk_space_allocator,
+                dest_disk_space_allocator
+            )
+            return await view.get_video(video_id)
+
+        except (FileNotFoundError, InvalidFileFormat):
+            raise HTTPException(404, "Video file not found or invalid")
+
+        except NotFoundError:
+            raise HTTPException(404, "Video not found with provided ID")
+
+        except ValueError:
+            raise HTTPException(409, "Video is already corrected and rendered")
+
+        except OutOfDiskSpace as ran_out_of_disk:
+            raise HTTPException(
+                status_code=507,
+                detail=f"Not enough disk space, only "
+                       f"{ran_out_of_disk.free_runtime_disk_space} is currently unreserved"
+            )

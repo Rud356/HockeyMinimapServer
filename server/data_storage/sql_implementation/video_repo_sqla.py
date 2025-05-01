@@ -134,11 +134,15 @@ class VideoRepoSQLA(VideoRepo):
             raise ValueError("Paths must be not null if flag is set to true")
 
         # Setting flag to True
-        if not (from_directory / converted_video_path).is_file():
-            raise ValueError(f"Invalid file path {from_directory / converted_video_path}")
+        if not converted_video_path.is_relative_to(from_directory):
+            raise ValueError(f"Invalid file path, paths must be relative {from_directory, converted_video_path}")
 
         async with await self.transaction.start_nested_transaction() as tr:
-            video_record.converted_video_path = str(converted_video_path)
+            video_record.converted_video_path = str(
+                converted_video_path
+                    .relative_to(from_directory)
+                    .as_posix()
+            )
             video_record.is_converted = flag_value
 
             await tr.commit()
