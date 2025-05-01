@@ -26,7 +26,7 @@ hwaccel_output_format = ""
 video_width = 1280
 video_height = 720
 preset = "fast"
-crf = 23
+crf = 27
 
 [minimap_config.top_left_field_point]
 x = 16
