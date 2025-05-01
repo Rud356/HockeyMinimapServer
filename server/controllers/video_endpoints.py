@@ -1,9 +1,13 @@
 import pathlib
+import tempfile
+from concurrent.futures.thread import ThreadPoolExecutor
+from pathlib import Path
+from typing import Annotated, Optional
 
 import aiofiles
 from dishka.integrations.fastapi import FromDishka
-from fastapi import APIRouter, File, HTTPException, UploadFile
-from starlette.responses import HTMLResponse
+from fastapi import APIRouter, File, HTTPException, Query, UploadFile
+from starlette.responses import FileResponse, HTMLResponse
 
 from server.algorithms.exceptions.invalid_file_format import InvalidFileFormat
 from server.algorithms.exceptions.out_of_disk_space import OutOfDiskSpace
@@ -11,6 +15,7 @@ from server.algorithms.video_processing import VideoProcessing
 from server.controllers.endpoints_base import APIEndpoint
 from server.controllers.exceptions import UnauthorizedResourceAccess
 from server.data_storage.dto import UserDTO
+from server.data_storage.exceptions import DataIntegrityError, NotFoundError
 from server.data_storage.protocols import Repository
 from server.utils.config import AppConfig
 from server.utils.providers import StaticDirSpaceAllocator, TmpDirSpaceAllocator, VideoProcessingWorker
@@ -25,12 +30,62 @@ class VideoUploadEndpoint(APIEndpoint):
         self.router.add_api_route(
             "/videos_upload",
             self.upload_page,
-            methods=["get"]
+            methods=["get"],
+            tags=["video"]
         )
         self.router.add_api_route(
             "/videos",
             self.upload_video,
-            methods=["post"]
+            description="Загружает новое видео на сервер",
+            methods=["post"],
+            tags=["video"],
+            responses={
+                400: {"description": "Неверный размер файла или формат не является видео"},
+                500: {"description": "Ошибка сервера во время обработки файла"},
+                507: {"description": "Не удалось выделить достаточно места на диске для сохранения файла"}
+            }
+        )
+        self.router.add_api_route(
+            "/videos/",
+            self.get_videos,
+            description="Получает список видео",
+            methods=["get"],
+            tags=["video"]
+        )
+        self.router.add_api_route(
+            "/videos/{video_id}",
+            self.get_video,
+            description="Получает информацию о видео по идентификатору",
+            methods=["get"],
+            tags=["video"],
+            responses = {
+                400: {"description": "Неверные данные о видео или неверный ID видео"},
+                404: {"description": "Видео с предоставленным ID не найдено"},
+            }
+        )
+        self.router.add_api_route(
+            "/videos/{video_id}/correction",
+            self.get_correction_preview,
+            description="Получает пример коррекции видео",
+            methods=["get"],
+            tags=["video"],
+            responses={
+                400: {"description": "Неверная временная метка"},
+                404: {"description": "Видео с предоставленным ID не найдено или файл утерян/испорчен"},
+                500: {"description": "Отсутствует информация о длине видео"}
+            }
+        )
+        self.router.add_api_route(
+            "/videos/{video_id}/correction",
+            self.change_correction_coefficients,
+            description="Изменяет коэффициент коррекции видео",
+            methods=["patch"],
+            tags=["video"],
+            responses={
+                400: {"description": "Неверные данные о коэффициенте коррекции"},
+                404: {"description": "Видео с предоставленным ID не найдено"},
+                409: {"description": "Видео было конвертировано с предыдущими коэффициентами коррекции"}
+            }
         )
 
     async def upload_page(self) -> HTMLResponse:
@@ -118,10 +173,11 @@ class VideoUploadEndpoint(APIEndpoint):
                     while contents := await video_upload.read(1024 * 1024):
                         await f.write(contents)
 
-                return await VideoView(repository, self.video_processing).create_new_video_from_upload(
+                return await VideoView(repository).create_new_video_from_upload(
                     temp_file,
                     app_config.static_path / "videos",
                     video_processing_worker,
+                    self.video_processing,
                     dest_disk_space_allocator
                 )
 
@@ -141,9 +197,140 @@ class VideoUploadEndpoint(APIEndpoint):
         finally:
             await video_upload.close()
 
+    async def get_video(
+        self,
+        repository: FromDishka[Repository],
+        current_user: FromDishka[UserDTO],
+        video_id: int
+    ) -> VideoDTO:
+        """
+        Получает информацию о видео.
+
+        :param repository: Объект взаимодействия с БД.
+        :param current_user: Пользователь системы.
+        :param video_id: Идентификатор видео.
+        :return: Объект информации о видео.
+        """
+        try:
+            video: VideoDTO = await VideoView(repository).get_video(video_id)
+
+        except ValueError as err:
+            raise HTTPException(
+                400,
+                "Bad data been received, or video can't be accessed"
+            ) from err
+
+        except NotFoundError:
+            raise HTTPException(status_code=404, detail="Video not found with provided ID")
+
+        return video
+
+    async def get_videos(
+        self,
+        repository: FromDishka[Repository],
+        current_user: FromDishka[UserDTO],
+        limit: Annotated[int, Query(ge=1, le=250)] = 100,
+        offset: Annotated[int, Query(ge=0)] = 0
+    ) -> list[VideoDTO]:
+        """
+        Получает список видео.
+
+        :param repository: Объект взаимодействия с БД.
+        :param current_user: Пользователь системы.
+        :param limit: Сколько записей получить.
+        :param offset: Сколько записей отступить от начала.
+        :return: Список объектов видео.
+        """
+        videos = await VideoView(repository).get_videos(limit, offset)
+        return videos
+
+    async def get_correction_preview(
+        self,
+        repository: FromDishka[Repository],
+        current_user: FromDishka[UserDTO],
+        app_config: FromDishka[AppConfig],
+        video_id: int,
+        frame_timestamp: Annotated[Optional[float], Query(ge=0)] = 0.0
+    ) -> FileResponse:
+        try:
+            temp_dir = tempfile.mkdtemp(prefix="hmms_preview_")
+            temp_dir_path: Path = Path(temp_dir)
+            temp_frame: Path = temp_dir_path / "frame.jpeg"
+
+            await VideoView(repository).generate_correction_preview(
+                video_id,
+                ThreadPoolExecutor(1),
+                self.video_processing,
+                app_config.static_path,
+                temp_frame,
+                frame_timestamp
+            )
+
+            return FileResponse(temp_frame.resolve())
+
+        except ValueError:
+            raise HTTPException(400, "Bad video timestamp")
+
+        except (FileNotFoundError, InvalidFileFormat):
+            raise HTTPException(404, "Video file not found or invalid")
+
+        except NotFoundError:
+            raise HTTPException(404, "Video not found with provided ID")
+
+        except KeyError:
+            raise HTTPException(500, "Video doesn't have DURATION in metadata, likely corrupted")
+
     async def change_correction_coefficients(
         self,
         repository: FromDishka[Repository],
+        current_user: FromDishka[UserDTO],
+        video_id: int,
+        k1: Annotated[float, Query(ge=-1, le=1, description="Коэффициент коррекции 1")] = 0,
+        k2: Annotated[float, Query(ge=-1, le=1, description="Коэффициент коррекции 2")] = 0,
+        override_coefficients_after_convertion: Annotated[
+            bool,
+            Query(description="Требуется ли перезапись коэффициентов для конвертации снова")
+        ] = False
+    ) -> VideoDTO:
+        """
+        Изменяет коэффициенты коррекции видео.
 
-    ) -> None:
-        ...
+        :param repository: Объект взаимодействия с БД.
+        :param current_user: Пользователь системы.
+        :param video_id: Идентификатор видео.
+        :param k1: Первичный коэффициент коррекции.
+        :param k2: Вторичный коэффициент коррекции.
+        :param override_coefficients_after_convertion: Перезаписать коэффициенты конвертации.
+        :return: Обновленные данные о видео.
+        """
+        if not current_user.user_permissions.can_create_projects:
+            raise UnauthorizedResourceAccess(
+                "User is required to have permission to create projects to modify project"
+            )
+
+        try:
+            view: VideoView = VideoView(repository)
+            await view.adjust_corrective_coefficients(
+                video_id, k1, k2, override_coefficients_after_convertion
+            )
+            video: VideoDTO = await view.get_video(video_id)
+
+        except DataIntegrityError:
+            raise HTTPException(
+                400,
+                "Bad values for coefficients"
+            )
+
+        except NotFoundError:
+            raise HTTPException(
+                404,
+                "Video not found"
+            )
+
+        except ValueError:
+            raise HTTPException(
+                409,
+                "Video has been already converted"
+            )
+
+        return video

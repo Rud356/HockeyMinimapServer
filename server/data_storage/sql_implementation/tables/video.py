@@ -40,7 +40,7 @@ class Video(Base):
 
     __tablename__ = "video"
     __table_args__: tuple[ColumnCollectionConstraint | dict[Any, Any], ...] = (
-        CheckConstraint("corrective_coefficient_k1 BETWEEN -10.0 AND 10.0"),
-        CheckConstraint("corrective_coefficient_k2 BETWEEN -2.0 AND 2.0"),
+        CheckConstraint("corrective_coefficient_k1 BETWEEN -1.0 AND 1.0"),
+        CheckConstraint("corrective_coefficient_k2 BETWEEN -1.0 AND 1.0"),
         {}
     )

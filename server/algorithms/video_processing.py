@@ -103,7 +103,7 @@ class VideoProcessing:
         frame: Optional[CV_Image] = None
 
         try:
-            end_timestamp: float = self.convert_ffmpeg_timestamp_to_seconds(video_info["tags"]["DURATION"])
+            end_timestamp: float = self.convert_ffmpeg_timestamp_to_seconds(video_info["duration"])
             if not self.is_valid_timestamp(frame_timestamp, end_timestamp):
                 raise ValueError("Invalid timestamp provided")
 
@@ -301,6 +301,15 @@ class VideoProcessing:
         :return: Временная метка в секундах.
         :raise ValueError: Не верный формат временной метки.
         """
+        try:
+            timestamp_value: float = float(timestamp)
+
+        except ValueError:
+            pass
+
+        else:
+            return timestamp_value
+
         parts = timestamp.split(":")
 
         if len(parts) != 3:

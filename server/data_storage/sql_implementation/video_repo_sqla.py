@@ -114,15 +114,28 @@ class VideoRepoSQLA(VideoRepo):
             raise ValueError("Invalid data types") from err
 
     async def set_flag_video_is_converted(
-        self, video_id: int, flag_value: bool, from_directory: Path, converted_video_path: Path
+        self, video_id: int, flag_value: bool,
+        from_directory: Path | None = None,
+        converted_video_path: Path | None = None
     ) -> bool:
-        if not (from_directory / converted_video_path).is_file():
-            raise ValueError(f"Invalid file path {from_directory / converted_video_path}")
-
         video_record: Optional[Video] = await self._get_video(video_id)
 
         if video_record is None:
             raise ValueError("Video does not exists")
+
+        if not flag_value:
+            async with await self.transaction.start_nested_transaction() as tr:
+                video_record.is_converted = flag_value
+                await tr.commit()
+
+            return flag_value
+
+        if from_directory is None or converted_video_path is None:
+            raise ValueError("Paths must be not null if flag is set to true")
+
+        # Setting flag to True
+        if not (from_directory / converted_video_path).is_file():
+            raise ValueError(f"Invalid file path {from_directory / converted_video_path}")
 
         async with await self.transaction.start_nested_transaction() as tr:
             video_record.converted_video_path = str(converted_video_path)

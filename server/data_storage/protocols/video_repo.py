@@ -53,10 +53,12 @@ class VideoRepo(Protocol):
         """
 
     async def set_flag_video_is_converted(
-        self, video_id: int, flag_value: bool, from_directory: Path, converted_video_path: Path
+        self, video_id: int, flag_value: bool,
+        from_directory: Path | None = None,
+        converted_video_path: Path | None = None
     ) -> bool:
         """
-        Устанавливает пометку завершения конвертации форматов видео.
+        Устанавливает пометку завершения конвертации форматов видео с коррекцией.
 
         :param video_id: Идентификатор видео.
         :param flag_value: В какое значение установить флаг.
