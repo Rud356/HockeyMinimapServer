@@ -22,60 +22,6 @@ class VideoProcessing:
     def __init__(self, video_processing_config: VideoPreprocessingConfig):
         self.processing_config = video_processing_config
 
-    def get_sample_from_video(
-        self, file: Path, *, frame_timestamp: Optional[float] = None, frame_index: Optional[int] = None
-    ) -> tuple[CV_Image | None, dict[str, Any]]:
-        """
-        Получает один кадр из видео.
-
-        :param file: Путь до файла.
-        :param frame_timestamp: Временная метка в секундах, с которой получаем кадр.
-        :param frame_index: Номер кадра, с которого получаем кадр.
-        :return: Кадр и метаинформация о видеофайле.
-        :raise FileNotFound: Файл не найден на диске.
-        :raise ValueError: Использовано два варианта временных меток одновременно,
-            или временная метка вне длительности видео.
-        :raise KeyError: Временная метка конца не найдена в метаданных.
-        :raise InvalidFileFormat: Неподдерживаемый формат файла предоставлен в качестве файла.
-        """
-        video_info = self.probe_video(file)
-        frame: Optional[CV_Image] = None
-
-        if frame_timestamp is not None and frame_index is not None:
-            raise ValueError("Must only specify either frame timestamp or frame index")
-
-        try:
-            cap = cv2.VideoCapture(str(file.resolve()))
-            if cap.isOpened():
-                # Set timestamp
-                if frame_index is not None:
-                    self.set_capture_frame_index(cap, frame_index)
-
-                if frame_timestamp is not None:
-                    end_timestamp: float = self.convert_ffmpeg_timestamp_to_seconds(video_info["tags"]["DURATION"])
-                    if not self.is_valid_timestamp(frame_timestamp, end_timestamp):
-                        raise ValueError("Invalid timestamp provided")
-
-                    self.set_capture_timestamp(cap, frame_timestamp)
-
-                # Set output frame
-                ret, frame_data = cap.read()
-                if ret:
-                    frame = typing.cast(CV_Image, frame_data)
-                else:
-                    raise InvalidFileFormat("Unexpected file format or file not readable by cv2")
-
-        except KeyError as e:
-            raise KeyError("Duration information from metadata not found") from e
-
-        except ValueError:
-            raise
-
-        except Exception as e:
-            raise InvalidFileFormat("Error decoding video") from e
-
-        return frame, video_info
-
     def render_correction_sample(
         self,
         source_file: Path,
@@ -112,22 +58,19 @@ class VideoProcessing:
 
         with tempfile.TemporaryDirectory(prefix="hmms_") as temp_dir:
             temp_dir_path: Path = Path(temp_dir)
-            temp_frame: Path = temp_dir_path / "frame.png"
+            temp_frame: Path = temp_dir_path / "frame.jpeg"
             # Execute convertion and correction
             (
                 ffmpeg.input(
                     str(source_file),
+                    ss=f"{frame_timestamp:.3f}",
                     hwaccel=self.processing_config.hwaccel,
-                    ss=f"{frame_timestamp:.3f}"
                 )
                 .output(
                     str(temp_frame),
-                    vf=f"lenscorrection=k1={k1}:k2={k2}",
                     frames="1",
-                    preset=f"{self.processing_config.preset}",
-                    crf=f"{self.processing_config.crf}",
-                    loglevel="quiet",
-                    movflags='faststart'
+                    vf=f"lenscorrection=k1={k1}:k2={k2}",
+                    loglevel="quiet"
                 )
                 .global_args("-y")
                 .run()
@@ -162,6 +105,13 @@ class VideoProcessing:
         """
         # Checking video does exist and has correct file format that can be processed
         self.probe_video(source_file)
+        additional_options = {}
+        additional_input_options = {}
+        if len(self.processing_config.preset):
+            additional_options["preset"] = self.processing_config.preset
+
+        if len(self.processing_config.hwaccel_output_format):
+            additional_input_options["hwaccel_output_format"] = self.processing_config.hwaccel_output_format
 
         with tempfile.TemporaryDirectory(prefix="hmms_") as temp_dir:
             temp_dir_path: Path = Path(temp_dir)
@@ -175,15 +125,17 @@ class VideoProcessing:
             (
                 ffmpeg.input(
                     str(source_file),
-                    hwaccel=self.processing_config.hwaccel
+                    hwaccel=self.processing_config.hwaccel,
+                    **additional_input_options
                 )
                 .output(
                     str(temp_video),
                     vf=f"{scale_filter},lenscorrection=k1={k1}:k2={k2}",
-                    preset=f"{self.processing_config.preset}",
+                    vcodec=f"{self.processing_config.codec}",
                     crf=f"{self.processing_config.crf}",
                     loglevel="quiet",
-                    movflags='faststart'
+                    movflags='faststart',
+                    **additional_options
                 )
                 .global_args("-y")
                 .run()
@@ -206,6 +158,13 @@ class VideoProcessing:
         """
         # Checking video does exist and has correct file format that can be processed
         self.probe_video(source_file)
+        additional_options = {}
+        additional_input_options = {}
+        if len(self.processing_config.preset):
+            additional_options["preset"] = self.processing_config.preset
+
+        if len(self.processing_config.hwaccel_output_format):
+            additional_input_options["hwaccel_output_format"] = self.processing_config.hwaccel_output_format
 
         with tempfile.TemporaryDirectory(prefix="hmms_") as temp_dir:
             temp_dir_path: Path = Path(temp_dir)
@@ -215,14 +174,16 @@ class VideoProcessing:
             (
                 ffmpeg.input(
                     str(source_file),
-                    hwaccel=self.processing_config.hwaccel
+                    hwaccel=self.processing_config.hwaccel,
+                    **additional_input_options
                 )
                 .output(
                     str(temp_video),
-                    preset=f"{self.processing_config.preset}",
+                    vcodec=f"{self.processing_config.codec}",
                     crf=f"{self.processing_config.crf}",
                     loglevel="quiet",
-                    movflags='faststart'
+                    movflags='faststart',
+                    **additional_options
                 )
                 .global_args("-y")
                 .run()

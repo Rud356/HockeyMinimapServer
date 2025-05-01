@@ -61,6 +61,13 @@ class MapVideoRendererService:
         """
         loop: asyncio.AbstractEventLoop = asyncio.get_running_loop()
         height, width, *_ = self.map_frame.shape
+        additional_options = {}
+        additional_input_options = {}
+        if len(self.video_processing_config.preset):
+            additional_options["preset"] = self.video_processing_config.preset
+
+        if len(self.video_processing_config.hwaccel_output_format):
+            additional_input_options["hwaccel_output_format"] = self.video_processing_config.hwaccel_output_format
 
         with tempfile.TemporaryDirectory(prefix="hmms_map_render_") as temp_dir:
             temp_video_path: Path = Path(temp_dir) / self.output_dest.name
@@ -68,15 +75,17 @@ class MapVideoRendererService:
                 ffmpeg.input("pipe:", format="rawvideo", pix_fmt="bgr24",
                     s='{}x{}'.format(width, height),
                     hwaccel=self.video_processing_config.hwaccel,
-                    loglevel="quiet"
+                    loglevel="quiet",
+                    **additional_input_options
                 )
                 .filter('pad', width='ceil(iw/2)*2', height='ceil(ih/2)*2')
                 .output(
                     str(temp_video_path.resolve()),
                     pix_fmt='yuv420p',
-                    preset=f"{self.video_processing_config.preset}",
+                    vcodec=f"{self.video_processing_config.codec}",
                     crf=f"{self.video_processing_config.crf}",
-                    movflags='faststart'
+                    movflags='faststart',
+                    **additional_options
                 )
                 .global_args("-y")
                 .run_async(pipe_stdin=True)

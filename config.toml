@@ -21,6 +21,8 @@ is_local_instance = true
 
 [video_processing]
 hwaccel = "auto"
+codec = "h264"
+hwaccel_output_format = ""
 video_width = 1280
 video_height = 720
 preset = "fast"
