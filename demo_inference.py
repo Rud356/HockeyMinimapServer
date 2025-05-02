@@ -49,7 +49,7 @@ val_dataset = datasets.ImageFolder(os.path.join(data_dir, 'val'), transform=team
 print(Path(os.path.join(data_dir, 'train')).resolve(), Path(os.path.join(data_dir, 'val')).resolve())
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
-trainer = TeamDetectorTeacher(train_dataset, val_dataset, 1, TeamDetectorModel(), device)
+trainer = TeamDetectorTeacher(train_dataset, val_dataset, 100, TeamDetectorModel(), device)
 model = trainer.train_nn()
 predictor: TeamDetectionPredictor = TeamDetectionPredictor(model, team_detector_transform, device)
 
@@ -147,52 +147,46 @@ async def main(video_path: Path, field_model: Path, players_model: Path):
 
     async for frame in buffered_generator(async_video_reader(cap), 30):
         if frame_n == 0:
-            map_data = await field_data(frame.copy(), field_service, key_point_placer)
-
             height, width, _ = frame.shape
             resolution = (width, height)
 
-            # Fix point data
-            map_data.key_points[KeyPoint(x=423, y=520)] = map_data.key_points.pop(MINIMAP_KEY_POINTS.left_blue_line_bottom)
-            map_data.key_points[KeyPoint(x=1162, y=244)] = map_data.key_points.pop(KeyPoint(x=1162, y=105))
-
             # Update blue line bottom position
-            blue_line_bottom_rel = Point(x=423, y=520).to_relative_coordinates_inside_bbox(map_bbox)
-            blue_line_bottom = RelativePointDTO(
+            blue_line_bottom_rel = Point(x=423, y=280).to_relative_coordinates_inside_bbox(map_bbox)
+            blue_line_bottom_new = RelativePointDTO(
                 x=blue_line_bottom_rel.x,
                 y=blue_line_bottom_rel.y
             )
             was_point = RelativePointDTO(
-                x=relative_map_points.left_blue_line_bottom.x,
-                y=relative_map_points.left_blue_line_bottom.y
+                x=relative_map_points.left_blue_line_top.x,
+                y=relative_map_points.left_blue_line_top.y
             )
-            key_points_mapping[blue_line_bottom] = key_points_mapping.pop(was_point)
+            key_points_mapping[blue_line_bottom_new] = key_points_mapping.pop(was_point)
 
-            # Move blue line position
-            blue_line_bottom_rel = Point(x=1162, y=244).to_relative_coordinates_inside_bbox(map_bbox)
-            blue_line_bottom = RelativePointDTO(
-                x=blue_line_bottom_rel.x,
-                y=blue_line_bottom_rel.y
+            # Move goal line position
+            goal_line_bottom_rel = Point(x=1162, y=163).to_relative_coordinates_inside_bbox(map_bbox)
+            goal_line_bottom = RelativePointDTO(
+                x=goal_line_bottom_rel.x,
+                y=goal_line_bottom_rel.y
             )
             was_point = Point(
                 x=1162,
                 y=105
             ).to_relative_coordinates_inside_bbox(map_bbox)
-            blue_line_bottom_was = RelativePointDTO(
+            goal_line_bottom_was = RelativePointDTO(
                 x=was_point.x,
                 y=was_point.y
             )
-            key_points_mapping[blue_line_bottom] = key_points_mapping.pop(blue_line_bottom_was)
+            key_points_mapping[goal_line_bottom] = key_points_mapping.pop(goal_line_bottom_was)
 
             out_demo = frame.copy()
             map_demo = map_img.copy()
-            for n, (map_p, p) in enumerate(key_points_mapping.items()):
+            for n, (map_p_rel, p) in enumerate(key_points_mapping.items()):
                 demo_p = Point.from_relative_coordinates(
                     RelativePoint(p.x, p.y),
                     resolution
                 )
                 map_p = Point.from_relative_coordinates_inside_bbox(
-                    RelativePoint(map_p.x, map_p.y),
+                    RelativePoint(map_p_rel.x, map_p_rel.y),
                     map_bbox
                 )
 
@@ -283,8 +277,6 @@ async def main(video_path: Path, field_model: Path, players_model: Path):
         out_video.write(frame_copy)
 
         frame_n += 1
-        if frame_n == 50:
-            break
         print(f"Frame {frame_n:<3} done")
 
     try:
