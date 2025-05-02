@@ -14,7 +14,7 @@ from server.algorithms.players_mapper import PlayersMapper
 
 if TYPE_CHECKING:
     from torch import Tensor
-    from server.algorithms.data_types import BoundingBox, CV_Image, Mask, RawPlayerTrackingData, Point
+    from server.algorithms.data_types import BoundingBox, CV_Image, Mask, RawPlayerTrackingData, Point, RelativePoint
 
 
 class PlayerDataExtractionService:
@@ -106,10 +106,12 @@ class PlayerDataExtractionService:
         # Find positions of players on mini map
         height, width, channels = frame.shape
         resolution: tuple[int, int] = (width, height)
-        players_bottom_points: list[Point] = [
-            tracked_player.bounding_box.bottom_point for tracked_player in tracking_data
+        players_bottom_points: list[RelativePoint] = [
+            tracked_player.bounding_box.bottom_point.to_relative_coordinates(
+                resolution
+            ) for tracked_player in tracking_data
         ]
-        map_points: list[Point] = self.players_mapper.transform_point_to_minimap_coordinates(
+        map_points: list[RelativePoint] = self.players_mapper.transform_point_to_minimap_coordinates(
             *players_bottom_points
         )
 
@@ -126,7 +128,7 @@ class PlayerDataExtractionService:
                 PlayerData(
                     player_data.tracking_id,
                     None,
-                    map_point.to_relative_coordinates_inside_bbox(self.players_mapper.map_bbox),
+                    map_point,
                     player_data.bounding_box.to_relative_coordinates(resolution),
                     player_data.player_class,
                     player_team

@@ -4,8 +4,9 @@ from typing import Mapping
 import cv2
 import numpy
 
-from server.algorithms.data_types import BoundingBox, CV_Image, Point, RelativePoint
+from server.algorithms.data_types import BoundingBox, CV_Image, Point, RelativeBoundingBox, RelativePoint
 from server.algorithms.exceptions.not_enough_field_points import NotEnoughFieldPoints
+from server.data_storage.dto.relative_point_dto import RelativePointDTO
 from server.utils.config.key_point import KeyPoint
 
 
@@ -13,13 +14,12 @@ class PlayersMapper:
     """
     Класс для реализации алгоритма соотнесения координат игроков из видео с координатами игроков на мини-карте.
     """
-    map_bbox: BoundingBox
     field_transform: numpy.ndarray
 
     def __init__(
         self,
         map_bbox: BoundingBox,
-        field_points: Mapping[KeyPoint, Point] | Mapping[Point, Point] | Mapping[RelativePoint, RelativePoint],
+        field_points: Mapping[KeyPoint | RelativePointDTO, Point | RelativePointDTO],
         reproj_threshold: float = 4.0,
         max_iters: int = 2000,
         confidence: float = 0.9
@@ -47,7 +47,7 @@ class PlayersMapper:
         height, width = image.shape[:2]
         return typing.cast(CV_Image, cv2.warpPerspective(image, self.field_transform, (width, height)))
 
-    def transform_point_to_minimap_coordinates(self, *points: Point) -> list[Point]:
+    def transform_point_to_minimap_coordinates(self, *points: RelativePoint | RelativePointDTO) -> list[RelativePoint]:
         """
         Конвертирует точки из пространства камеры в пространство мини-карты.
 
@@ -62,5 +62,6 @@ class PlayersMapper:
         to_map_coordinates = cv2.perspectiveTransform(pts_converted, self.field_transform)[0]
 
         return [
-            Point(x, y).clip_point_to_bounding_box(self.map_bbox) for x, y in to_map_coordinates
+            Point(x, y).clip_point_to_bounding_box(self.map_bbox)
+            for x, y in to_map_coordinates
         ]

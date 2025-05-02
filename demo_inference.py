@@ -8,10 +8,11 @@ from typing import AsyncGenerator, Optional
 
 import cv2
 import numpy
+import numpy as np
 import torch
 from torchvision import datasets
 
-from server.algorithms.data_types import BoundingBox, CV_Image, Point
+from server.algorithms.data_types import BoundingBox, CV_Image, Point, RelativePoint
 from server.algorithms.data_types.field_extracted_data import FieldExtractedData
 from server.algorithms.enums import CameraPosition, Team
 from server.algorithms.key_point_placer import KeyPointPlacer
@@ -23,6 +24,7 @@ from server.algorithms.services.field_predictor_service import FieldPredictorSer
 from server.algorithms.services.map_video_renderer_service import MapVideoRendererService
 from server.algorithms.services.player_data_extraction_service import PlayerDataExtractionService
 from server.algorithms.services.player_predictor_service import PlayerPredictorService
+from server.algorithms.video_processing import VideoProcessing
 from server.data_storage.dto import BoxDTO, PointDTO
 from server.data_storage.dto.player_data_dto import PlayerDataDTO
 from server import config_data
@@ -31,6 +33,7 @@ from server.utils.async_buffered_generator import buffered_generator
 from server.utils.async_video_reader import async_video_reader
 from server.utils.config import VideoPreprocessingConfig
 from server.utils.config.key_point import KeyPoint
+from server.views.map_view import MapView
 
 MINIMAP_KEY_POINTS = config_data.minimap_config
 torch.set_float32_matmul_precision('medium')
@@ -46,7 +49,7 @@ val_dataset = datasets.ImageFolder(os.path.join(data_dir, 'val'), transform=team
 print(Path(os.path.join(data_dir, 'train')).resolve(), Path(os.path.join(data_dir, 'val')).resolve())
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
-trainer = TeamDetectorTeacher(train_dataset, val_dataset, 100, TeamDetectorModel(), device)
+trainer = TeamDetectorTeacher(train_dataset, val_dataset, 1, TeamDetectorModel(), device)
 model = trainer.train_nn()
 predictor: TeamDetectionPredictor = TeamDetectionPredictor(model, team_detector_transform, device)
 
@@ -77,6 +80,7 @@ async def field_data(
 
 async def main(video_path: Path, field_model: Path, players_model: Path):
     device = "cuda" if torch.cuda.is_available() else "cpu"
+    map_view = MapView(object()) # noqa: repository isn't used here
 
     field_service = FieldPredictorService(
         field_model.resolve(),
@@ -88,9 +92,24 @@ async def main(video_path: Path, field_model: Path, players_model: Path):
         device,
         asyncio.Queue()
     )
+
+    loop = asyncio.get_running_loop()
+    loop.create_task(field_service())
+    loop.create_task(player_service())
+
+    relative_map_points = map_view.get_relative_minimap_points(MINIMAP_KEY_POINTS)
+    key_points_mapping, mask = await map_view.get_key_points_from_video(
+        video_path,
+        CameraPosition.top_middle_point,
+        MINIMAP_KEY_POINTS,
+        VideoProcessing(config_data.video_processing),
+        field_service,
+        3.0
+    )
+
+
     # DEMO RESOLUTION, FIGURED OUT IN RUNTIME
     key_point_placer = KeyPointPlacer(MINIMAP_KEY_POINTS, CameraPosition.top_middle_point, (1280, 720))
-
     team_predictor: TeamDetectionPredictor = predictor
 
     map_img = cv2.imread("static/map.png")
@@ -113,9 +132,6 @@ async def main(video_path: Path, field_model: Path, players_model: Path):
     data_renderer: AsyncGenerator[int, list[PlayerDataDTO] | None] = video_render_service.data_renderer()
     await data_renderer.asend(None)
 
-    loop = asyncio.get_running_loop()
-    loop.create_task(field_service())
-    loop.create_task(player_service())
     renderer_task = loop.create_task(video_render_service.run())
 
     cap = cv2.VideoCapture(str(video_path), cv2.CAP_FFMPEG)
@@ -126,6 +142,8 @@ async def main(video_path: Path, field_model: Path, players_model: Path):
     width: int
     height: int
     resolution: tuple[int, int] = (1280, 720)
+
+    RELATIVE_MAP_BBOX = BoundingBox(Point(0, 0), Point(1, 1))
 
     async for frame in buffered_generator(async_video_reader(cap), 30):
         if frame_n == 0:
@@ -138,14 +156,51 @@ async def main(video_path: Path, field_model: Path, players_model: Path):
             map_data.key_points[KeyPoint(x=423, y=520)] = map_data.key_points.pop(MINIMAP_KEY_POINTS.left_blue_line_bottom)
             map_data.key_points[KeyPoint(x=1162, y=244)] = map_data.key_points.pop(KeyPoint(x=1162, y=105))
 
+            # Update blue line bottom position
+            blue_line_bottom_rel = Point(x=423, y=520).to_relative_coordinates_inside_bbox(map_bbox)
+            blue_line_bottom = RelativePointDTO(
+                x=blue_line_bottom_rel.x,
+                y=blue_line_bottom_rel.y
+            )
+            was_point = RelativePointDTO(
+                x=relative_map_points.left_blue_line_bottom.x,
+                y=relative_map_points.left_blue_line_bottom.y
+            )
+            key_points_mapping[blue_line_bottom] = key_points_mapping.pop(was_point)
+
+            # Move blue line position
+            blue_line_bottom_rel = Point(x=1162, y=244).to_relative_coordinates_inside_bbox(map_bbox)
+            blue_line_bottom = RelativePointDTO(
+                x=blue_line_bottom_rel.x,
+                y=blue_line_bottom_rel.y
+            )
+            was_point = Point(
+                x=1162,
+                y=105
+            ).to_relative_coordinates_inside_bbox(map_bbox)
+            blue_line_bottom_was = RelativePointDTO(
+                x=was_point.x,
+                y=was_point.y
+            )
+            key_points_mapping[blue_line_bottom] = key_points_mapping.pop(blue_line_bottom_was)
+
             out_demo = frame.copy()
             map_demo = map_img.copy()
-            for n, (map_p, p) in enumerate(map_data.key_points.items()):
-                out_demo = draw_text(out_demo, str(n), (int(p.x), int(p.y - 10)), (255, 192, 255))
-                out_demo = p.visualize_point_on_image(out_demo)
+            for n, (map_p, p) in enumerate(key_points_mapping.items()):
+                demo_p = Point.from_relative_coordinates(
+                    RelativePoint(p.x, p.y),
+                    resolution
+                )
+                map_p = Point.from_relative_coordinates_inside_bbox(
+                    RelativePoint(map_p.x, map_p.y),
+                    map_bbox
+                )
+
+                out_demo = draw_text(out_demo, str(n), (int(demo_p.x), int(demo_p.y - 10)), (255, 192, 255))
+                out_demo = demo_p.visualize_point_on_image(out_demo)
 
                 map_demo = draw_text(map_demo, str(n), (int(map_p.x), int(map_p.y - 10)), (255, 192, 255))
-                map_demo = Point(int(map_p.x), int(map_p.y)).visualize_point_on_image(map_demo)
+                map_demo = map_p.visualize_point_on_image(map_demo)
 
             # cv2.imshow("Demo field", out_demo)
             # cv2.imshow("Demo map", map_demo)
@@ -154,8 +209,8 @@ async def main(video_path: Path, field_model: Path, players_model: Path):
 
             # Patch up and display data to simulate user input
             mapper = PlayersMapper(
-                map_bbox,
-                map_data.key_points
+                RELATIVE_MAP_BBOX,
+                key_points_mapping
             )
             # cv2.imshow("Warped image", mapper.warp_image(frame.copy()))
             # cv2.waitKey(0)
@@ -165,12 +220,11 @@ async def main(video_path: Path, field_model: Path, players_model: Path):
                 team_predictor,
                 mapper,
                 PlayerTracker(),
-                map_data.map_mask,
-                map_data.field_bbox
+                mask,
+                # Absolute coordinates required
+                BoundingBox(*mask.get_corners_of_mask())
             )
 
-        assert map_bbox is not None, "Map bbox must be not None"
-        assert map_data is not None, "Map data is still empty"
         assert mapper is not None, "Must have mapper, if map data is provided"
         assert player_data_extractor is not None, "Must have player data extractor instance at this point in code"
 
@@ -223,13 +277,14 @@ async def main(video_path: Path, field_model: Path, players_model: Path):
 
         await data_renderer.asend(converted_player_data)
 
-        # cv2.imshow("Map", map_copy)
         # cv2.imshow("Field", frame_copy)
         # cv2.waitKey(0)
         # cv2.destroyAllWindows()
         out_video.write(frame_copy)
 
         frame_n += 1
+        if frame_n == 50:
+            break
         print(f"Frame {frame_n:<3} done")
 
     try:

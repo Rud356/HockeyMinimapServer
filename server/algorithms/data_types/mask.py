@@ -6,6 +6,8 @@ from typing import Optional
 
 import cv2
 import numpy
+import numpy as np
+from numpy._typing import NDArray, _32Bit, _64Bit
 
 from server.algorithms.data_types.point import Point
 from server.algorithms.data_types.image_typehint import CV_Image
@@ -24,7 +26,7 @@ class Mask:
 
         :return:
         """
-        return (self.mask * 255).astype(numpy.uint8)
+        return self.mask.astype(numpy.uint8)
 
     def expand_mask(self, kernel: Optional[CV_Image] = None) -> Mask:
         """
@@ -52,6 +54,22 @@ class Mask:
             bool(self.mask[int(p.y)-1, int(p.x)-1] > 0) for p in points
         ]
         return keep_list
+
+    def get_corners_of_mask(self) -> tuple[Point, Point]:
+        """
+        Получает координаты по углам маски.
+
+        :return: Координаты верхней левой и нижней правой точки маски.
+        """
+        points:  numpy.ndarray[
+            tuple[int, ...],
+            numpy.dtype[numpy.signedinteger[_32Bit | _64Bit]]
+        ] = np.argwhere(self.mask > 0)
+
+        top_left_y, top_left_x = points.min(axis=0)
+        bottom_right_y, bottom_right_x = points.max(axis=0)
+
+        return Point(x=top_left_x, y=top_left_y), Point(x=bottom_right_x, y=bottom_right_y)
 
     @classmethod
     def from_multiple_masks(cls, *masks: CV_Image) -> Mask:
