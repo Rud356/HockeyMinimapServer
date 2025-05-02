@@ -24,7 +24,6 @@ from starlette.middleware.base import BaseHTTPMiddleware
 
 from server.algorithms.disk_space_allocator import DiskSpaceAllocator
 from server.algorithms.video_processing import VideoProcessing
-from server.controllers.services.user_authorization_service import UserAuthorizationService
 from server.controllers.user_authentication import UserAuthenticationEndpoint
 from server.controllers.users_managment import UserManagementEndpoint
 from server.controllers.video_endpoints import VideoUploadEndpoint

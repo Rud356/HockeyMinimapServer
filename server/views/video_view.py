@@ -79,7 +79,7 @@ class VideoView:
         :raise NotFoundError: Если видео не найдено в БД.
         """
         async with self.repository.transaction:
-            video: VideoDTO = await self.repository.video_repo.get_video(video_id)
+            video: VideoDTO | None = await self.repository.video_repo.get_video(video_id)
 
         if video is None:
             raise NotFoundError("Video was not found")
@@ -156,7 +156,7 @@ class VideoView:
         loop = asyncio.get_running_loop()
 
         async with self.repository.transaction:
-            video: VideoDTO = await self.repository.video_repo.get_video(video_id)
+            video: VideoDTO | None = await self.repository.video_repo.get_video(video_id)
 
             if video is None:
                 raise NotFoundError("Video was not found")
@@ -203,7 +203,7 @@ class VideoView:
         loop = asyncio.get_running_loop()
 
         async with self.repository.transaction:
-            video: VideoDTO = await self.repository.video_repo.get_video(video_id)
+            video: VideoDTO | None = await self.repository.video_repo.get_video(video_id)
 
             if video is None:
                 raise NotFoundError("Video was not found")

@@ -1,8 +1,7 @@
-from typing import Annotated, Any
+from typing import Any
 
 import jwt
-from dishka import FromDishka
-from fastapi import Cookie, Response
+from fastapi import Response
 from pydantic import ValidationError
 
 from server.controllers.exceptions import BadTokenPayload, UnauthorizedResourceAccess
