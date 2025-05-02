@@ -12,8 +12,8 @@ class KeyPoint(PointDTO):
     :param x: Координата X.
     :param y: Координата Y.
     """
-    x: int = Field(ge=0)
-    y: int = Field(ge=0)
+    x: int | float = Field(ge=0)
+    y: int | float = Field(ge=0)
 
     model_config: ClassVar[ConfigDict] = ConfigDict(
         frozen=True

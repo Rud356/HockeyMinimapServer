@@ -2,7 +2,7 @@ import itertools
 import math
 from typing import Optional, TypeAlias
 
-from server.algorithms.data_types import BoundingBox, Line, Point
+from server.algorithms.data_types import BoundingBox, Line, Point, RelativePoint
 from server.algorithms.enums.camera_position import CameraPosition
 from server.algorithms.enums.coordinate_split import HorizontalPosition, VerticalPosition
 from server.algorithms.exceptions.anchor_point_required import AnchorPointRequired
@@ -17,26 +17,26 @@ class KeyPointPlacer:
     """
     camera_position: CameraPosition
     minimap_key_points: MinimapKeyPointConfig
-    resolution: tuple[int, int]
+    frame_resolution: tuple[int, int]
 
     def __init__(
         self,
         key_points: MinimapKeyPointConfig,
         camera_position: CameraPosition,
-        resolution: tuple[int, int]
+        frame_resolution: tuple[int, int]
     ):
         self.minimap_key_points = key_points
         self.camera_position = camera_position
 
         if (
-            resolution is None or
-            len(resolution) != 2 or
-                (resolution[0] < 0 or resolution[1] < 0) or
-            not all(map(lambda v: not isinstance(resolution, int), resolution))
+            frame_resolution is None or
+            len(frame_resolution) != 2 or
+                (frame_resolution[0] < 0 or frame_resolution[1] < 0) or
+            not all(map(lambda v: not isinstance(frame_resolution, int), frame_resolution))
         ):
             raise ValueError("Must provide valid resolution")
 
-        self.resolution = resolution
+        self.frame_resolution = frame_resolution
 
         # Mapping for center line points (in map space)
         self.center_line_points: dict[PointQuadrant, KeyPoint] = {
@@ -321,7 +321,7 @@ class KeyPointPlacer:
         blue_lines: Optional[tuple[Line, ...]] = None,
         goal_zones_centers: Optional[tuple[Point, ...]] = None,
         goal_lines: Optional[tuple[Line, ...]] = None
-    ) -> dict[KeyPoint, Point]:
+    ) -> dict[KeyPoint, RelativePoint]:
         """
         Соотносит переданные точки и линии в координаты мини-карты.
 
@@ -387,7 +387,12 @@ class KeyPointPlacer:
                 center_point=final_anchor_point
             )
 
-        return resulting_mapping
+        relative_result_mapping: dict[KeyPoint, RelativePoint] = {
+            key_point: video_point.to_relative_coordinates(
+                self.frame_resolution
+            ) for key_point, video_point in resulting_mapping.items()
+        }
+        return relative_result_mapping
 
     def apply_camera_rotation_on_quadrants(self, *quadrants: PointQuadrant) -> list[PointQuadrant]:
         """
