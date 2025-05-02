@@ -56,7 +56,7 @@ class TeamDetectorTeacher:
         """
         train_losses, val_losses = [], []
         criterion = nn.CrossEntropyLoss()
-        optimizer = optim.Adam(self.model.parameters(), lr=0.00075)
+        optimizer = optim.SGD(self.model.parameters(), lr=0.001, momentum=0.9)
         best_val_loss: float = float('inf')
         best_model_state: Mapping[str, Any] = self.model.state_dict()
 
