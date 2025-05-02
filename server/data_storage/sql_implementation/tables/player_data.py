@@ -6,7 +6,7 @@ from sqlalchemy.orm import mapped_column
 from sqlalchemy.sql.schema import CheckConstraint, ColumnCollectionConstraint
 
 from server.algorithms.enums.player_classes_enum import PlayerClasses
-from server.data_storage.dto import BoxDTO, PointDTO
+from server.data_storage.dto import BoxDTO
 from server.data_storage.dto.relative_point_dto import RelativePointDTO
 from server.data_storage.sql_implementation.tables.base import Base
 from server.data_storage.sql_implementation.tables.team_assignment import TeamAssignment

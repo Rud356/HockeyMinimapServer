@@ -3,7 +3,6 @@ from fastapi import APIRouter
 
 from server.controllers.endpoints_base import APIEndpoint
 from server.data_storage.dto import MinimapDataDTO, UserDTO
-from server.data_storage.dto.relative_point_dto import RelativePointDTO
 from server.data_storage.protocols import Repository
 
 

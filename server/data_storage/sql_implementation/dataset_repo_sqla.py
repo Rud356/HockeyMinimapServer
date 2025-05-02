@@ -10,7 +10,7 @@ from server.algorithms.enums import Team
 from server.algorithms.enums.player_classes_enum import PlayerClasses
 from .tables import Box, Point, SubsetData, TeamsDataset, TeamsSubset
 from .transaction_manager_sqla import TransactionManagerSQLA
-from ..dto import BoxDTO, DatasetDTO, PointDTO, SubsetDataDTO, TeamsSubsetDTO
+from ..dto import BoxDTO, DatasetDTO, SubsetDataDTO, TeamsSubsetDTO
 from ..dto.relative_point_dto import RelativePointDTO
 from ..dto.subset_data_input import SubsetDataInputDTO
 from ..exceptions import DataIntegrityError, NotFoundError

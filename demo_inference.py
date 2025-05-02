@@ -58,7 +58,6 @@ for image_name in os.listdir(test_dir):
         print(f'Image {image_name}: The player belongs to {predicted_team.name} team')
 
 
-
 def draw_text(img, text, pos, color):
     return cv2.putText(img, text, pos, cv2.FONT_HERSHEY_SIMPLEX, 1.2, color, 2, cv2.LINE_AA)
 
