@@ -1,7 +1,6 @@
 import asyncio
 
 import pytest
-import pytest_asyncio # noqa: used as plugin
 
 from server.algorithms.data_types.disk_usage import DiskUsage
 from server.algorithms.disk_space_allocator import (

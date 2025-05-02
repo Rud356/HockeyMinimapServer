@@ -1,5 +1,4 @@
 import pytest
-import pytest_asyncio  # noqa: used as plugin
 from dishka import Container, make_container
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
