@@ -4,6 +4,7 @@ from sqlalchemy import Select, func
 
 from server.algorithms.video_processing import VideoPreprocessingConfig, VideoProcessing
 from server.data_storage.dto import PointDTO
+from server.data_storage.dto.relative_point_dto import RelativePointDTO
 from server.data_storage.exceptions import DataIntegrityError, NotFoundError
 from server.data_storage.sql_implementation.tables import MapData, Point
 from .fixtures import *
@@ -38,10 +39,10 @@ async def test_creating_map_data(video_fps: float, repo: RepositorySQLA):
         )
 
     point_src = {
-        PointDTO(x=0.5, y=0.5): PointDTO(x=0.5, y=0.5),
-        PointDTO(x=0.56, y=0.56): PointDTO(x=0.54, y=0.52),
-        PointDTO(x=0.6, y=0.6): PointDTO(x=0.7, y=0.2),
-        PointDTO(x=0.26, y=0.2): PointDTO(x=0.2, y=0.17)
+        RelativePointDTO(x=0.5, y=0.5): RelativePointDTO(x=0.5, y=0.5),
+        RelativePointDTO(x=0.56, y=0.56): RelativePointDTO(x=0.54, y=0.52),
+        RelativePointDTO(x=0.6, y=0.6): RelativePointDTO(x=0.7, y=0.2),
+        RelativePointDTO(x=0.26, y=0.2): RelativePointDTO(x=0.2, y=0.17)
     }
     async with repo.transaction as tr:
         await repo.map_data_repo.create_point_mapping_for_video(
@@ -63,10 +64,10 @@ async def test_getting_multiple_points(video_fps: float, repo: RepositorySQLA):
         )
 
     point_src = {
-        PointDTO(x=0.5, y=0.5): PointDTO(x=0.5, y=0.5),
-        PointDTO(x=0.56, y=0.56): PointDTO(x=0.54, y=0.52),
-        PointDTO(x=0.6, y=0.6): PointDTO(x=0.7, y=0.2),
-        PointDTO(x=0.26, y=0.2): PointDTO(x=0.2, y=0.17)
+        RelativePointDTO(x=0.5, y=0.5): RelativePointDTO(x=0.5, y=0.5),
+        RelativePointDTO(x=0.56, y=0.56): RelativePointDTO(x=0.54, y=0.52),
+        RelativePointDTO(x=0.6, y=0.6): RelativePointDTO(x=0.7, y=0.2),
+        RelativePointDTO(x=0.26, y=0.2): RelativePointDTO(x=0.2, y=0.17)
     }
     async with repo.transaction as tr:
         await repo.map_data_repo.create_point_mapping_for_video(
@@ -77,7 +78,8 @@ async def test_getting_multiple_points(video_fps: float, repo: RepositorySQLA):
         mapped_points = await repo.map_data_repo.get_points_mapping_for_video(video.video_id)
 
     assert {
-        PointDTO(x=point.point_on_minimap.x, y=point.point_on_minimap.y): PointDTO(x=point.point_on_camera.x, y=point.point_on_camera.y)
+        RelativePointDTO(x=point.point_on_minimap.x, y=point.point_on_minimap.y):
+            RelativePointDTO(x=point.point_on_camera.x, y=point.point_on_camera.y)
         for point in mapped_points
     } == point_src, "Mismatch points"
 
@@ -89,10 +91,10 @@ async def test_deleting_points(video_fps: float, repo: RepositorySQLA):
         )
 
     point_src = {
-        PointDTO(x=0.5, y=0.5): PointDTO(x=0.5, y=0.5),
-        PointDTO(x=0.56, y=0.56): PointDTO(x=0.54, y=0.52),
-        PointDTO(x=0.6, y=0.6): PointDTO(x=0.7, y=0.2),
-        PointDTO(x=0.26, y=0.2): PointDTO(x=0.2, y=0.17)
+        RelativePointDTO(x=0.5, y=0.5): RelativePointDTO(x=0.5, y=0.5),
+        RelativePointDTO(x=0.56, y=0.56): RelativePointDTO(x=0.54, y=0.52),
+        RelativePointDTO(x=0.6, y=0.6): RelativePointDTO(x=0.7, y=0.2),
+        RelativePointDTO(x=0.26, y=0.2): RelativePointDTO(x=0.2, y=0.17)
     }
     async with repo.transaction as tr:
         await repo.map_data_repo.create_point_mapping_for_video(
@@ -120,10 +122,10 @@ async def test_editing_points(video_fps: float, repo: RepositorySQLA):
         )
 
     point_src = {
-        PointDTO(x=0.5, y=0.5): PointDTO(x=0.5, y=0.5),
-        PointDTO(x=0.56, y=0.56): PointDTO(x=0.54, y=0.52),
-        PointDTO(x=0.6, y=0.6): PointDTO(x=0.7, y=0.2),
-        PointDTO(x=0.26, y=0.2): PointDTO(x=0.2, y=0.17)
+        RelativePointDTO(x=0.5, y=0.5): RelativePointDTO(x=0.5, y=0.5),
+        RelativePointDTO(x=0.56, y=0.56): RelativePointDTO(x=0.54, y=0.52),
+        RelativePointDTO(x=0.6, y=0.6): RelativePointDTO(x=0.7, y=0.2),
+        RelativePointDTO(x=0.26, y=0.2): RelativePointDTO(x=0.2, y=0.17)
     }
     async with repo.transaction as tr:
         await repo.map_data_repo.create_point_mapping_for_video(
@@ -148,7 +150,7 @@ async def test_editing_points(video_fps: float, repo: RepositorySQLA):
     async with repo.transaction as tr:
         mapped_points = await repo.map_data_repo.get_points_mapping_for_video(video.video_id)
 
-    assert mapped_points[1].point_on_minimap == PointDTO(x=0.1, y=0.1)
+    assert mapped_points[1].point_on_minimap == RelativePointDTO(x=0.1, y=0.1)
 
     async with repo.transaction as tr:
         await repo.map_data_repo.edit_point_from_mapping(
@@ -158,7 +160,7 @@ async def test_editing_points(video_fps: float, repo: RepositorySQLA):
     async with repo.transaction as tr:
         mapped_points = await repo.map_data_repo.get_points_mapping_for_video(video.video_id)
 
-    assert mapped_points[2].point_on_camera == PointDTO(x=0.25, y=0.25)
+    assert mapped_points[2].point_on_camera == RelativePointDTO(x=0.25, y=0.25)
 
 
 async def test_editing_not_existing_points(video_fps: float, repo: RepositorySQLA):
@@ -176,10 +178,10 @@ async def test_editing_points_with_invalid_points(video_fps: float, repo: Reposi
         )
 
     point_src = {
-        PointDTO(x=0.5, y=0.5): PointDTO(x=0.5, y=0.5),
-        PointDTO(x=0.56, y=0.56): PointDTO(x=0.54, y=0.52),
-        PointDTO(x=0.6, y=0.6): PointDTO(x=0.7, y=0.2),
-        PointDTO(x=0.26, y=0.2): PointDTO(x=0.2, y=0.17)
+        RelativePointDTO(x=0.5, y=0.5): RelativePointDTO(x=0.5, y=0.5),
+        RelativePointDTO(x=0.56, y=0.56): RelativePointDTO(x=0.54, y=0.52),
+        RelativePointDTO(x=0.6, y=0.6): RelativePointDTO(x=0.7, y=0.2),
+        RelativePointDTO(x=0.26, y=0.2): RelativePointDTO(x=0.2, y=0.17)
     }
     async with repo.transaction as tr:
         await repo.map_data_repo.create_point_mapping_for_video(

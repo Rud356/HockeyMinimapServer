@@ -9,6 +9,7 @@ from server.algorithms.enums import Team
 from server.algorithms.enums.player_classes_enum import PlayerClasses
 from server.algorithms.player_tracker import PlayerTracker
 from server.data_storage.dto import BoxDTO, PointDTO, SubsetDataDTO
+from server.data_storage.dto.relative_point_dto import RelativePointDTO
 
 if TYPE_CHECKING:
     from torch import Tensor
@@ -84,8 +85,8 @@ class PlayerTrackingService:
                     class_id=player_data.player_class,
                     team_id=None,
                     box=BoxDTO(
-                        top_point=PointDTO(x=min_point.x, y=min_point.y),
-                        bottom_point=PointDTO(x=max_point.x, y=max_point.y),
+                        top_point=RelativePointDTO(x=min_point.x, y=min_point.y),
+                        bottom_point=RelativePointDTO(x=max_point.x, y=max_point.y),
                     )
                 )
             )

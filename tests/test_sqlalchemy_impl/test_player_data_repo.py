@@ -3,8 +3,9 @@ from pathlib import Path
 from server.algorithms.enums import Team
 from server.algorithms.enums.player_classes_enum import PlayerClasses
 from server.algorithms.video_processing import VideoPreprocessingConfig, VideoProcessing
-from server.data_storage.dto import BoxDTO, PointDTO
+from server.data_storage.dto import BoxDTO
 from server.data_storage.dto.player_data_dto import PlayerDataDTO
+from server.data_storage.dto.relative_point_dto import RelativePointDTO
 from server.data_storage.exceptions import DataIntegrityError, NotFoundError
 from .fixtures import *
 
@@ -57,10 +58,10 @@ async def test_creating_player_data(video_fps: float, video_frames_count: int, r
                     player_id=None,
                     player_name=None,
                     class_id=PlayerClasses.Player,
-                    player_on_minimap=PointDTO(x=0.35, y=0.3),
+                    player_on_minimap=RelativePointDTO(x=0.35, y=0.3),
                     player_on_camera=BoxDTO(
-                        top_point=PointDTO(x=0.2, y=0.2),
-                        bottom_point=PointDTO(x=0.35, y=0.4)
+                        top_point=RelativePointDTO(x=0.2, y=0.2),
+                        bottom_point=RelativePointDTO(x=0.35, y=0.4)
                     )
                 )
                 for p in range(10)
@@ -95,10 +96,10 @@ async def test_fetching_all_player_data(video_fps: float, video_frames_count: in
                     player_id=None,
                     player_name=None,
                     class_id=PlayerClasses.Player,
-                    player_on_minimap=PointDTO(x=0.35, y=0.3),
+                    player_on_minimap=RelativePointDTO(x=0.35, y=0.3),
                     player_on_camera=BoxDTO(
-                        top_point=PointDTO(x=0.2, y=0.2),
-                        bottom_point=PointDTO(x=0.35, y=0.4)
+                        top_point=RelativePointDTO(x=0.2, y=0.2),
+                        bottom_point=RelativePointDTO(x=0.35, y=0.4)
                     )
                 )
                 for p in range(10)
@@ -138,10 +139,10 @@ async def test_fetching_partial_player_data(video_fps: float, video_frames_count
                     player_id=None,
                     player_name=None,
                     class_id=PlayerClasses.Player,
-                    player_on_minimap=PointDTO(x=0.35, y=0.3),
+                    player_on_minimap=RelativePointDTO(x=0.35, y=0.3),
                     player_on_camera=BoxDTO(
-                        top_point=PointDTO(x=0.2, y=0.2),
-                        bottom_point=PointDTO(x=0.35, y=0.4)
+                        top_point=RelativePointDTO(x=0.2, y=0.2),
+                        bottom_point=RelativePointDTO(x=0.35, y=0.4)
                     )
                 )
                 for p in range(10)
@@ -226,10 +227,10 @@ async def test_inserting_more_data_than_in_video(
                     player_id=None,
                     player_name=None,
                     class_id=PlayerClasses.Player,
-                    player_on_minimap=PointDTO(x=0.35, y=0.3),
+                    player_on_minimap=RelativePointDTO(x=0.35, y=0.3),
                     player_on_camera=BoxDTO(
-                        top_point=PointDTO(x=0.2, y=0.2),
-                        bottom_point=PointDTO(x=0.35, y=0.4)
+                        top_point=RelativePointDTO(x=0.2, y=0.2),
+                        bottom_point=RelativePointDTO(x=0.35, y=0.4)
                     )
                 )
                 for p in range(10)
@@ -266,10 +267,10 @@ async def test_inserting_invalid_data(video_fps: float, video_frames_count: int,
                     player_name=None,
                     class_id=PlayerClasses.Player,
                     # Invalid data, points must have values between 0 and 1
-                    player_on_minimap=PointDTO(x=1.35, y=0.3),
+                    player_on_minimap=RelativePointDTO.model_construct(x=1.35, y=0.3),
                     player_on_camera=BoxDTO(
-                        top_point=PointDTO(x=0.2, y=0.2),
-                        bottom_point=PointDTO(x=0.35, y=0.4)
+                        top_point=RelativePointDTO(x=0.2, y=0.2),
+                        bottom_point=RelativePointDTO(x=0.35, y=0.4)
                     )
                 )
                 for p in range(10)
@@ -306,10 +307,10 @@ async def test_modifying_player_team(video_fps: float, video_frames_count: int, 
                     player_id=None,
                     player_name=None,
                     class_id=PlayerClasses.Player,
-                    player_on_minimap=PointDTO(x=0.35, y=0.3),
+                    player_on_minimap=RelativePointDTO(x=0.35, y=0.3),
                     player_on_camera=BoxDTO(
-                        top_point=PointDTO(x=0.2, y=0.2),
-                        bottom_point=PointDTO(x=0.35, y=0.4)
+                        top_point=RelativePointDTO(x=0.2, y=0.2),
+                        bottom_point=RelativePointDTO(x=0.35, y=0.4)
                     )
                 )
                 for p in range(10)
@@ -356,10 +357,10 @@ async def test_setting_player_team_to_not_existing(video_fps: float, video_frame
                     player_id=None,
                     player_name=None,
                     class_id=PlayerClasses.Player,
-                    player_on_minimap=PointDTO(x=0.35, y=0.3),
+                    player_on_minimap=RelativePointDTO(x=0.35, y=0.3),
                     player_on_camera=BoxDTO(
-                        top_point=PointDTO(x=0.2, y=0.2),
-                        bottom_point=PointDTO(x=0.35, y=0.4)
+                        top_point=RelativePointDTO(x=0.2, y=0.2),
+                        bottom_point=RelativePointDTO(x=0.35, y=0.4)
                     )
                 )
                 for p in range(10)
@@ -398,10 +399,10 @@ async def test_modifying_player_class(video_fps: float, video_frames_count: int,
                     player_id=None,
                     player_name=None,
                     class_id=PlayerClasses.Player,
-                    player_on_minimap=PointDTO(x=0.35, y=0.3),
+                    player_on_minimap=RelativePointDTO(x=0.35, y=0.3),
                     player_on_camera=BoxDTO(
-                        top_point=PointDTO(x=0.2, y=0.2),
-                        bottom_point=PointDTO(x=0.35, y=0.4)
+                        top_point=RelativePointDTO(x=0.2, y=0.2),
+                        bottom_point=RelativePointDTO(x=0.35, y=0.4)
                     )
                 )
                 for p in range(10)
@@ -451,10 +452,10 @@ async def test_setting_player_class_to_not_existing(video_fps: float, video_fram
                     player_id=None,
                     player_name=None,
                     class_id=PlayerClasses.Player,
-                    player_on_minimap=PointDTO(x=0.35, y=0.3),
+                    player_on_minimap=RelativePointDTO(x=0.35, y=0.3),
                     player_on_camera=BoxDTO(
-                        top_point=PointDTO(x=0.2, y=0.2),
-                        bottom_point=PointDTO(x=0.35, y=0.4)
+                        top_point=RelativePointDTO(x=0.2, y=0.2),
+                        bottom_point=RelativePointDTO(x=0.35, y=0.4)
                     )
                 )
                 for p in range(10)

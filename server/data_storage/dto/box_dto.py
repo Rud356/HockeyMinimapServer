@@ -1,8 +1,8 @@
 from pydantic import BaseModel
 
-from server.data_storage.dto.point_dto import PointDTO
+from server.data_storage.dto.relative_point_dto import RelativePointDTO
 
 
 class BoxDTO(BaseModel):
-    top_point: PointDTO
-    bottom_point: PointDTO
+    top_point: RelativePointDTO
+    bottom_point: RelativePointDTO

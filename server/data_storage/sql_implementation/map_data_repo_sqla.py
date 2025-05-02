@@ -4,6 +4,7 @@ from sqlalchemy import Select
 from sqlalchemy.exc import IntegrityError, ProgrammingError
 
 from server.data_storage.dto import MinimapDataDTO, PointDTO
+from server.data_storage.dto.relative_point_dto import RelativePointDTO
 from server.data_storage.exceptions import DataIntegrityError, NotFoundError
 from server.data_storage.protocols import MapDataRepo
 from server.data_storage.sql_implementation.tables import MapData, Point
@@ -15,7 +16,7 @@ class MapDataRepoSQLA(MapDataRepo):
         self.transaction: TransactionManagerSQLA = transaction
 
     async def create_point_mapping_for_video(
-        self, video_id: int, mapping: dict[PointDTO, PointDTO]
+        self, video_id: int, mapping: dict[RelativePointDTO, RelativePointDTO]
     ) -> int:
         async with await self.transaction.start_nested_transaction() as tr:
             tr.session.add_all(
@@ -45,11 +46,11 @@ class MapDataRepoSQLA(MapDataRepo):
         return [
             MinimapDataDTO(
                 map_data_id=map_data_point.map_data_id,
-                point_on_camera=PointDTO(
+                point_on_camera=RelativePointDTO(
                     x=map_data_point.point_on_camera.x,
                     y=map_data_point.point_on_camera.y
                 ),
-                point_on_minimap=PointDTO(
+                point_on_minimap=RelativePointDTO(
                     x=map_data_point.point_on_minimap.x,
                     y=map_data_point.point_on_minimap.y
                 ),

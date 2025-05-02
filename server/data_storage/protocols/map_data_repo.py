@@ -1,7 +1,7 @@
 from typing import Optional, Protocol, runtime_checkable
 
 from server.data_storage.dto.minimap_data_dto import MinimapDataDTO
-from server.data_storage.dto.point_dto import PointDTO
+from server.data_storage.dto.relative_point_dto import RelativePointDTO
 from server.data_storage.protocols.transaction_manager import TransactionManager
 
 
@@ -13,7 +13,7 @@ class MapDataRepo(Protocol):
     transaction: TransactionManager
 
     async def create_point_mapping_for_video(
-        self, video_id: int, mapping: dict[PointDTO, PointDTO]
+        self, video_id: int, mapping: dict[RelativePointDTO, RelativePointDTO]
     ) -> int:
         """
         Создает соотнесения точек для видео.
@@ -42,8 +42,8 @@ class MapDataRepo(Protocol):
     async def edit_point_from_mapping(
         self,
         map_data_id: int,
-        point_on_camera: Optional[PointDTO] = None,
-        point_on_minimap: Optional[PointDTO] = None,
+        point_on_camera: Optional[RelativePointDTO] = None,
+        point_on_minimap: Optional[RelativePointDTO] = None,
         is_used: Optional[bool] = None
     ) -> bool:
         """

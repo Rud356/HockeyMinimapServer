@@ -3,7 +3,8 @@ from pathlib import Path
 from server.algorithms.enums import Team
 from server.algorithms.enums.player_classes_enum import PlayerClasses
 from server.algorithms.video_processing import VideoPreprocessingConfig, VideoProcessing
-from server.data_storage.dto import BoxDTO, PointDTO
+from server.data_storage.dto import BoxDTO
+from server.data_storage.dto.relative_point_dto import RelativePointDTO
 from server.data_storage.dto.subset_data_input import SubsetDataInputDTO
 from server.data_storage.exceptions import DataIntegrityError, NotFoundError
 from .fixtures import *
@@ -106,8 +107,8 @@ async def test_adding_subset(video_fps: float, video_frames_count: int, repo: Re
                         class_id=PlayerClasses.Player,
                         team_id=Team.Home,
                         box=BoxDTO(
-                            top_point=PointDTO(x=0.2, y=0.2),
-                            bottom_point=PointDTO(x=0.35, y=0.4)
+                            top_point=RelativePointDTO(x=0.2, y=0.2),
+                            bottom_point=RelativePointDTO(x=0.35, y=0.4)
                         )
                     )
                     for p in range(10)
@@ -152,8 +153,8 @@ async def test_adding_subset_to_out_of_bounds(video_fps: float, video_frames_cou
                             class_id=PlayerClasses.Player,
                             team_id=Team.Home,
                             box=BoxDTO(
-                                top_point=PointDTO(x=0.2, y=0.2),
-                                bottom_point=PointDTO(x=0.35, y=0.4)
+                                top_point=RelativePointDTO(x=0.2, y=0.2),
+                                bottom_point=RelativePointDTO(x=0.35, y=0.4)
                             )
                         )
                         for p in range(10)
@@ -193,8 +194,8 @@ async def test_adding_subset_to_invalid_boundaries(video_fps: float, video_frame
                             class_id=PlayerClasses.Player,
                             team_id=Team.Home,
                             box=BoxDTO(
-                                top_point=PointDTO(x=0.2, y=0.2),
-                                bottom_point=PointDTO(x=0.35, y=0.4)
+                                top_point=RelativePointDTO(x=0.2, y=0.2),
+                                bottom_point=RelativePointDTO(x=0.35, y=0.4)
                             )
                         )
                         for p in range(10)
@@ -234,8 +235,8 @@ async def test_adding_subset_with_duplicates(video_fps: float, video_frames_coun
                             class_id=PlayerClasses.Player,
                             team_id=Team.Home,
                             box=BoxDTO(
-                                top_point=PointDTO(x=0.2, y=0.2),
-                                bottom_point=PointDTO(x=0.35, y=0.4)
+                                top_point=RelativePointDTO(x=0.2, y=0.2),
+                                bottom_point=RelativePointDTO(x=0.35, y=0.4)
                             )
                         )
                         for _ in range(10)
@@ -261,8 +262,8 @@ async def test_adding_subset_to_not_existing_dataset(video_fps: float, video_fra
                             class_id=PlayerClasses.Player,
                             team_id=Team.Home,
                             box=BoxDTO(
-                                top_point=PointDTO(x=0.2, y=0.2),
-                                bottom_point=PointDTO(x=0.35, y=0.4)
+                                top_point=RelativePointDTO(x=0.2, y=0.2),
+                                bottom_point=RelativePointDTO(x=0.35, y=0.4)
                             )
                         )
                         for _ in range(10)
@@ -302,8 +303,8 @@ async def test_changing_team_for_player(video_fps: float, video_frames_count: in
                         class_id=PlayerClasses.Player,
                         team_id=Team.Home,
                         box=BoxDTO(
-                            top_point=PointDTO(x=0.2, y=0.2),
-                            bottom_point=PointDTO(x=0.35, y=0.4)
+                            top_point=RelativePointDTO(x=0.2, y=0.2),
+                            bottom_point=RelativePointDTO(x=0.35, y=0.4)
                         )
                     )
                     for p in range(10)
@@ -358,8 +359,8 @@ async def test_changing_team_for_non_existing_player(video_fps: float, video_fra
                         class_id=PlayerClasses.Player,
                         team_id=Team.Home,
                         box=BoxDTO(
-                            top_point=PointDTO(x=0.2, y=0.2),
-                            bottom_point=PointDTO(x=0.35, y=0.4)
+                            top_point=RelativePointDTO(x=0.2, y=0.2),
+                            bottom_point=RelativePointDTO(x=0.35, y=0.4)
                         )
                     )
                     for p in range(10)
@@ -405,8 +406,8 @@ async def test_getting_teams_data_points_count(video_fps: float, video_frames_co
                         class_id=PlayerClasses.Player,
                         team_id=Team.Home,
                         box=BoxDTO(
-                            top_point=PointDTO(x=0.2, y=0.2),
-                            bottom_point=PointDTO(x=0.35, y=0.4)
+                            top_point=RelativePointDTO(x=0.2, y=0.2),
+                            bottom_point=RelativePointDTO(x=0.35, y=0.4)
                         )
                     )
                     for p in range(10)
@@ -456,8 +457,8 @@ async def test_points_count_from_many_subsets(video_fps: float, video_frames_cou
                             class_id=PlayerClasses.Player,
                             team_id=Team.Home,
                             box=BoxDTO(
-                                top_point=PointDTO(x=0.2, y=0.2),
-                                bottom_point=PointDTO(x=0.35, y=0.4)
+                                top_point=RelativePointDTO(x=0.2, y=0.2),
+                                bottom_point=RelativePointDTO(x=0.35, y=0.4)
                             )
                         )
                         for p in range(10)
@@ -507,8 +508,8 @@ async def test_changing_player_class(video_fps: float, video_frames_count: int, 
                         class_id=PlayerClasses.Player,
                         team_id=Team.Home,
                         box=BoxDTO(
-                            top_point=PointDTO(x=0.2, y=0.2),
-                            bottom_point=PointDTO(x=0.35, y=0.4)
+                            top_point=RelativePointDTO(x=0.2, y=0.2),
+                            bottom_point=RelativePointDTO(x=0.35, y=0.4)
                         )
                     )
                     for p in range(10)
@@ -565,8 +566,8 @@ async def test_changing_player_class_for_non_existing_player(
                         class_id=PlayerClasses.Player,
                         team_id=Team.Home,
                         box=BoxDTO(
-                            top_point=PointDTO(x=0.2, y=0.2),
-                            bottom_point=PointDTO(x=0.35, y=0.4)
+                            top_point=RelativePointDTO(x=0.2, y=0.2),
+                            bottom_point=RelativePointDTO(x=0.35, y=0.4)
                         )
                     )
                     for p in range(10)
@@ -613,8 +614,8 @@ async def test_getting_teams_data_points_count_with_class_change(
                         class_id=PlayerClasses.Player,
                         team_id=Team.Home,
                         box=BoxDTO(
-                            top_point=PointDTO(x=0.2, y=0.2),
-                            bottom_point=PointDTO(x=0.35, y=0.4)
+                            top_point=RelativePointDTO(x=0.2, y=0.2),
+                            bottom_point=RelativePointDTO(x=0.35, y=0.4)
                         )
                     )
                     for p in range(10)
@@ -665,8 +666,8 @@ video_fps: float, video_frames_count: int, repo: RepositorySQLA
                         class_id=PlayerClasses.Player,
                         team_id=Team.Home,
                         box=BoxDTO(
-                            top_point=PointDTO(x=0.2, y=0.2),
-                            bottom_point=PointDTO(x=0.35, y=0.4)
+                            top_point=RelativePointDTO(x=0.2, y=0.2),
+                            bottom_point=RelativePointDTO(x=0.35, y=0.4)
                         )
                     )
                     for p in range(10)

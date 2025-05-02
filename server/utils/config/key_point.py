@@ -1,7 +1,11 @@
-from pydantic import BaseModel, ConfigDict, Field
+from typing import ClassVar
+
+from pydantic import ConfigDict, Field
+
+from server.data_storage.dto import PointDTO
 
 
-class KeyPoint(BaseModel):
+class KeyPoint(PointDTO):
     """
     Описывает ключевую точку на мини-карте.
 
@@ -11,4 +15,6 @@ class KeyPoint(BaseModel):
     x: int = Field(ge=0)
     y: int = Field(ge=0)
 
-    model_config = ConfigDict(frozen=True)
+    model_config: ClassVar[ConfigDict] = ConfigDict(
+        frozen=True
+    ) # noqa: overriding defaults to have it hashable

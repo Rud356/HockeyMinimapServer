@@ -11,6 +11,7 @@ from server.algorithms.enums.player_classes_enum import PlayerClasses
 from .tables import Box, Point, SubsetData, TeamsDataset, TeamsSubset
 from .transaction_manager_sqla import TransactionManagerSQLA
 from ..dto import BoxDTO, DatasetDTO, PointDTO, SubsetDataDTO, TeamsSubsetDTO
+from ..dto.relative_point_dto import RelativePointDTO
 from ..dto.subset_data_input import SubsetDataInputDTO
 from ..exceptions import DataIntegrityError, NotFoundError
 from ..protocols import DatasetRepo
@@ -69,11 +70,11 @@ class DatasetRepoSQLA(DatasetRepo):
                     class_id=data_point.class_id,
                     team_id=data_point.team_id,
                     box=BoxDTO(
-                        top_point=PointDTO(
+                        top_point=RelativePointDTO(
                             x=data_point.box.top_point.x,
                             y=data_point.box.top_point.y
                         ),
-                        bottom_point=PointDTO(
+                        bottom_point=RelativePointDTO(
                             x=data_point.box.bottom_point.x,
                             y=data_point.box.bottom_point.y
                         ),

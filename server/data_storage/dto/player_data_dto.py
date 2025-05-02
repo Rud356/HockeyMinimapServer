@@ -5,7 +5,7 @@ from pydantic import BaseModel
 from server.algorithms.enums.player_classes_enum import PlayerClasses
 from server.algorithms.enums.team import Team
 from server.data_storage.dto.box_dto import BoxDTO
-from server.data_storage.dto.point_dto import PointDTO
+from server.data_storage.dto.relative_point_dto import RelativePointDTO
 
 
 class PlayerDataDTO(BaseModel):
@@ -15,4 +15,4 @@ class PlayerDataDTO(BaseModel):
     team_id: Optional[Team]
     class_id: PlayerClasses
     player_on_camera: BoxDTO
-    player_on_minimap: PointDTO
+    player_on_minimap: RelativePointDTO
