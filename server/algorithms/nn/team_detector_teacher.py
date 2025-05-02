@@ -42,8 +42,8 @@ class TeamDetectorTeacher:
         :param model: Модель машинного обучения.
         :param device: На каком устройстве выполняется обучение.
         """
-        self.train_loader: DataLoader[VisionDataset] = DataLoader(train_dataset, batch_size=128, shuffle=True)
-        self.val_loader: DataLoader[VisionDataset] = DataLoader(val_dataset, batch_size=128, shuffle=True)
+        self.train_loader: DataLoader[VisionDataset] = DataLoader(train_dataset, batch_size=128)
+        self.val_loader: DataLoader[VisionDataset] = DataLoader(val_dataset, batch_size=128)
         self.epochs: int = epochs
         self.model: TeamDetectorModel = model.to(device)
         self.device: str = device
