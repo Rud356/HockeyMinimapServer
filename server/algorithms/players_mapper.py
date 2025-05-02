@@ -45,7 +45,25 @@ class PlayersMapper:
         :return: Новое изображение с примененным преобразованием.
         """
         height, width = image.shape[:2]
-        return typing.cast(CV_Image, cv2.warpPerspective(image, self.field_transform, (width, height)))
+
+        scale_matrix: numpy.ndarray = numpy.array(
+            [
+                [width, 0, 0],
+                [0, height, 0],
+                [0, 0, 1]
+            ],
+            dtype = 'float32'
+        )
+        adjusted_transform = scale_matrix @ self.field_transform @ numpy.linalg.inv(scale_matrix)
+
+        return typing.cast(
+            CV_Image, cv2.warpPerspective(
+                image,
+                adjusted_transform,
+                (width, height),
+                flags = cv2.INTER_CUBIC
+            )
+        )
 
     def transform_point_to_minimap_coordinates(self, *points: RelativePoint | RelativePointDTO) -> list[RelativePoint]:
         """
@@ -62,6 +80,6 @@ class PlayersMapper:
         to_map_coordinates = cv2.perspectiveTransform(pts_converted, self.field_transform)[0]
 
         return [
-            Point(x, y).clip_point_to_bounding_box(self.map_bbox)
+            RelativePoint(*Point(x, y).clip_point_to_bounding_box(self.map_bbox))
             for x, y in to_map_coordinates
         ]
