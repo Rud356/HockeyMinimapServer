@@ -10,7 +10,7 @@ class UserView:
     Предоставляет интерфейс получения данных о пользователях и управления ими.
     """
     def __init__(self, repository: Repository):
-        self.repository = repository
+        self.repository: Repository = repository
 
     async def get_users(self, limit: int = 100, offset: int = 0) -> list[UserDTO]:
         """

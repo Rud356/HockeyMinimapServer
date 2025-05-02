@@ -26,6 +26,7 @@ from server.algorithms.services.player_predictor_service import PlayerPredictorS
 from server.data_storage.dto import BoxDTO, PointDTO
 from server.data_storage.dto.player_data_dto import PlayerDataDTO
 from server import config_data
+from server.data_storage.dto.relative_point_dto import RelativePointDTO
 from server.utils.async_buffered_generator import buffered_generator
 from server.utils.async_video_reader import async_video_reader
 from server.utils.config import VideoPreprocessingConfig
@@ -97,13 +98,18 @@ async def main(video_path: Path, field_model: Path, players_model: Path):
     # Video output streams
     fourcc = cv2.VideoWriter_fourcc(*'mp4v')
     out_video = cv2.VideoWriter('output.mp4', fourcc, 25.0, (1280, 720))
+    map_bbox: BoundingBox = BoundingBox(
+        Point(MINIMAP_KEY_POINTS.top_left_field_point.x, MINIMAP_KEY_POINTS.top_left_field_point.y),
+        Point(MINIMAP_KEY_POINTS.bottom_right_field_point.x, MINIMAP_KEY_POINTS.bottom_right_field_point.y)
+    )
 
     video_render_service = MapVideoRendererService(
         ThreadPoolExecutor(1),
         25.0,
         Path('output_map.mp4'),
+        map_bbox,
         map_img,
-        video_processing_config=VideoPreprocessingConfig(video_width=1280, video_height=720, crf=30)
+        video_processing_config=VideoPreprocessingConfig(video_width=1280, video_height=720, crf=24)
     )
     data_renderer: AsyncGenerator[int, list[PlayerDataDTO] | None] = video_render_service.data_renderer()
     await data_renderer.asend(None)
@@ -118,21 +124,20 @@ async def main(video_path: Path, field_model: Path, players_model: Path):
     map_data: Optional[FieldExtractedData] = None
     mapper: Optional[PlayersMapper] = None
     player_data_extractor: Optional[PlayerDataExtractionService] = None
-
-    map_bbox: Optional[BoundingBox] = None
+    width: int
+    height: int
+    resolution: tuple[int, int] = (1280, 720)
 
     async for frame in buffered_generator(async_video_reader(cap), 30):
         if frame_n == 0:
             map_data = await field_data(frame.copy(), field_service, key_point_placer)
 
+            height, width, _ = frame.shape
+            resolution = (width, height)
+
             # Fix point data
             map_data.key_points[KeyPoint(x=423, y=520)] = map_data.key_points.pop(MINIMAP_KEY_POINTS.left_blue_line_bottom)
             map_data.key_points[KeyPoint(x=1162, y=244)] = map_data.key_points.pop(KeyPoint(x=1162, y=105))
-
-            map_bbox = BoundingBox(
-                Point(MINIMAP_KEY_POINTS.top_left_field_point.x, MINIMAP_KEY_POINTS.top_left_field_point.y),
-                Point(MINIMAP_KEY_POINTS.bottom_right_field_point.x, MINIMAP_KEY_POINTS.bottom_right_field_point.y)
-            )
 
             out_demo = frame.copy()
             map_demo = map_img.copy()
@@ -176,8 +181,6 @@ async def main(video_path: Path, field_model: Path, players_model: Path):
         player_data = player_data_extractor.process_frame(frame, player_instances)
 
         frame_copy = frame.copy()
-        map_copy = map_img.copy()
-
         converted_player_data: list[PlayerDataDTO] = []
         for player in player_data:
             # TODO: Replace with actual visualiser wrapper
@@ -186,9 +189,29 @@ async def main(video_path: Path, field_model: Path, players_model: Path):
             if player.team_id is not None:
                 player_data_repr += f" {player.team_id.name[0]}"
 
-            bbox_real = BoundingBox.from_relative_bounding_box(player.bounding_box_on_camera, (720, 1280))
-            minimap_point = Point.from_relative_coordinates_inside_bbox(player.position, map_bbox)
+            player_info: PlayerDataDTO = PlayerDataDTO(
+                tracking_id=player.tracking_id,
+                player_id=None,
+                player_name=None,
+                team_id=player.team_id,
+                class_id=player.class_id,
+                player_on_camera=BoxDTO(
+                    top_point=RelativePointDTO(
+                        x=player.bounding_box_on_camera.min_point.x,
+                        y=player.bounding_box_on_camera.min_point.y
+                    ),
+                    bottom_point=RelativePointDTO(
+                        x=player.bounding_box_on_camera.max_point.x,
+                        y=player.bounding_box_on_camera.max_point.y
+                    )
+                ),
+                player_on_minimap=RelativePointDTO(
+                    x=player.position.x,
+                    y=player.position.y
+                )
+            )
 
+            bbox_real = BoundingBox.from_relative_bounding_box(player.bounding_box_on_camera, resolution)
             frame_copy = bbox_real.visualize_bounding_box(frame_copy)
             draw_text(
                 frame_copy,
@@ -197,29 +220,7 @@ async def main(video_path: Path, field_model: Path, players_model: Path):
                 (22, 99, 33)
             )
 
-            converted_player_data.append(
-                PlayerDataDTO(
-                    tracking_id=player.tracking_id,
-                    player_id=None,
-                    player_name=None,
-                    team_id=player.team_id,
-                    class_id=player.class_id,
-                    player_on_camera=BoxDTO(
-                        top_point=PointDTO(
-                            x=bbox_real.min_point.x,
-                            y=bbox_real.min_point.y
-                        ),
-                        bottom_point=PointDTO(
-                            x=bbox_real.max_point.x,
-                            y=bbox_real.max_point.y
-                        )
-                    ),
-                    player_on_minimap=PointDTO(
-                        x=minimap_point.x,
-                        y=minimap_point.y
-                    )
-                )
-            )
+            converted_player_data.append(player_info)
 
         await data_renderer.asend(converted_player_data)
 

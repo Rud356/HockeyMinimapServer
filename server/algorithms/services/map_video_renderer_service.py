@@ -12,11 +12,11 @@ from typing import AsyncGenerator, Optional
 import cv2
 import ffmpeg
 
-from server.algorithms.data_types import CV_Image
+from server.algorithms.data_types import BoundingBox, CV_Image, Point, RelativePoint
 from server.algorithms.enums import Team
 from server.algorithms.enums.player_classes_enum import PlayerClasses
-from server.data_storage.dto import PointDTO
 from server.data_storage.dto.player_data_dto import PlayerDataDTO
+from server.data_storage.dto.relative_point_dto import RelativePointDTO
 from server.utils.config import VideoPreprocessingConfig
 
 FILL_CIRCLE_THICKNESS: int = -1
@@ -32,6 +32,7 @@ class MapVideoRendererService:
         renderer_pool_executor: Executor,
         fps: int | float,
         output_dest: Path,
+        map_bbox: BoundingBox,
         map_frame: CV_Image,
         video_processing_config: VideoPreprocessingConfig,
         frame_buffer_limit: int = 10,
@@ -44,6 +45,7 @@ class MapVideoRendererService:
         assert fps > 5, "Must specify fps at least"
         self.fps: float = fps
         self.output_dest: Path = output_dest.resolve()
+        self.map_bbox: BoundingBox = map_bbox
         self.map_frame: CV_Image = map_frame
         self.video_processing_config: VideoPreprocessingConfig = video_processing_config
         self.renderer_pool_executor: Executor = renderer_pool_executor
@@ -164,7 +166,7 @@ class MapVideoRendererService:
         self,
         map_frame: CV_Image,
         tracking_id: int,
-        map_point_position: PointDTO,
+        map_point_position: RelativePointDTO,
         class_id: PlayerClasses,
         team_id: Optional[Team] = None,
         player_name: Optional[str] = None
@@ -180,21 +182,22 @@ class MapVideoRendererService:
         :param player_name: Пользовательское название игрока.
         :return: Нарисованный кадр.
         """
-        point_position: tuple[int, int] = int(map_point_position.x), int(map_point_position.y)
+        point_position: Point = Point.from_relative_coordinates_inside_bbox(
+            RelativePoint(map_point_position.x, map_point_position.y),
+            self.map_bbox
+        )
+        pixel_position: tuple[int, int] = int(point_position.x), int(point_position.y)
 
-        # Unknown player team color and text color
+        # Default player team color, text color and text
         team_color: tuple[int, int, int] = (232, 232, 232)
         team_text_color: tuple[int, int, int] = (0, 0, 0)
+        player_text: str = "P"
 
         match class_id:
             case PlayerClasses.Referee:
-                map_frame = self.draw_point(
-                    map_frame,
-                    "R",
-                    self.referee_color,
-                    (255, 255, 255),
-                    point_position
-                )
+                team_color = self.referee_color
+                team_text_color = (255, 255, 255)
+                player_text = "R"
 
             case PlayerClasses.Player:
                 # Overriding default unknown team color
@@ -206,22 +209,10 @@ class MapVideoRendererService:
 
                 # Choosing what to render as player name
                 if player_name:
-                    map_frame = self.draw_point(
-                        map_frame,
-                        str(player_name),
-                        team_color,
-                        team_text_color,
-                        point_position
-                    )
+                    player_text = str(player_name)
 
                 else:
-                    map_frame = self.draw_point(
-                        map_frame,
-                        str(tracking_id),
-                        team_color,
-                        team_text_color,
-                        point_position
-                    )
+                    player_text = str(tracking_id)
 
             case PlayerClasses.Goalie:
                 # Overriding default unknown team color
@@ -233,23 +224,18 @@ class MapVideoRendererService:
 
                 # Choosing what to render as player name
                 if player_name:
-                    map_frame = self.draw_point(
-                        map_frame,
-                        str(player_name),
-                        team_color,
-                        team_text_color,
-                        point_position
-                    )
+                    player_text = str(player_name)
 
                 else:
-                    map_frame = self.draw_point(
-                        map_frame,
-                        "G",
-                        team_color,
-                        team_text_color,
-                        point_position
-                    )
+                    player_text = "G"
 
+        map_frame = self.draw_point(
+            map_frame,
+            player_text,
+            team_color,
+            team_text_color,
+            pixel_position
+        )
         return map_frame
 
     def draw_point(

@@ -45,8 +45,9 @@ class Point(NamedTuple):
         self.assert_resolution_validity(resolution)
 
         return RelativePoint(
-            self.x / resolution[0],
-            self.y / resolution[1]
+            # Clipping points to space from 0 to 1
+            max(min(self.x / resolution[0], 1), 0),
+            max(min(self.y / resolution[1], 1), 0)
         )
 
     def to_relative_coordinates_inside_bbox(self, inside_of_bbox: BoundingBox) -> RelativePoint:

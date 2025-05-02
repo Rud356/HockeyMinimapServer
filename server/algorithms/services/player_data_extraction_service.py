@@ -105,7 +105,7 @@ class PlayerDataExtractionService:
 
         # Find positions of players on mini map
         height, width, channels = frame.shape
-        resolution: tuple[int, int] = (height, width)
+        resolution: tuple[int, int] = (width, height)
         players_bottom_points: list[Point] = [
             tracked_player.bounding_box.bottom_point for tracked_player in tracking_data
         ]

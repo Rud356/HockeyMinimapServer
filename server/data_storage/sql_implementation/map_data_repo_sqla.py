@@ -3,7 +3,7 @@ from typing import Optional, Sequence
 from sqlalchemy import Select
 from sqlalchemy.exc import IntegrityError, ProgrammingError
 
-from server.data_storage.dto import MinimapDataDTO, PointDTO
+from server.data_storage.dto import MinimapDataDTO
 from server.data_storage.dto.relative_point_dto import RelativePointDTO
 from server.data_storage.exceptions import DataIntegrityError, NotFoundError
 from server.data_storage.protocols import MapDataRepo
@@ -74,8 +74,8 @@ class MapDataRepoSQLA(MapDataRepo):
     async def edit_point_from_mapping(
         self,
         map_data_id: int,
-        point_on_camera: Optional[PointDTO] = None,
-        point_on_minimap: Optional[PointDTO] = None,
+        point_on_camera: Optional[RelativePointDTO] = None,
+        point_on_minimap: Optional[RelativePointDTO] = None,
         is_used: Optional[bool] = None
     ) -> bool:
         modified: bool = False

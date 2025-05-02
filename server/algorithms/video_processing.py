@@ -70,7 +70,7 @@ class VideoProcessing:
                     str(temp_frame),
                     frames="1",
                     vf=f"lenscorrection=k1={k1}:k2={k2}",
-                    loglevel="quiet"
+                    loglevel=self.processing_config.loglevel
                 )
                 .global_args("-y")
                 .run()
@@ -79,7 +79,67 @@ class VideoProcessing:
             sample_frame: CV_Image = typing.cast(CV_Image, cv2.imread(str(temp_frame)))
             if sample_frame is None:
                 raise InvalidFileFormat(
-                    "Can't read the file, expected to have output from ffmpeg, but none received")
+                    "Can't read the file, expected to have output from ffmpeg, but none received"
+                )
+
+            frame = sample_frame
+
+        return frame, video_info
+
+    def render_frame_sample(
+        self,
+        source_file: Path,
+        frame_timestamp: Optional[float] = None
+    ) -> tuple[CV_Image, dict[str, Any]]:
+        """
+        Выводи один кадр из видео.
+
+        :param source_file: Исходное видео без коррекции.
+        :param frame_timestamp: Временная метка для перехода к получению кадра в секундах.
+        :return: Кадр и техническая информация об исходном видео.
+        :raise FileNotFound: Файл не найден на диске.
+        :raise ValueError: Временная метка вне длительности видео.
+        :raise KeyError: Временная метка конца не найдена в метаданных.
+        :raise InvalidFileFormat: Неподдерживаемый формат файла предоставлен в качестве файла.
+        """
+        if frame_timestamp is None:
+            frame_timestamp = 0.0
+
+        video_info = self.probe_video(source_file)
+        frame: Optional[CV_Image] = None
+
+        try:
+            end_timestamp: float = self.convert_ffmpeg_timestamp_to_seconds(video_info["duration"])
+            if not self.is_valid_timestamp(frame_timestamp, end_timestamp):
+                raise ValueError("Invalid timestamp provided")
+
+        except KeyError as e:
+            raise KeyError("Duration information from metadata not found") from e
+
+        with tempfile.TemporaryDirectory(prefix="hmms_") as temp_dir:
+            temp_dir_path: Path = Path(temp_dir)
+            temp_frame: Path = temp_dir_path / "frame.jpeg"
+            # Execute convertion and fetching frame
+            (
+                ffmpeg.input(
+                    str(source_file),
+                    ss=f"{frame_timestamp:.3f}",
+                    hwaccel=self.processing_config.hwaccel,
+                )
+                .output(
+                    str(temp_frame),
+                    frames="1",
+                    loglevel=self.processing_config.loglevel
+                )
+                .global_args("-y")
+                .run()
+            )
+
+            sample_frame: CV_Image = typing.cast(CV_Image, cv2.imread(str(temp_frame)))
+            if sample_frame is None:
+                raise InvalidFileFormat(
+                    "Can't read the file, expected to have output from ffmpeg, but none received"
+                )
 
             frame = sample_frame
 
