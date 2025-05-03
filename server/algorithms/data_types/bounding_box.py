@@ -59,7 +59,7 @@ class BoundingBox(NamedTuple):
         self,
         image: CV_Image,
         color: tuple[int, int, int] = (0, 255, 0)
-    ) -> numpy.ndarray:
+    ) -> CV_Image:
         """
         Визуализирует прямоугольник на изображении.
 
