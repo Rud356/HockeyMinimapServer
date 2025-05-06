@@ -1,7 +1,9 @@
-from enum import IntEnum, auto
+from enum import auto
+
+from server.algorithms.enums.openapi_int_enum import OpenAPIIntEnum
 
 
-class CameraPosition(IntEnum):
+class CameraPosition(OpenAPIIntEnum):
     top_left_corner = auto()
     top_middle_point = auto()
     top_right_corner = auto()

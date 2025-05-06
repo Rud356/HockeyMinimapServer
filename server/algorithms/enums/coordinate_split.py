@@ -1,13 +1,15 @@
-from enum import IntEnum, auto
+from enum import auto
+
+from server.algorithms.enums.openapi_int_enum import OpenAPIIntEnum
 
 
-class HorizontalPosition(IntEnum):
+class HorizontalPosition(OpenAPIIntEnum):
     top = auto()
     bottom = auto()
     center = auto()
 
 
-class VerticalPosition(IntEnum):
+class VerticalPosition(OpenAPIIntEnum):
     left = auto()
     right = auto()
     center = auto()

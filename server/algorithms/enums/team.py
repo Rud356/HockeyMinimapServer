@@ -1,6 +1,8 @@
-from enum import IntEnum, auto
+from enum import auto
+
+from server.algorithms.enums.openapi_int_enum import OpenAPIIntEnum
 
 
-class Team(IntEnum):
+class Team(OpenAPIIntEnum):
     Home = auto()
     Away = auto()

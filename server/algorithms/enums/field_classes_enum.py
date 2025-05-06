@@ -1,7 +1,8 @@
-from enum import IntEnum
+
+from server.algorithms.enums.openapi_int_enum import OpenAPIIntEnum
 
 
-class FieldClasses(IntEnum):
+class FieldClasses(OpenAPIIntEnum):
     RedCenterLine = 0
     BlueLine = 1
     RedCircle = 2
