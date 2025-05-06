@@ -11,7 +11,7 @@ import numpy
 import torch
 from torchvision import datasets
 
-from server import config_data
+from server import config_data, server
 from server.algorithms.data_types import BoundingBox, CV_Image, Point, RelativePoint
 from server.algorithms.data_types.field_extracted_data import FieldExtractedData
 from server.algorithms.enums import CameraPosition, Team
@@ -23,7 +23,6 @@ from server.algorithms.services.field_data_extraction_service import FieldDataEx
 from server.algorithms.services.field_predictor_service import FieldPredictorService
 from server.algorithms.services.map_video_renderer_service import MapVideoRendererService
 from server.algorithms.services.player_data_extraction_service import PlayerDataExtractionService
-from server.algorithms.services.player_predictor_service import PlayerPredictorService
 from server.algorithms.video_processing import VideoProcessing
 from server.data_storage.dto import BoxDTO
 from server.data_storage.dto.player_data_dto import PlayerDataDTO
@@ -76,20 +75,12 @@ async def field_data(
     return field_points
 
 
-async def main(video_path: Path, field_model: Path, players_model: Path):
+async def main(video_path: Path):
     device = "cuda" if torch.cuda.is_available() else "cpu"
     map_view = MapView(object()) # noqa: repository isn't used here
 
-    field_service = FieldPredictorService(
-        field_model.resolve(),
-        device,
-        asyncio.Queue()
-    )
-    player_service = PlayerPredictorService(
-        players_model.resolve(),
-        device,
-        asyncio.Queue()
-    )
+    field_service = server.field_predictor
+    player_service = server.player_predictor
 
     loop = asyncio.get_running_loop()
     loop.create_task(field_service())
@@ -134,7 +125,6 @@ async def main(video_path: Path, field_model: Path, players_model: Path):
 
     cap = cv2.VideoCapture(str(video_path), cv2.CAP_FFMPEG)
     frame_n = 0
-    map_data: Optional[FieldExtractedData] = None
     mapper: Optional[PlayersMapper] = None
     player_data_extractor: Optional[PlayerDataExtractionService] = None
     width: int
@@ -288,11 +278,5 @@ async def main(video_path: Path, field_model: Path, players_model: Path):
 
 if __name__ == "__main__":
     start = time.time()
-    asyncio.run(
-        main(
-            source_video,
-            (Path(__file__).parent / "models/FieldDetector.pth").resolve(),
-            (Path(__file__).parent / "models/PlayersDetector.pth").resolve()
-        )
-    )
+    asyncio.run(main(source_video))
     print(f"Took {round(time.time() - start, 3)}s to render")
