@@ -12,6 +12,7 @@ import numpy
 import torch
 from torchvision import datasets
 
+from server.main import server
 from server.algorithms.data_types import BoundingBox, CV_Image, Point, RelativePoint
 from server.algorithms.data_types.field_extracted_data import FieldExtractedData
 from server.algorithms.enums import CameraPosition, Team
@@ -35,7 +36,7 @@ from server.views.map_view import MapView
 DEFAULT_CONFIG_PATH: Path = Path(__file__).parent / "config.toml"
 
 with open(DEFAULT_CONFIG_PATH, mode="rb") as f:
-    config_data = AppConfig.model_construct(**tomllib.load(f))
+    config_data = AppConfig(**tomllib.load(f))
 
 
 MINIMAP_KEY_POINTS = config_data.minimap_config
