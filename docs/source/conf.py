@@ -14,13 +14,10 @@ on_rtd = os.environ.get('READTHEDOCS', None) == 'True'
 sys.path.insert(0, str(server_path))
 sys.path.insert(1, str(Path(__file__).parent))
 
-import server
-
 project = 'HockeyServerMinimap'
 copyright = '2025, Rud356'
 author = 'Rud356'
-release = server.__version__
-
+release = "0.0.2"
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
 
@@ -29,7 +26,6 @@ source_suffix = '.rst'
 
 extensions = [
     'sphinx.ext.autodoc',
-    "sphinx_autodoc_typehints",
     'sphinx.ext.autosummary',
     'sphinx.ext.viewcode',
     'docxbuilder'

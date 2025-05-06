@@ -3,7 +3,7 @@ from pathlib import Path
 
 from server.minimap_server import MinimapServer, AppConfig
 
-__version__ = "0.0.1"
+__version__ = "0.0.2"
 DEFAULT_CONFIG_PATH: Path = Path("./config.toml")
 
 with open(DEFAULT_CONFIG_PATH, mode="rb") as f:
