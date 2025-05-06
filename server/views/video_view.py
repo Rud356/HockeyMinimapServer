@@ -8,6 +8,7 @@ import cv2
 
 from server.algorithms.data_types import CV_Image
 from server.algorithms.disk_space_allocator import DiskSpaceAllocator
+from server.algorithms.enums import CameraPosition
 from server.algorithms.video_processing import VideoProcessing
 from server.data_storage.dto import VideoDTO
 from server.data_storage.exceptions import NotFoundError
@@ -199,7 +200,7 @@ class VideoView:
         :param render_again: Нужно ли корректировать видео заново, если файл уже был откорректирован.
         :param temp_disk_space_allocator: Аллокатор места во временной папке.
         :param dest_disk_space_allocator: Аллокатор места в конечной папке.
-        :return:
+        :return: Ничего.
         """
         loop = asyncio.get_running_loop()
 
@@ -249,4 +250,26 @@ class VideoView:
             )
             await tr.commit()
 
-    # TODO: Add changing camera position
+    async def change_camera_position_for_video(
+        self,
+        video_id: int,
+        camera_position: CameraPosition
+    ) -> bool:
+        """
+        Изменяет положение камеры относительно поля для видео.
+
+        :param video_id: Идентификатор видео.
+        :param camera_position: Положение камеры.
+        :return: Применены ли изменения.
+        :raise NotFoundError: Если видео не найдено в БД.
+        :raise ValueError: Если передано неверное значение.
+        """
+
+        async with self.repository.transaction as tr:
+            changed = await self.repository.video_repo.set_camera_position(
+                video_id,
+                camera_position
+            )
+            await tr.commit()
+
+        return changed

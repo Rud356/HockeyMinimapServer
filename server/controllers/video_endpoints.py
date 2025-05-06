@@ -9,6 +9,7 @@ from dishka.integrations.fastapi import FromDishka
 from fastapi import APIRouter, File, HTTPException, Query, UploadFile
 from starlette.responses import FileResponse, HTMLResponse
 
+from server.algorithms.enums import CameraPosition
 from server.algorithms.exceptions.invalid_file_format import InvalidFileFormat
 from server.algorithms.exceptions.out_of_disk_space import OutOfDiskSpace
 from server.algorithms.video_processing import VideoProcessing
@@ -61,6 +62,18 @@ class VideoUploadEndpoint(APIEndpoint):
             responses = {
                 400: {"description": "Неверные данные о видео или неверный ID видео"},
                 401: {"description": "Нет валидного токена авторизации"},
+                404: {"description": "Видео с предоставленным ID не найдено"},
+            }
+        )
+        self.router.add_api_route(
+            "/videos/{video_id}/camera",
+            self.set_camera_position_for_video,
+            description="Изменяет положение камеры относительно поля",
+            methods=["patch"],
+            tags=["video"],
+            responses={
+                400: {"description": "Неверные данные о позиции камеры"},
+                401: {"description": "Нет валидного токена авторизации или прав менять проекты"},
                 404: {"description": "Видео с предоставленным ID не найдено"},
             }
         )
@@ -271,6 +284,41 @@ class VideoUploadEndpoint(APIEndpoint):
         """
         videos = await VideoView(repository).get_videos(limit, offset)
         return videos
+
+    async def set_camera_position_for_video(
+        self,
+        repository: FromDishka[Repository],
+        current_user: FromDishka[UserDTO],
+        video_id: int,
+        camera_positon: Annotated[CameraPosition, Query()] = CameraPosition.top_left_corner
+    ) -> bool:
+        """
+        Устанавливает позицию камеры относительно поля для видео.
+
+        :param camera_positon: Позиция камеры относительно поля.
+        :param repository: Объект взаимодействия с БД.
+        :param current_user: Пользователь системы.
+        :param video_id: Идентификатор видео.
+        :return: Применено ли изменение.
+        """
+        if not current_user.user_permissions.can_create_projects:
+            raise UnauthorizedResourceAccess(
+                "User is required to have permission to create projects to modify project"
+            )
+
+        try:
+            return await VideoView(repository).change_camera_position_for_video(
+                video_id, camera_positon
+            )
+
+        except ValueError as err:
+            raise HTTPException(
+                400,
+                "Bad data been received"
+            ) from err
+
+        except NotFoundError:
+            raise HTTPException(status_code=404, detail="Video not found with provided ID")
 
     async def get_correction_preview(
         self,

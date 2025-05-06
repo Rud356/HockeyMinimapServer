@@ -67,7 +67,7 @@ class VideoToMapEndpoint(APIEndpoint):
         self.router.add_api_route(
             "/video/{video_id}/map_points/inference",
             self.infer_key_points_from_video,
-            methods=["get"],
+            methods=["post"],
             description="Получает ключевые точки с помощью нейронной сети на основе кадра, "
                         "и опциональной якорной точки, передаваемой в теле запроса",
             tags=["map"],
@@ -217,7 +217,7 @@ class VideoToMapEndpoint(APIEndpoint):
         field_predictor: FromDishka[FieldPredictorService],
         file_lock: FromDishka[FileLock],
         video_id: int,
-        body: InferenceAnchorPoint,
+        body: Optional[InferenceAnchorPoint],
         frame_timestamp: Annotated[Optional[float], Query(ge=0)] = 0.0
     ) -> list[PointsMapping]:
         if not current_user.user_permissions.can_create_projects:
@@ -245,6 +245,10 @@ class VideoToMapEndpoint(APIEndpoint):
         key_points: dict[RelativePointDTO, RelativePointDTO]
         field_mask: Mask
 
+        anchor_point: Optional[RelativePointDTO] = None
+        if body is not None:
+            anchor_point = body.anchor_point
+
         key_points, field_mask, *_ = await map_view.get_key_points_from_video(
             video_path,
             video.camera_position,
@@ -252,7 +256,7 @@ class VideoToMapEndpoint(APIEndpoint):
             video_processing,
             field_predictor,
             frame_timestamp,
-            body.anchor_point
+            anchor_point
         )
 
         async with file_lock.lock_file(field_mask_path):
