@@ -7,7 +7,7 @@ from typing import Optional
 import cv2
 import numpy
 import numpy as np
-from numpy._typing import NDArray, _32Bit, _64Bit
+from numpy._typing import _32Bit, _64Bit
 
 from server.algorithms.data_types.point import Point
 from server.algorithms.data_types.image_typehint import CV_Image

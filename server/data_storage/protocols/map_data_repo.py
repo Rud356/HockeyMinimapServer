@@ -21,6 +21,7 @@ class MapDataRepo(Protocol):
         :param video_id: Идентификатор видео.
         :param mapping: Соотнесение точек с мини-карты к точкам на видео.
         :return: Сколько точек соотнесено.
+        :raise DataIntegrityError: Неверные входные данные.
         """
 
     async def get_points_mapping_for_video(self, video_id: int) -> list[MinimapDataDTO]:

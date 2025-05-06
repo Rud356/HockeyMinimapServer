@@ -4,7 +4,7 @@ from typing import Mapping
 import cv2
 import numpy
 
-from server.algorithms.data_types import BoundingBox, CV_Image, Point, RelativeBoundingBox, RelativePoint
+from server.algorithms.data_types import BoundingBox, CV_Image, Point, RelativePoint
 from server.algorithms.exceptions.not_enough_field_points import NotEnoughFieldPoints
 from server.data_storage.dto.relative_point_dto import RelativePointDTO
 from server.utils.config.key_point import KeyPoint

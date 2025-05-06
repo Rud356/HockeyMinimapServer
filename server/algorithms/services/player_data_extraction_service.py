@@ -14,7 +14,7 @@ from server.algorithms.players_mapper import PlayersMapper
 
 if TYPE_CHECKING:
     from torch import Tensor
-    from server.algorithms.data_types import BoundingBox, CV_Image, Mask, RawPlayerTrackingData, Point, RelativePoint
+    from server.algorithms.data_types import BoundingBox, CV_Image, Mask, RawPlayerTrackingData, RelativePoint
 
 
 class PlayerDataExtractionService:

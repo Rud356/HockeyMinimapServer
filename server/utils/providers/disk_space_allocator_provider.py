@@ -3,6 +3,7 @@ from typing import NewType
 from dishka import Provider, Scope, provide
 
 from server.algorithms.disk_space_allocator import DiskSpaceAllocator
+from server.utils.file_lock import FileLock
 
 StaticDirSpaceAllocator = NewType("StaticDirSpaceAllocator", DiskSpaceAllocator)
 TmpDirSpaceAllocator = NewType("TmpDirSpaceAllocator", DiskSpaceAllocator)
@@ -18,6 +19,7 @@ class DiskSpaceAllocatorProvider(Provider):
         static_dir_disk_space_allocator: DiskSpaceAllocator
     ):
         super().__init__()
+        self.file_lock: FileLock = FileLock()
         self.tmp_disk_space_allocator: TmpDirSpaceAllocator = TmpDirSpaceAllocator(tmp_disk_space_allocator)
         self.static_dir_space_allocator: StaticDirSpaceAllocator = StaticDirSpaceAllocator(static_dir_disk_space_allocator)
 
@@ -28,3 +30,7 @@ class DiskSpaceAllocatorProvider(Provider):
     @provide(scope=Scope.REQUEST)
     def static_dir_disk_allocator(self) -> StaticDirSpaceAllocator:
         return self.static_dir_space_allocator
+
+    @provide(scope=Scope.REQUEST)
+    def get_file_lock(self) -> FileLock:
+        return self.file_lock

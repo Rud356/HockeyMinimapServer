@@ -175,7 +175,8 @@ class VideoView:
             executor,
             cv2.imwrite,
             str(dest.resolve()),
-            image
+            image,
+            []
         )
 
     async def apply_video_correction(
@@ -247,3 +248,5 @@ class VideoView:
                 dest_file
             )
             await tr.commit()
+
+    # TODO: Add changing camera position

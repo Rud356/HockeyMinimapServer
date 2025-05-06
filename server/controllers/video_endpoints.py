@@ -168,9 +168,21 @@ class VideoUploadEndpoint(APIEndpoint):
         video_processing_worker: FromDishka[VideoProcessingWorker],
         video_upload: UploadFile = File(...),
     ) -> VideoDTO | None:
+        """
+        Загружает видео на сервер.
+
+        :param repository: Объект взаимодействия с БД.
+        :param app_config: Конфигурация сервера.
+        :param current_user: Пользователь системы.
+        :param temp_disk_space_allocator: Аллокатор дискового пространства во временной папке.
+        :param dest_disk_space_allocator: Аллокатор дискового пространства в постоянной папке.
+        :param video_processing_worker: Обработчик видео.
+        :param video_upload: Загружаемое видео.
+        :return: Загруженное видео или ничего в случае ошибки.
+        """
         if not current_user.user_permissions.can_create_projects:
             raise UnauthorizedResourceAccess(
-                "User is required to have access to administrating rights"
+                "User is required to have access to projects management"
             )
 
         if video_upload.filename is None or video_upload.size is None:
