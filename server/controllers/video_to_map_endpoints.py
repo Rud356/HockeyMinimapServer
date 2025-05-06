@@ -6,6 +6,7 @@ from dishka import FromDishka
 from fastapi import APIRouter, HTTPException, Query
 
 from server.algorithms.data_types import Mask
+from server.algorithms.exceptions import InvalidFileFormat
 from server.algorithms.services.field_predictor_service import FieldPredictorService
 from server.algorithms.video_processing import VideoProcessing
 from server.controllers.dto.inference_anchor_point import InferenceAnchorPoint
@@ -249,15 +250,27 @@ class VideoToMapEndpoint(APIEndpoint):
         if body is not None:
             anchor_point = body.anchor_point
 
-        key_points, field_mask, *_ = await map_view.get_key_points_from_video(
-            video_path,
-            video.camera_position,
-            app_config.minimap_config,
-            video_processing,
-            field_predictor,
-            frame_timestamp,
-            anchor_point
-        )
+        try:
+            key_points, field_mask, *_ = await map_view.get_key_points_from_video(
+                video_path,
+                video.camera_position,
+                app_config.minimap_config,
+                video_processing,
+                field_predictor,
+                frame_timestamp,
+                anchor_point
+            )
+
+        except (FileNotFoundError, InvalidFileFormat) as err:
+            raise HTTPException(404, "Video file not found or invalid") from err
+
+        except (KeyError, ValueError) as err:
+            raise HTTPException(
+                400, "Video is invalid"
+            ) from err
+
+        except KeyError:
+            raise HTTPException(500, "Video doesn't have proper length field")
 
         async with file_lock.lock_file(field_mask_path):
             cv2.imwrite(str(field_mask_path.resolve()), field_mask.mask)

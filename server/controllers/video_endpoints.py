@@ -465,6 +465,9 @@ class VideoUploadEndpoint(APIEndpoint):
         except ValueError:
             raise HTTPException(409, "Video is already corrected and rendered")
 
+        except KeyError:
+            raise HTTPException(500, "Video doesn't have proper length field")
+
         except OutOfDiskSpace as ran_out_of_disk:
             raise HTTPException(
                 status_code=507,

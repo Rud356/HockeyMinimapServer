@@ -130,6 +130,10 @@ class MapView:
         :param timestamp: Временная метка.
         :param anchor_point: Опциональная ключевая точка центра.
         :return: Соотнесение ключевых точек поля к точкам с камеры и маска поля.
+        :raise FileNotFound: Файл не найден на диске.
+        :raise ValueError: Временная метка вне длительности видео.
+        :raise KeyError: Временная метка конца не найдена в метаданных.
+        :raise InvalidFileFormat: Неподдерживаемый формат файла предоставлен в качестве файла.
         """
         # Get map to be in relative coordinates
         relative_map_config: RelativeMinimapKeyPointConfig = self.get_relative_minimap_points(
@@ -211,6 +215,10 @@ class MapView:
         :param video_processing: Обработчик видео.
         :param timestamp: Временная метка кадра.
         :return: Изображение с кадра.
+        :raise FileNotFoundError: Файл не найден на диске.
+        :raise ValueError: Временная метка вне длительности видео.
+        :raise KeyError: Временная метка конца не найдена в метаданных.
+        :raise InvalidFileFormat: Неподдерживаемый формат файла предоставлен в качестве файла.
         """
         loop: AbstractEventLoop = asyncio.get_running_loop()
         result_frame: CV_Image

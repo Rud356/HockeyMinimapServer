@@ -97,7 +97,7 @@ class VideoProcessing:
         :param source_file: Исходное видео без коррекции.
         :param frame_timestamp: Временная метка для перехода к получению кадра в секундах.
         :return: Кадр и техническая информация об исходном видео.
-        :raise FileNotFound: Файл не найден на диске.
+        :raise FileNotFoundError: Файл не найден на диске.
         :raise ValueError: Временная метка вне длительности видео.
         :raise KeyError: Временная метка конца не найдена в метаданных.
         :raise InvalidFileFormat: Неподдерживаемый формат файла предоставлен в качестве файла.
