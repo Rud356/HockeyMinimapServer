@@ -84,7 +84,7 @@ def install_pytorch():
 def install_detectron2():
     print("Installing")
     run_pip(
-        ['install', 'git+https://github.com/facebookresearch/detectron2.git', '--no-build-isolation']
+        ['install', 'git+https://github.com/Rud356/detectron2', '--no-build-isolation', "--use-pep517"]
     )
 
 
