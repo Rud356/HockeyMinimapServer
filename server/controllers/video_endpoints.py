@@ -40,6 +40,7 @@ class VideoUploadEndpoint(APIEndpoint):
             tags=["video"],
             responses={
                 400: {"description": "Неверный размер файла или формат не является видео"},
+                401: {"description": "Нет прав на загрузку видео"},
                 500: {"description": "Ошибка сервера во время обработки файла"},
                 507: {"description": "Не удалось выделить достаточно места на диске для сохранения файла"}
             }
@@ -59,6 +60,7 @@ class VideoUploadEndpoint(APIEndpoint):
             tags=["video"],
             responses = {
                 400: {"description": "Неверные данные о видео или неверный ID видео"},
+                401: {"description": "Нет валидного токена авторизации"},
                 404: {"description": "Видео с предоставленным ID не найдено"},
             }
         )
@@ -70,6 +72,7 @@ class VideoUploadEndpoint(APIEndpoint):
             tags=["video"],
             responses={
                 400: {"description": "Неверная временная метка"},
+                401: {"description": "Нет валидного токена авторизации"},
                 404: {"description": "Видео с предоставленным ID не найдено или файл утерян/испорчен"},
                 500: {"description": "Отсутствует информация о длине видео"}
             }
@@ -82,6 +85,7 @@ class VideoUploadEndpoint(APIEndpoint):
             tags=["video"],
             responses={
                 400: {"description": "Неверные данные о коэффициенте коррекции"},
+                401: {"description": "Нет прав на изменение значений коррекции"},
                 404: {"description": "Видео с предоставленным ID не найдено"},
                 409: {"description": "Видео было конвертировано с предыдущими коэффициентами коррекции"}
             }

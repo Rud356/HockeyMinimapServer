@@ -10,4 +10,5 @@ with open(DEFAULT_CONFIG_PATH, mode="rb") as f:
     config_data = AppConfig(**tomllib.load(f))
 
 server = MinimapServer(config_data)
+server.finish_setup()
 app = server.app

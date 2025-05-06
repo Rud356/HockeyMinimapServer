@@ -8,10 +8,10 @@ from typing import AsyncGenerator, Optional
 
 import cv2
 import numpy
-import numpy as np
 import torch
 from torchvision import datasets
 
+from server import config_data
 from server.algorithms.data_types import BoundingBox, CV_Image, Point, RelativePoint
 from server.algorithms.data_types.field_extracted_data import FieldExtractedData
 from server.algorithms.enums import CameraPosition, Team
@@ -25,14 +25,12 @@ from server.algorithms.services.map_video_renderer_service import MapVideoRender
 from server.algorithms.services.player_data_extraction_service import PlayerDataExtractionService
 from server.algorithms.services.player_predictor_service import PlayerPredictorService
 from server.algorithms.video_processing import VideoProcessing
-from server.data_storage.dto import BoxDTO, PointDTO
+from server.data_storage.dto import BoxDTO
 from server.data_storage.dto.player_data_dto import PlayerDataDTO
-from server import config_data
 from server.data_storage.dto.relative_point_dto import RelativePointDTO
 from server.utils.async_buffered_generator import buffered_generator
 from server.utils.async_video_reader import async_video_reader
 from server.utils.config import VideoPreprocessingConfig
-from server.utils.config.key_point import KeyPoint
 from server.views.map_view import MapView
 
 MINIMAP_KEY_POINTS = config_data.minimap_config

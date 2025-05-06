@@ -4,6 +4,7 @@ import tempfile
 import time
 import typing
 from argparse import Namespace
+from asyncio import AbstractEventLoop, Lock, Queue
 from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Any, AsyncGenerator
@@ -23,10 +24,14 @@ from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
 from starlette.middleware.base import BaseHTTPMiddleware
 
 from server.algorithms.disk_space_allocator import DiskSpaceAllocator
+from server.algorithms.nn import device
+from server.algorithms.services.field_predictor_service import FieldPredictorService
+from server.algorithms.services.player_predictor_service import PlayerPredictorService
 from server.algorithms.video_processing import VideoProcessing
 from server.controllers.user_authentication import UserAuthenticationEndpoint
 from server.controllers.users_managment import UserManagementEndpoint
 from server.controllers.video_endpoints import VideoUploadEndpoint
+from server.controllers.video_to_map_endpoints import VideoToMapEndpoint
 from server.data_storage.sql_implementation.repository_sqla import RepositorySQLA
 from server.data_storage.sql_implementation.sqla_provider import SQLAlchemyProvider
 from server.utils.config import AppConfig
@@ -37,6 +42,7 @@ from server.utils.providers import (
     RenderServiceLimitsProvider,
     UserAuthorizationProvider,
 )
+from server.utils.providers.nn_providers import NnProvider
 
 
 class MinimapServer:
@@ -86,6 +92,21 @@ class MinimapServer:
             static_path_disk_allocator = temp_disk_allocator
 
         # Initialize container for providers
+        gpu_lock: Lock = Lock()
+        self.player_predictor: PlayerPredictorService = PlayerPredictorService(
+            config.nn_config.player_detection_model_path.resolve(),
+            device,
+            Queue(),
+            threshold=0.6,
+            device_lock=gpu_lock
+        )
+        self.field_predictor: FieldPredictorService = FieldPredictorService(
+            config.nn_config.field_detection_model_path.resolve(),
+            device,
+            Queue(),
+            device_lock=gpu_lock
+        )
+
         container: AsyncContainer = make_async_container(
             DiskSpaceAllocatorProvider(
                 temp_disk_allocator,
@@ -102,6 +123,11 @@ class MinimapServer:
             ExecutorsProvider(
                 config.video_processing_workers,
                 config.players_data_extraction_workers
+            ),
+            NnProvider(
+                device,
+                self.player_predictor,
+                self.field_predictor
             )
         )
 
@@ -112,6 +138,7 @@ class MinimapServer:
         VideoUploadEndpoint(api, VideoProcessing(config.video_processing))
         UserManagementEndpoint(api)
         UserAuthenticationEndpoint(api)
+        VideoToMapEndpoint(api)
 
         self.app.mount("/static", StaticFiles(directory=config.static_path), name="static")
         self.register_routes(api)
@@ -190,6 +217,11 @@ class MinimapServer:
 
     @asynccontextmanager
     async def lifespan(self, app: FastAPI) -> AsyncGenerator[None, Any]:
+        # Initialize background services
+        loop: AbstractEventLoop = asyncio.get_running_loop()
+        loop.create_task(self.player_predictor())
+        loop.create_task(self.field_predictor())
+
         yield
         await app.state.dishka_container.close()
 
