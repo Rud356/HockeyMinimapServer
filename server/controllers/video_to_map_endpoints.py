@@ -266,7 +266,7 @@ class VideoToMapEndpoint(APIEndpoint):
 
         except (KeyError, ValueError) as err:
             raise HTTPException(
-                400, "Video is invalid"
+                400, "Invalid timestamp for video or video invalid"
             ) from err
 
         except KeyError:

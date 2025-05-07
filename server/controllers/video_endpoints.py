@@ -211,7 +211,7 @@ class VideoUploadEndpoint(APIEndpoint):
             ):
                 temp_file: pathlib.Path = pathlib.Path(tmp_dir) / video_upload.filename
                 async with aiofiles.open(temp_file, 'wb') as f:
-                    while contents := await video_upload.read(1024 * 1024):
+                    while contents := await video_upload.read(100 * 1024 * 1024):
                         await f.write(contents)
 
                 return await VideoView(repository).create_new_video_from_upload(
