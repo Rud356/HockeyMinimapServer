@@ -42,6 +42,25 @@ class DatasetRepoSQLA(DatasetRepo):
             subsets=[]
         )
 
+    async def get_dataset_information_by_id(self, dataset_id: int) -> DatasetDTO:
+        try:
+            dataset: Optional[TeamsDataset] = (await self.transaction.session.execute(
+                Select(TeamsDataset)
+                .where(TeamsDataset.dataset_id == dataset_id)
+            )).scalar_one_or_none()
+
+        except ProgrammingError as err:
+            raise ValueError("Invalid data provided for lookup") from err
+
+        if dataset is None:
+            raise NotFoundError("Dataset with provided id was not found")
+
+        return DatasetDTO(
+            dataset_id=dataset.dataset_id,
+            video_id=dataset.video_id,
+            subsets=[]
+        )
+
     async def get_team_dataset_by_id(self, dataset_id: int) -> DatasetDTO:
         try:
             dataset: Optional[TeamsDataset] = (await self.transaction.session.execute(
@@ -263,13 +282,13 @@ class DatasetRepoSQLA(DatasetRepo):
         self, dataset_id: int, from_frame: int, to_frame: int
     ) -> bool:
         if from_frame > to_frame:
-            raise ValueError(f"{to_frame=} must be greater or equal to {from_frame=}")
+            raise IndexError(f"{to_frame=} must be greater or equal to {from_frame=}")
 
         if from_frame < 0:
-            raise ValueError(f"{from_frame=} must be greater or equal to 0")
+            raise IndexError(f"{from_frame=} must be greater or equal to 0")
 
         if to_frame < 0:
-            raise ValueError(f"{to_frame=} must be greater or equal to 0")
+            raise IndexError(f"{to_frame=} must be greater or equal to 0")
 
         crossover_exists: bool | None = await self.transaction.session.scalar(
             Select(exists(TeamsSubset)).where(

@@ -10,6 +10,7 @@ from server.algorithms.enums.player_classes_enum import PlayerClasses
 from server.algorithms.player_tracker import PlayerTracker
 from server.data_storage.dto import BoxDTO, PointDTO, SubsetDataDTO
 from server.data_storage.dto.relative_point_dto import RelativePointDTO
+from server.data_storage.dto.subset_data_input import SubsetDataInputDTO
 
 if TYPE_CHECKING:
     from torch import Tensor
@@ -33,9 +34,8 @@ class PlayerTrackingService:
     def process_frame(
         self,
         frame_id: int,
-        subset_id: int,
         instances: Instances
-    ) -> list[SubsetDataDTO]:
+    ) -> list[SubsetDataInputDTO]:
         """
         Отслеживает идентичность игроков в кадрах.
 
@@ -72,15 +72,14 @@ class PlayerTrackingService:
             boxes, scores, classes_predicted
         )
 
-        output: list[SubsetDataDTO] = []
+        output: list[SubsetDataInputDTO] = []
         for player_data in tracking_data:
             min_point: Point = player_data.bounding_box.min_point
             max_point: Point = player_data.bounding_box.max_point
 
             output.append(
-                SubsetDataDTO(
+                SubsetDataInputDTO(
                     tracking_id=player_data.tracking_id,
-                    subset_id=subset_id,
                     frame_id=frame_id,
                     class_id=player_data.player_class,
                     team_id=None,

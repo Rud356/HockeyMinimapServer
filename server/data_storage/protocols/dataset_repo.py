@@ -23,6 +23,16 @@ class DatasetRepo(Protocol):
         :raise DataIntegrityError: Если данные нарушают целостность БД.
         """
 
+    async def get_dataset_information_by_id(self, dataset_id: int) -> DatasetDTO:
+        """
+        Возвращает только информацию, прямо находящуюся в наборе данных.
+
+        :param dataset_id: Идентификатор набора данных.
+        :return: Данные о наборе, без информации из поднаборов.
+        :raise ValueError: Неправильный входной идентификатор.
+        :raise NotFoundError: Набор данных не существует.
+        """
+
     async def get_team_dataset_by_id(self, dataset_id: int) -> DatasetDTO:
         """
         Получает набор данных разделения команд по идентификатору.
@@ -109,5 +119,5 @@ class DatasetRepo(Protocol):
         :param from_frame: С какого кадра проверка.
         :param to_frame: По какой кадр проверка.
         :return: Есть ли пересечение кадров с другими наборами.
-        :raise ValueError: Когда предоставлены неправильные данные ограничений.
+        :raise IndexError: Когда предоставлены неправильные данные ограничений.
         """
