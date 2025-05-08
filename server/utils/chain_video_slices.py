@@ -37,5 +37,3 @@ async def chain_video_slices(
 
             if current_frame_num >= end_frame:
                 break
-
-        print(video_reader.get(cv2.CAP_PROP_POS_FRAMES))
