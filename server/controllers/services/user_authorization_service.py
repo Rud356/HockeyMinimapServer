@@ -10,7 +10,11 @@ from server.data_storage.protocols import Repository
 
 
 class UserAuthorizationService:
-    def __init__(self, key: str, local_mode: bool = False):
+    """
+    Управляет авторизацией пользователей на сервере.
+    """
+
+    def __init__(self, key: str, local_mode: bool = False) -> None:
         self.key: str = key
         self.local_mode: bool = local_mode
 
@@ -75,6 +79,11 @@ class UserAuthorizationService:
 
     @staticmethod
     def local_account_data() -> UserDTO:
+        """
+        Генерирует данные локального пользователя.
+
+        :return: Данные локального пользователя.
+        """
         return UserDTO(
             user_id=0,
             username="Admin",

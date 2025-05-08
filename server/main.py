@@ -1,3 +1,4 @@
+import sys
 import tomllib
 from argparse import Namespace
 
@@ -19,19 +20,19 @@ if args.drop_db and args.init_db:
     tmp_sqla_provider: SQLAlchemyProvider = SQLAlchemyProvider(tmp_engine)
     server.drop_db(tmp_engine, tmp_sqla_provider)
     server.init_db(tmp_engine, tmp_sqla_provider)
-    exit(0)
+    sys.exit(0)
 
 elif args.drop_db:
     tmp_engine = create_async_engine(config_data.db_connection_string)
     tmp_sqla_provider = SQLAlchemyProvider(tmp_engine)
     server.drop_db(tmp_engine, tmp_sqla_provider)
-    exit(0)
+    sys.exit(0)
 
 elif args.init_db:
     tmp_engine = create_async_engine(config_data.db_connection_string)
     tmp_sqla_provider = SQLAlchemyProvider(tmp_engine)
     server.init_db(tmp_engine, tmp_sqla_provider)
-    exit(0)
+    sys.exit(0)
 
 app = server.app
 server.finish_setup()

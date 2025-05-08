@@ -15,9 +15,19 @@ class NeuralNetworkConfig(BaseModel):
     device: Optional[str] = None
     max_batch_size: int = Field(ge=1, lt=50)
 
-    @field_validator('field_detection_model_path', 'player_detection_model_path', mode='after')
+    @field_validator(
+        'field_detection_model_path',
+        'player_detection_model_path',
+        mode='after'
+    )
     @classmethod
     def check_is_path_to_directory(cls, v: Any) -> Path:
+        """
+        Проверяет, является ли переменная валидным путем до файла на диске.
+
+        :param v: Значение переменной.
+        :return: Путь до переменной.
+        """
         if isinstance(v, Path) and v.is_file():
             return v
 

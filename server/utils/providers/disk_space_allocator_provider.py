@@ -20,8 +20,12 @@ class DiskSpaceAllocatorProvider(Provider):
     ):
         super().__init__()
         self.file_lock: FileLock = FileLock()
-        self.tmp_disk_space_allocator: TmpDirSpaceAllocator = TmpDirSpaceAllocator(tmp_disk_space_allocator)
-        self.static_dir_space_allocator: StaticDirSpaceAllocator = StaticDirSpaceAllocator(static_dir_disk_space_allocator)
+        self.tmp_disk_space_allocator: TmpDirSpaceAllocator = TmpDirSpaceAllocator(
+            tmp_disk_space_allocator
+        )
+        self.static_dir_space_allocator: StaticDirSpaceAllocator = StaticDirSpaceAllocator(
+            static_dir_disk_space_allocator
+        )
 
     @provide(scope=Scope.REQUEST)
     def tmp_disk_allocator(self) -> TmpDirSpaceAllocator:

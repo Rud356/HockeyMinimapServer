@@ -49,7 +49,8 @@ class DatasetRepo(Protocol):
         :param subset_data: Список, где каждый элемент представляет
         данные об игроках на каждом кадре.
         :return: Идентификатор поднабора данных.
-        :raise ValueError: Несоответствие начальных и конечных кадров или длинны массива с количеством кадров.
+        :raise ValueError: Несоответствие начальных и конечных кадров
+        или длинны массива с количеством кадров.
         :raise NotFoundError: Набор данных не существует.
         :raise DataIntegrityError: Если данные нарушают целостность БД.
         """
@@ -65,7 +66,9 @@ class DatasetRepo(Protocol):
         :raise NotFoundError: Не найдены записи с таким игроком.
         """
 
-    async def set_player_class(self, subset_id: int, tracking_id: int, player_class: PlayerClasses) -> bool:
+    async def set_player_class(
+        self, subset_id: int, tracking_id: int, player_class: PlayerClasses
+    ) -> bool:
         """
         Изменяет класс игрока по номеру отслеживания.
 

@@ -1,8 +1,10 @@
 import torch
 
-from .team_detector import TeamDetectorModel # noqa: used as exports
-from .team_detector_teacher import TeamDetectorTeacher, team_detector_transform # noqa: used as exports
-from .team_detector_predictor import TeamDetectionPredictor # noqa: used as exports
+from .team_detector import TeamDetectorModel
+from .team_detector_teacher import (
+    TeamDetectorTeacher, team_detector_transform
+)
+from .team_detector_predictor import TeamDetectionPredictor
 
 
 torch.set_float32_matmul_precision('medium')

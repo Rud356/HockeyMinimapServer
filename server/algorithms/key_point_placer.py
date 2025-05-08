@@ -94,12 +94,15 @@ class KeyPointPlacer:
         ]
         quadrants = self.apply_camera_rotation_on_quadrants(*quadrants)
         mapped_points: dict[KeyPoint, Point] = {
-            self.red_circles_points[quadrant]: point for quadrant, point in zip(quadrants, blue_circles)
+            self.red_circles_points[quadrant]: point
+                for quadrant, point in zip(quadrants, blue_circles)
         }
 
         return mapped_points
 
-    def map_goal_zones_to_key_points(self, *goal_zones: Point, center_point: Point) -> dict[KeyPoint, Point]:
+    def map_goal_zones_to_key_points(
+        self, *goal_zones: Point, center_point: Point
+    ) -> dict[KeyPoint, Point]:
         """
         Соотносит положение зон с мини-картой.
 
@@ -209,10 +212,14 @@ class KeyPointPlacer:
 
         # Long lines point mapping
         key_points_mapping = {
-            (HorizontalPosition.top, VerticalPosition.left): self.minimap_key_points.left_goal_line_top,
-            (HorizontalPosition.bottom, VerticalPosition.left): self.minimap_key_points.left_goal_line_after_zone_bottom,
-            (HorizontalPosition.top, VerticalPosition.right): self.minimap_key_points.right_goal_line_top,
-            (HorizontalPosition.bottom, VerticalPosition.right): self.minimap_key_points.right_goal_line_after_zone_bottom
+            (HorizontalPosition.top, VerticalPosition.left):
+                self.minimap_key_points.left_goal_line_top,
+            (HorizontalPosition.bottom, VerticalPosition.left):
+                self.minimap_key_points.left_goal_line_after_zone_bottom,
+            (HorizontalPosition.top, VerticalPosition.right):
+                self.minimap_key_points.right_goal_line_top,
+            (HorizontalPosition.bottom, VerticalPosition.right):
+                self.minimap_key_points.right_goal_line_after_zone_bottom
         }
 
         line_points_quadrants: dict[PointQuadrant, Point] = {}
@@ -547,11 +554,16 @@ class KeyPointPlacer:
             tuple[HorizontalPosition, VerticalPosition],
             tuple[HorizontalPosition, VerticalPosition]
         ] = {
-            (HorizontalPosition.center, VerticalPosition.center): (HorizontalPosition.center, VerticalPosition.center),
-            (HorizontalPosition.top, VerticalPosition.right): (HorizontalPosition.top, VerticalPosition.left),
-            (HorizontalPosition.top, VerticalPosition.left): (HorizontalPosition.bottom, VerticalPosition.right),
-            (HorizontalPosition.bottom, VerticalPosition.right): (HorizontalPosition.top, VerticalPosition.right),
-            (HorizontalPosition.bottom, VerticalPosition.left): (HorizontalPosition.bottom, VerticalPosition.right)
+            (HorizontalPosition.center, VerticalPosition.center):
+                (HorizontalPosition.center, VerticalPosition.center),
+            (HorizontalPosition.top, VerticalPosition.right):
+                (HorizontalPosition.top, VerticalPosition.left),
+            (HorizontalPosition.top, VerticalPosition.left):
+                (HorizontalPosition.bottom, VerticalPosition.right),
+            (HorizontalPosition.bottom, VerticalPosition.right):
+                (HorizontalPosition.top, VerticalPosition.right),
+            (HorizontalPosition.bottom, VerticalPosition.left):
+                (HorizontalPosition.bottom, VerticalPosition.right)
         }
 
         return [
@@ -572,11 +584,16 @@ class KeyPointPlacer:
             PointQuadrant,
             PointQuadrant
         ] = {
-            (HorizontalPosition.center, VerticalPosition.center): (HorizontalPosition.center, VerticalPosition.center),
-            (HorizontalPosition.top, VerticalPosition.right): (HorizontalPosition.bottom, VerticalPosition.right),
-            (HorizontalPosition.top, VerticalPosition.left): (HorizontalPosition.top, VerticalPosition.right),
-            (HorizontalPosition.bottom, VerticalPosition.right): (HorizontalPosition.bottom, VerticalPosition.left),
-            (HorizontalPosition.bottom, VerticalPosition.left): (HorizontalPosition.top, VerticalPosition.left)
+            (HorizontalPosition.center, VerticalPosition.center):
+                (HorizontalPosition.center, VerticalPosition.center),
+            (HorizontalPosition.top, VerticalPosition.right):
+                (HorizontalPosition.bottom, VerticalPosition.right),
+            (HorizontalPosition.top, VerticalPosition.left):
+                (HorizontalPosition.top, VerticalPosition.right),
+            (HorizontalPosition.bottom, VerticalPosition.right):
+                (HorizontalPosition.bottom, VerticalPosition.left),
+            (HorizontalPosition.bottom, VerticalPosition.left):
+                (HorizontalPosition.top, VerticalPosition.left)
         }
 
         return [
