@@ -12,7 +12,6 @@ import numpy
 import torch
 from torchvision import datasets
 
-from server.main import server
 from server.algorithms.data_types import BoundingBox, CV_Image, Point, RelativePoint
 from server.algorithms.data_types.field_extracted_data import FieldExtractedData
 from server.algorithms.enums import CameraPosition, Team
@@ -28,6 +27,7 @@ from server.algorithms.video_processing import VideoProcessing
 from server.data_storage.dto import BoxDTO
 from server.data_storage.dto.player_data_dto import PlayerDataDTO
 from server.data_storage.dto.relative_point_dto import RelativePointDTO
+from server.main import server
 from server.utils.async_buffered_generator import buffered_generator
 from server.utils.async_video_reader import async_video_reader
 from server.utils.config import AppConfig, VideoPreprocessingConfig
