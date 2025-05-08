@@ -1,7 +1,7 @@
 from typing import Optional, cast
 
 from pydantic import ValidationError
-from sqlalchemy import Delete, Select, Update, and_, exists, func
+from sqlalchemy import Delete, Select, Update, and_, exists, func, or_
 from sqlalchemy.engine import TupleResult
 from sqlalchemy.exc import IntegrityError, ProgrammingError
 from sqlalchemy.orm import selectinload
@@ -259,9 +259,39 @@ class DatasetRepoSQLA(DatasetRepo):
             for result in cast(tuple[tuple[Team, int], ...], results)
         }
 
+    async def check_frames_crossover_other_subset(
+        self, dataset_id: int, from_frame: int, to_frame: int
+    ) -> bool:
+        if from_frame > to_frame:
+            raise ValueError(f"{to_frame=} must be greater or equal to {from_frame=}")
+
+        if from_frame < 0:
+            raise ValueError(f"{from_frame=} must be greater or equal to 0")
+
+        if to_frame < 0:
+            raise ValueError(f"{to_frame=} must be greater or equal to 0")
+
+        crossover_exists: bool | None = await self.transaction.session.scalar(
+            Select(exists(TeamsSubset)).where(
+                and_(
+                    TeamsSubset.dataset_id == dataset_id,
+                    or_(
+                        TeamsSubset.from_frame_id.between(from_frame, to_frame),
+                        TeamsSubset.to_frame_id.between(from_frame, to_frame),
+                    )
+                )
+            )
+        )
+
+        if crossover_exists is None:
+            return False
+
+        return crossover_exists
+
     async def _data_point_exists(self, subset_id: int, tracking_id: int) -> bool:
         """
         Существует ли запись с предоставленным номером отслеживания в поднаборе данных.
+
         :param subset_id: Идентификатор поднабора.
         :param tracking_id: Идентификатор отслеживания.
         :return: Есть ли данное отслеживание в БД.

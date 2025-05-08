@@ -25,7 +25,7 @@ class DatasetRepo(Protocol):
 
     async def get_team_dataset_by_id(self, dataset_id: int) -> DatasetDTO:
         """
-        Получает набор данных выделения команд по идентификатору.
+        Получает набор данных разделения команд по идентификатору.
 
         :param dataset_id: Идентификатор набора данных.
         :return: Набор данных.
@@ -96,4 +96,18 @@ class DatasetRepo(Protocol):
 
         :param dataset_id: Идентификатор набора данных.
         :return: Словарь с командами и количеством точек об игроках в каждой из них.
+        """
+
+    async def check_frames_crossover_other_subset(
+        self, dataset_id: int, from_frame: int, to_frame: int
+    ) -> bool:
+        """
+        Проверяет, пересекаются ли данные с кадра по кадр с каким-либо
+         другим поднабором данных.
+
+        :param dataset_id: Идентификатор набора данных.
+        :param from_frame: С какого кадра проверка.
+        :param to_frame: По какой кадр проверка.
+        :return: Есть ли пересечение кадров с другими наборами.
+        :raise ValueError: Когда предоставлены неправильные данные ограничений.
         """

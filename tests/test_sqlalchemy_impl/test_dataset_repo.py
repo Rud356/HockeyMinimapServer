@@ -123,6 +123,154 @@ async def test_adding_subset(video_fps: float, video_frames_count: int, repo: Re
     assert dataset_fetched.subsets[0].subset_id == subset_id
 
 
+async def test_checking_bounds_of_subset(video_fps: float, video_frames_count: int, repo: RepositorySQLA):
+    async with repo.transaction as tr:
+        video = await repo.video_repo.create_new_video(
+            video_fps, test_video_path.relative_to(test_video_directory)
+        )
+        await tr.commit()
+
+    async with repo.transaction as tr:
+        await repo.frames_repo.create_frames(1, video_frames_count)
+        await tr.commit()
+
+    async with repo.transaction as tr:
+        dataset = await repo.dataset_repo.create_dataset_for_video(video.video_id)
+        await tr.commit()
+
+    frames_numbering = range(0, 10)
+
+    async with repo.transaction as tr:
+        subset_id = await repo.dataset_repo.add_subset_to_dataset(
+            dataset.dataset_id,
+            frames_numbering.start,
+            frames_numbering.stop,
+            [
+                [
+                    SubsetDataInputDTO(
+                        tracking_id=p,
+                        frame_id=i,
+                        class_id=PlayerClasses.Player,
+                        team_id=Team.Home,
+                        box=BoxDTO(
+                            top_point=RelativePointDTO(x=0.2, y=0.2),
+                            bottom_point=RelativePointDTO(x=0.35, y=0.4)
+                        )
+                    )
+                    for p in range(10)
+                ]
+                for i in frames_numbering
+            ]
+        )
+        await tr.commit()
+
+    async with repo.transaction:
+        crossover_exists: bool = await repo.dataset_repo.check_frames_crossover_other_subset(
+            dataset.dataset_id,
+            frames_numbering.start,
+            frames_numbering.stop
+        )
+
+        assert crossover_exists, "Crossover not found, but must be found"
+
+        crossover_exists = await repo.dataset_repo.check_frames_crossover_other_subset(
+            dataset.dataset_id,
+            frames_numbering.start,
+            frames_numbering.stop-4
+        )
+
+        assert crossover_exists, "Crossover not found, but must be found"
+
+        # Check crossover with shift
+        crossover_exists = await repo.dataset_repo.check_frames_crossover_other_subset(
+            dataset.dataset_id,
+            frames_numbering.start + 5,
+            frames_numbering.stop
+        )
+
+        assert crossover_exists, "Crossover not found, but must be found"
+
+        crossover_exists: bool = await repo.dataset_repo.check_frames_crossover_other_subset(
+            dataset.dataset_id,
+            frames_numbering.start+100,
+            frames_numbering.stop+100
+        )
+
+        assert not crossover_exists, "Crossover  found, but must not be found"
+
+        crossover_exists: bool = await repo.dataset_repo.check_frames_crossover_other_subset(
+            dataset.dataset_id,
+            frames_numbering.start,
+            frames_numbering.start
+        )
+
+        assert crossover_exists, "Crossover not found, but must be found"
+
+
+async def test_invalid_crossover_bounds(video_fps: float, video_frames_count: int, repo: RepositorySQLA):
+    async with repo.transaction as tr:
+        video = await repo.video_repo.create_new_video(
+            video_fps, test_video_path.relative_to(test_video_directory)
+        )
+        await tr.commit()
+
+    async with repo.transaction as tr:
+        await repo.frames_repo.create_frames(1, video_frames_count)
+        await tr.commit()
+
+    async with repo.transaction as tr:
+        dataset = await repo.dataset_repo.create_dataset_for_video(video.video_id)
+        await tr.commit()
+
+    frames_numbering = range(0, 10)
+
+    async with repo.transaction as tr:
+        subset_id = await repo.dataset_repo.add_subset_to_dataset(
+            dataset.dataset_id,
+            frames_numbering.start,
+            frames_numbering.stop,
+            [
+                [
+                    SubsetDataInputDTO(
+                        tracking_id=p,
+                        frame_id=i,
+                        class_id=PlayerClasses.Player,
+                        team_id=Team.Home,
+                        box=BoxDTO(
+                            top_point=RelativePointDTO(x=0.2, y=0.2),
+                            bottom_point=RelativePointDTO(x=0.35, y=0.4)
+                        )
+                    )
+                    for p in range(10)
+                ]
+                for i in frames_numbering
+            ]
+        )
+        await tr.commit()
+
+    async with repo.transaction:
+        with pytest.raises(ValueError):
+            # Checking negative numbers
+            await repo.dataset_repo.check_frames_crossover_other_subset(
+                dataset.dataset_id,
+                frames_numbering.start,
+                -1
+            )
+
+        with pytest.raises(ValueError):
+            # Checking negative numbers
+            await repo.dataset_repo.check_frames_crossover_other_subset(
+                dataset.dataset_id,
+                -1,
+                -1
+            )
+        with pytest.raises(ValueError):
+            await repo.dataset_repo.check_frames_crossover_other_subset(
+                dataset.dataset_id,
+                frames_numbering.stop,
+                frames_numbering.start
+            )
+
 async def test_adding_subset_to_out_of_bounds(video_fps: float, video_frames_count: int, repo: RepositorySQLA):
     async with repo.transaction as tr:
         video = await repo.video_repo.create_new_video(
