@@ -19,7 +19,7 @@ host = "localhost"
 port = 8000
 is_local_instance = true
 allowed_cors_domains = [
-    "https://localhost",
+    "http://localhost:8000",
     "https://localhost:7031"
 ]
 

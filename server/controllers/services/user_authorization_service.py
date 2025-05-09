@@ -1,3 +1,4 @@
+from http.client import HTTPException
 from typing import Any
 
 import jwt
@@ -6,6 +7,7 @@ from pydantic import ValidationError
 
 from server.controllers.exceptions import BadTokenPayload, UnauthorizedResourceAccess
 from server.data_storage.dto import UserDTO, UserPermissionsDTO
+from server.data_storage.exceptions import NotFoundError
 from server.data_storage.protocols import Repository
 
 
@@ -57,8 +59,17 @@ class UserAuthorizationService:
         if self.local_mode and data.username == "Admin":
             return True
 
-        async with repository.transaction:
-            repository_data: UserDTO = await repository.user_repo.get_user(user_id=data.user_id)
+        try:
+            async with repository.transaction:
+                repository_data: UserDTO = await repository.user_repo.get_user(
+                    user_id=data.user_id
+                )
+
+        except NotFoundError:
+            raise UnauthorizedResourceAccess()
+
+        except ValidationError:
+            raise BadTokenPayload()
 
         return repository_data == data
 
