@@ -1,3 +1,4 @@
+from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 from .dataset_repo_sqla import DatasetRepoSQLA
@@ -53,6 +54,10 @@ class RepositorySQLA(Repository):
         :return: Ничего.
         """
         async with engine.begin() as conn:
+            if engine.dialect.name == 'sqlite':
+                await conn.execute(text("PRAGMA foreign_keys=ON"))
+                await conn.execute(text("PRAGMA journal_mode=WAL;"))
+
             await conn.run_sync(Base.metadata.create_all)
 
     @staticmethod
