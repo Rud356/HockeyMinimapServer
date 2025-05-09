@@ -8,3 +8,4 @@ class ServerSettings(BaseModel):
     host: str
     port: int = Field(default=17600, ge=1, lt=65536)
     is_local_instance: bool
+    allowed_cors_domains: list[str] = Field(default="*")

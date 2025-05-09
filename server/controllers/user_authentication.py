@@ -1,3 +1,5 @@
+import datetime
+
 from dishka.integrations.fastapi import FromDishka
 from fastapi import APIRouter, HTTPException, Response
 from fastapi.encoders import jsonable_encoder
@@ -65,8 +67,19 @@ class UserAuthenticationEndpoint(APIEndpoint):
                 )
 
             response = JSONResponse(content=jsonable_encoder(user))
+
+            # 7 days cookie lifetime
+            cookie_lifetime: datetime.datetime = datetime.datetime.now(
+                tz=datetime.UTC
+            ) + datetime.timedelta(days=7)
             response.set_cookie(
-                key="user_token", value=user_auth_service.encode_user_auth_token(user)
+                key="user_token",
+                value=user_auth_service.encode_user_auth_token(user),
+                httponly=True,
+                expires=cookie_lifetime,
+                secure=True,
+                samesite="none",
+                path="/"
             )
 
             return response

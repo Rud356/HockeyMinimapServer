@@ -18,6 +18,10 @@ max_batch_size = 5
 host = "localhost"
 port = 8000
 is_local_instance = true
+allowed_cors_domains = [
+    "https://localhost",
+    "https://localhost:7031"
+]
 
 [video_processing]
 hwaccel = "auto"

@@ -58,7 +58,7 @@ class MinimapServer:
         self.config: AppConfig = config
         self.app.add_middleware(
             CORSMiddleware,
-            allow_origins=["*"],
+            allow_origins=config.server_settings.allowed_cors_domains,
             allow_credentials=True,
             allow_methods=["*"],
             allow_headers=["*"]
