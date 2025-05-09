@@ -1,4 +1,5 @@
 import hashlib
+import hmac
 from typing import Optional, cast
 
 from pydantic import ValidationError
@@ -188,7 +189,8 @@ class UserRepoSQLA(UserRepo):
             if result is None:
                 raise ValueError("User not found in database")
 
-            if result.password_hash == hashlib.sha256(password.encode('utf8')).hexdigest():
+            stored_password_hash: str = hashlib.sha256(password.encode('utf8')).hexdigest()
+            if hmac.compare_digest(result.password_hash, stored_password_hash):
                 return UserDTO(
                     user_id=result.user_id,
                     username=result.username,
