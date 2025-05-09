@@ -4,6 +4,7 @@ from pathlib import Path
 import cv2
 from detectron2.structures import Instances
 
+from server.algorithms.enums import PlayerClasses, Team
 from server.algorithms.services.player_predictor_service import PlayerPredictorService
 from server.algorithms.services.player_tracking_service import PlayerTrackingService
 from server.data_storage.dto import DatasetDTO, VideoDTO, SubsetDataInputDTO
@@ -131,3 +132,70 @@ class DatasetView:
             await tr.commit()
 
         return subset_id
+
+    async def set_player_team(self, subset_id: int, tracking_id: int, team: Team) -> bool:
+        """
+        Установить команду игрока по номеру отслеживания.
+
+        :param subset_id: Номер поднабора данных.
+        :param tracking_id: Номер отслеживания.
+        :param team: Команда для назначения.
+        :return: Была ли установлена команда.
+        :raise NotFoundError: Не найдены записи с таким игроком.
+        """
+        async with self.repository.transaction as tr:
+            has_changed: bool = await self.repository.dataset_repo.set_player_team(
+                subset_id, tracking_id, team
+            )
+            await tr.commit()
+
+        return has_changed
+
+    async def set_player_class(
+        self, subset_id: int, tracking_id: int, player_class: PlayerClasses
+    ) -> bool:
+        """
+        Изменяет класс игрока по номеру отслеживания.
+
+        :param subset_id: Номер поднабора данных.
+        :param tracking_id: Номер отслеживания.
+        :param player_class: Класс игрока.
+        :return: Был ли успешно изменен класс.
+        :raise NotFoundError: Не найдены записи с таким игроком.
+        """
+        async with self.repository.transaction as tr:
+            has_changed: bool = await self.repository.dataset_repo.set_player_class(
+                subset_id, tracking_id, player_class
+            )
+            await tr.commit()
+
+        return has_changed
+
+    async def kill_tracking(self, subset_id: int, tracking_id: int, frame_id: int) -> int:
+        """
+        Удаляет отслеживание начиная с определенного кадра.
+
+        :param subset_id: Номер поднабора данных.
+        :param tracking_id: Номер отслеживания.
+        :param frame_id: Номер кадра.
+        :return: Сколько точек отслеживания было удалено.
+        :raise NotFoundError: Не найдены записи с таким игроком.
+        """
+        async with self.repository.transaction as tr:
+            removed_records: int = await self.repository.dataset_repo.kill_tracking(
+                subset_id, tracking_id, frame_id
+            )
+            await tr.commit()
+
+        return removed_records
+
+    async def get_teams_dataset_size(self, dataset_id: int) -> dict[Team, int]:
+        """
+        Получает информацию о количестве точек данных с игроками по командам.
+
+        :param dataset_id: Идентификатор набора данных.
+        :return: Словарь с командами и количеством точек об игроках в каждой из них.
+        """
+
+        async with self.repository.transaction:
+            return await self.repository.dataset_repo.get_teams_dataset_size(dataset_id)
