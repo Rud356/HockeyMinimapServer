@@ -6,8 +6,7 @@ from detectron2.structures import Instances
 
 from server.algorithms.services.player_predictor_service import PlayerPredictorService
 from server.algorithms.services.player_tracking_service import PlayerTrackingService
-from server.data_storage.dto import DatasetDTO, VideoDTO
-from server.data_storage.dto.subset_data_input import SubsetDataInputDTO
+from server.data_storage.dto import DatasetDTO, VideoDTO, SubsetDataInputDTO
 from server.data_storage.exceptions import NotFoundError
 from server.data_storage.protocols import Repository
 from server.utils import buffered_generator, chain_video_slices

@@ -6,6 +6,7 @@ from .point_dto import PointDTO
 from .project_dto import ProjectDTO
 from .project_export_dto import ProjectExportDTO
 from .subset_data_dto import SubsetDataDTO
+from .subset_data_input import SubsetDataInputDTO
 from .teams_subset_dto import TeamsSubsetDTO
 from .user_dto import UserDTO
 from .video_dto import VideoDTO
@@ -22,6 +23,7 @@ __all__ = (
     "ProjectDTO",
     "ProjectExportDTO",
     "SubsetDataDTO",
+    "SubsetDataInputDTO",
     "TeamsSubsetDTO",
     "UserDTO",
     "VideoDTO",
