@@ -1,3 +1,4 @@
+from datetime import datetime, timedelta, timezone
 from http.client import HTTPException
 from typing import Any
 
@@ -27,7 +28,10 @@ class UserAuthorizationService:
         :param user: Объект с данными пользователя.
         :return: Токен доступа.
         """
-        return jwt.encode(user.model_dump(), self.key, algorithm="HS256")
+        return jwt.encode(
+            {"exp": datetime.now(tz=timezone.utc) + timedelta(days=7), **user.model_dump()},
+            self.key, algorithm="HS256"
+        )
 
     def decode_user_auth_token(self, token: str | None) -> UserDTO:
         """
@@ -42,10 +46,9 @@ class UserAuthorizationService:
 
         try:
             payload: dict[str, Any] = jwt.decode(token, self.key, algorithms=["HS256"])
-
             return UserDTO.model_validate(payload)
 
-        except ValidationError as err:
+        except (ValidationError,  jwt.ExpiredSignatureError) as err:
             raise BadTokenPayload() from err
 
     async def authenticate_decoded_token(self, data: UserDTO, repository: Repository) -> bool:

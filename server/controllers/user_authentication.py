@@ -5,8 +5,7 @@ from fastapi import APIRouter, HTTPException, Response
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
 
-from server.controllers.dto import AuthenticatedUserResponse
-from server.controllers.dto.user_auth import UserAuth
+from server.controllers.dto import AuthenticatedUserResponse, UserAuth
 from server.controllers.endpoints_base import APIEndpoint
 from server.controllers.services.user_authorization_service import UserAuthorizationService
 from server.data_storage.dto import UserDTO
@@ -68,7 +67,7 @@ class UserAuthenticationEndpoint(APIEndpoint):
                 )
 
             user_token: str = user_auth_service.encode_user_auth_token(user)
-            user_data: AuthenticatedUserResponse = AuthenticatedUserResponse.model_construct(
+            user_data: AuthenticatedUserResponse = AuthenticatedUserResponse(
                 **user.model_dump(), token=user_token
             )
             response = JSONResponse(content=jsonable_encoder(user_data))
