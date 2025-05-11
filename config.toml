@@ -20,7 +20,7 @@ port = 8000
 is_local_instance = true
 allowed_cors_domains = [
     "http://localhost:8000",
-    "https://localhost:7031"
+    "https://localhost:7023"
 ]
 
 [video_processing]
