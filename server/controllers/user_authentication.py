@@ -75,7 +75,7 @@ class UserAuthenticationEndpoint(APIEndpoint):
             response.set_cookie(
                 key="user_token",
                 value=user_auth_service.encode_user_auth_token(user),
-                httponly=True,
+                httponly=False,
                 expires=cookie_lifetime,
                 secure=True,
                 samesite="none",
