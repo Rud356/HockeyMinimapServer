@@ -5,6 +5,7 @@ from fastapi import APIRouter, HTTPException, Response
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
 
+from server.controllers.dto import AuthenticatedUserResponse
 from server.controllers.dto.user_auth import UserAuth
 from server.controllers.endpoints_base import APIEndpoint
 from server.controllers.services.user_authorization_service import UserAuthorizationService
@@ -24,7 +25,7 @@ class UserAuthenticationEndpoint(APIEndpoint):
             self.authenticate_user,
             description="Авторизует пользователя в системе",
             methods=["POST"],
-            response_model=UserDTO,
+            response_model=AuthenticatedUserResponse,
             responses={
                 200: {"description": "Пользователь успешно авторизован"},
                 404: {"description": "Пользователь не найден или неверные данные для входа"}
@@ -66,7 +67,11 @@ class UserAuthenticationEndpoint(APIEndpoint):
                     user_auth_data.username, user_auth_data.password
                 )
 
-            response = JSONResponse(content=jsonable_encoder(user))
+            user_token: str = user_auth_service.encode_user_auth_token(user)
+            user_data: AuthenticatedUserResponse = AuthenticatedUserResponse.model_construct(
+                **user.model_dump(), token=user_token
+            )
+            response = JSONResponse(content=jsonable_encoder(user_data))
 
             # 7 days cookie lifetime
             cookie_lifetime: datetime.datetime = datetime.datetime.now(
@@ -74,8 +79,8 @@ class UserAuthenticationEndpoint(APIEndpoint):
             ) + datetime.timedelta(days=7)
             response.set_cookie(
                 key="user_token",
-                value=user_auth_service.encode_user_auth_token(user),
-                httponly=False,
+                value=user_token,
+                httponly=True,
                 expires=cookie_lifetime,
                 secure=True,
                 samesite="none",
