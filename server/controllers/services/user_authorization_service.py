@@ -1,5 +1,5 @@
+import hashlib
 from datetime import datetime, timedelta, timezone
-from http.client import HTTPException
 from typing import Any
 
 import jwt
@@ -18,7 +18,7 @@ class UserAuthorizationService:
     """
 
     def __init__(self, key: str, local_mode: bool = False) -> None:
-        self.key: str = key
+        self.key: str = hashlib.sha3_256(key.encode("utf8")).hexdigest()
         self.local_mode: bool = local_mode
 
     def encode_user_auth_token(self, user: UserDTO) -> str:
@@ -48,7 +48,11 @@ class UserAuthorizationService:
             payload: dict[str, Any] = jwt.decode(token, self.key, algorithms=["HS256"])
             return UserDTO.model_validate(payload)
 
-        except (ValidationError,  jwt.ExpiredSignatureError) as err:
+        except (
+            ValidationError,
+            jwt.ExpiredSignatureError,
+            jwt.exceptions.InvalidSignatureError
+        ) as err:
             raise BadTokenPayload() from err
 
     async def authenticate_decoded_token(self, data: UserDTO, repository: Repository) -> bool:
