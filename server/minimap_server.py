@@ -28,9 +28,10 @@ from server.algorithms.nn import device
 from server.algorithms.services.field_predictor_service import FieldPredictorService
 from server.algorithms.services.player_predictor_service import PlayerPredictorService
 from server.algorithms.video_processing import VideoProcessing
+from server.controllers.project_management import ProjectManagementEndpoint
 from server.controllers.user_authentication import UserAuthenticationEndpoint
 from server.controllers.users_managment import UserManagementEndpoint
-from server.controllers.video_endpoints import VideoUploadEndpoint
+from server.controllers.video_management import VideoUploadEndpoint
 from server.controllers.video_to_map_endpoints import VideoToMapEndpoint
 from server.data_storage.sql_implementation.repository_sqla import RepositorySQLA
 from server.data_storage.sql_implementation.sqla_provider import SQLAlchemyProvider
@@ -139,6 +140,7 @@ class MinimapServer:
         UserManagementEndpoint(api)
         UserAuthenticationEndpoint(api)
         VideoToMapEndpoint(api)
+        ProjectManagementEndpoint(api)
 
         self.app.mount("/static", StaticFiles(directory=config.static_path), name="static")
         self.register_routes(api)
