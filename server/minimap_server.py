@@ -250,10 +250,14 @@ class MinimapServer:
         asyncio.run(tmp_repo.drop_db(engine))
 
     def start(self) -> None:
+        """
+        Запускает приложение.
+
+        :return: Ничего.
+        """
         uvicorn.run(
             self.app,
             host=self.config.server_settings.host,
             port=self.config.server_settings.port,
             reload_dirs=self.reload_dirs
         )
-
