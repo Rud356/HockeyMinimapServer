@@ -19,7 +19,7 @@ from server.data_storage.exceptions import DataIntegrityError, NotFoundError
 from server.data_storage.protocols import Repository
 from server.utils.config import AppConfig
 from server.utils.file_lock import FileLock
-from server.views.map_view import MapView
+from server.views.map_view import MapView, RelativeMinimapKeyPointConfig
 from server.views.video_view import VideoView
 
 
@@ -81,6 +81,13 @@ class VideoToMapEndpoint(APIEndpoint):
                 404: {"description": "Видео не найдено"},
                 409: {"description": "К видео не была применена коррекция"}
             }
+        )
+        self.router.add_api_route(
+            "/map_points/reference",
+            self.get_reference_points,
+            methods=["get"],
+            description="Получает относительные позиции ключевых точек карты поля, и "
+                        "верхнюю и нижнюю точку координат области поля в абсолютных координатах"
         )
         self.router.add_api_route(
             "/map_points/{map_data_id}",
@@ -280,3 +287,15 @@ class VideoToMapEndpoint(APIEndpoint):
             PointsMapping(map_point=map_point, video_point=video_point)
                 for map_point, video_point in key_points.items()
         ]
+
+    async def get_reference_points(
+        self,
+        app_config: FromDishka[AppConfig],
+    ) -> RelativeMinimapKeyPointConfig:
+        """
+        Получает информацию о ключевых точках на карте.
+
+        :param app_config: Конфигурация приложения.
+        :return: Относительные ключевые точки и охватывающий прямоугольник.
+        """
+        return MapView.get_relative_minimap_points(app_config.minimap_config)
