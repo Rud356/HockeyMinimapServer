@@ -87,7 +87,8 @@ class VideoToMapEndpoint(APIEndpoint):
             self.get_reference_points,
             methods=["get"],
             description="Получает относительные позиции ключевых точек карты поля, и "
-                        "верхнюю и нижнюю точку координат области поля в абсолютных координатах"
+                        "верхнюю и нижнюю точку координат области поля в абсолютных координатах",
+            tags=["map"],
         )
         self.router.add_api_route(
             "/map_points/{map_data_id}",
