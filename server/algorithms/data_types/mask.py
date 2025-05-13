@@ -66,8 +66,8 @@ class Mask:
             numpy.dtype[numpy.signedinteger[_32Bit | _64Bit]]
         ] = np.argwhere(self.mask > 0)
 
-        top_left_y, top_left_x = points.min(axis=0)
-        bottom_right_y, bottom_right_x = points.max(axis=0)
+        top_left_y, top_left_x, *_ = points.min(axis=0)
+        bottom_right_y, bottom_right_x, *_ = points.max(axis=0)
 
         return Point(x=top_left_x, y=top_left_y), Point(x=bottom_right_x, y=bottom_right_y)
 

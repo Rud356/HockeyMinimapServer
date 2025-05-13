@@ -137,17 +137,17 @@ class DatasetRepoSQLA(DatasetRepo):
             )
 
         try:
-            dataset: Optional[TeamsDataset] = (await self.transaction.session.execute(
-                Select(TeamsDataset)
-                .where(TeamsDataset.dataset_id == dataset_id)
-            )).scalar_one_or_none()
+            async with await self.transaction.start_nested_transaction():
+                dataset: Optional[TeamsDataset] = (await self.transaction.session.execute(
+                    Select(TeamsDataset)
+                    .where(TeamsDataset.dataset_id == dataset_id)
+                )).scalar_one_or_none()
 
         except ProgrammingError as err:
             raise ValueError("Invalid data provided for lookup") from err
 
         if dataset is None:
             raise NotFoundError("Dataset with provided id was not found")
-
 
         async with await self.transaction.start_nested_transaction() as tr:
             new_subset = TeamsSubset(

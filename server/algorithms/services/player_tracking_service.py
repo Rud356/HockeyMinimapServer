@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+import cv2
 import torch
 from detectron2.structures import Instances
 
@@ -14,7 +15,7 @@ from server.data_storage.dto.subset_data_input import SubsetDataInputDTO
 
 if TYPE_CHECKING:
     from torch import Tensor
-    from server.algorithms.data_types import BoundingBox, CV_Image, Mask, RawPlayerTrackingData, Point
+    from server.algorithms.data_types import BoundingBox, CV_Image, Mask, RawPlayerTrackingData, Point, RelativePoint
 
 
 class PlayerTrackingService:
@@ -28,7 +29,10 @@ class PlayerTrackingService:
         field_bounding_box: BoundingBox
     ):
         self.player_tracker: PlayerTracker = player_tracker
-        self.field_mask: CV_Image = field_mask.mask
+        self.field_mask: CV_Image = cv2.cvtColor(field_mask.mask, cv2.COLOR_BGR2GRAY)
+        # Find positions of players on mini map
+        height, width, channels = field_mask.mask.shape
+        self.resolution: tuple[int, int] = (width, height)
         self.field_bbox: BoundingBox = field_bounding_box.scale_bbox(0.8)
 
     def process_frame(
@@ -52,11 +56,15 @@ class PlayerTrackingService:
         boxes = filtered_instances.pred_boxes.tensor
         x_centers = (boxes[:, 0] + boxes[:, 2]) / 2  # Midpoint of x_min and x_max
         y_bottoms = boxes[:, 3]  # y_max (bottom coordinate)
-        centers_bottoms: list[list[float]] = torch.stack((x_centers, y_bottoms), dim=1).to("cpu").tolist()
+        centers_bottoms: list[list[float]] = torch.stack(
+            (x_centers, y_bottoms),
+            dim=1
+        ).to("cpu").tolist()
 
         # Keep on field
         keep = [
-            (self.field_mask[int(y) - 1, int(x) - 1] > 0) and ((x, y) in self.field_bbox)
+            (self.field_mask[int(y) - 1, int(x) - 1] > 0)
+                and ((x, y) in self.field_bbox)
             for x, y in centers_bottoms
         ]
         keep_tensor = torch.BoolTensor(keep)
@@ -75,7 +83,13 @@ class PlayerTrackingService:
         output: list[SubsetDataInputDTO] = []
         for player_data in tracking_data:
             min_point: Point = player_data.bounding_box.min_point
+            min_relative_point: RelativePoint = min_point.to_relative_coordinates(
+                self.resolution
+            )
             max_point: Point = player_data.bounding_box.max_point
+            max_relative_point: RelativePoint = max_point.to_relative_coordinates(
+                self.resolution
+            )
 
             output.append(
                 SubsetDataInputDTO(
@@ -84,8 +98,8 @@ class PlayerTrackingService:
                     class_id=player_data.player_class,
                     team_id=None,
                     box=BoxDTO(
-                        top_point=RelativePointDTO(x=min_point.x, y=min_point.y),
-                        bottom_point=RelativePointDTO(x=max_point.x, y=max_point.y),
+                        top_point=RelativePointDTO(x=min_relative_point.x, y=min_relative_point.y),
+                        bottom_point=RelativePointDTO(x=max_relative_point.x, y=max_relative_point.y),
                     )
                 )
             )

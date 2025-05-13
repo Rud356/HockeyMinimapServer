@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import Optional, TYPE_CHECKING
 
+import cv2
 import torch
 from detectron2.structures import Instances
 
@@ -41,7 +42,7 @@ class PlayerDataExtractionService:
         self.team_predictor: TeamDetectionPredictor = team_predictor
         self.players_mapper: PlayersMapper = players_mapper
         self.player_tracker: PlayerTracker = player_tracker
-        self.field_mask: CV_Image = field_mask.mask
+        self.field_mask: CV_Image = cv2.cvtColor(field_mask.mask, cv2.COLOR_BGR2GRAY)
         self.field_bbox: BoundingBox = field_bounding_box.scale_bbox(0.8)
         self.known_tracked_players_teams: dict[int, Team] = {}
 
@@ -58,7 +59,6 @@ class PlayerDataExtractionService:
         :return: Список выделенных на кадре игроков и их номеров отслеживания.
         """
         output: list[PlayerData] = []
-        team_detection_bbox: BoundingBox = self.field_bbox
 
         # Filter out not on field
         threshold = 0.5
@@ -68,7 +68,10 @@ class PlayerDataExtractionService:
         boxes = filtered_instances.pred_boxes.tensor
         x_centers = (boxes[:, 0] + boxes[:, 2]) / 2  # Midpoint of x_min and x_max
         y_bottoms = boxes[:, 3]  # y_max (bottom coordinate)
-        centers_bottoms: list[list[float]] = torch.stack((x_centers, y_bottoms), dim=1).to("cpu").tolist()
+        centers_bottoms: list[list[float]] = torch.stack(
+            (x_centers, y_bottoms),
+            dim=1
+        ).to("cpu").tolist()
 
         # Keep on field
         keep = [self.field_mask[int(y) - 1, int(x) - 1] > 0 for x, y in centers_bottoms]
@@ -90,7 +93,7 @@ class PlayerDataExtractionService:
             n for n, track_data in enumerate(tracking_data)
                 if (
                     track_data.player_class != PlayerClasses.Referee and
-                    track_data.bounding_box.intersects_with(team_detection_bbox) and
+                    track_data.bounding_box.intersects_with(self.field_bbox) and
                     track_data.tracking_id not in self.known_tracked_players_teams
                 )
         ]

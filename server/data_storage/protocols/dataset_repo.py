@@ -106,6 +106,7 @@ class DatasetRepo(Protocol):
 
         :param dataset_id: Идентификатор набора данных.
         :return: Словарь с командами и количеством точек об игроках в каждой из них.
+        :raises NotFoundError: Если не найден набор данных.
         """
 
     async def check_frames_crossover_other_subset(

@@ -249,7 +249,7 @@ async def test_invalid_crossover_bounds(video_fps: float, video_frames_count: in
         await tr.commit()
 
     async with repo.transaction:
-        with pytest.raises(ValueError):
+        with pytest.raises(IndexError):
             # Checking negative numbers
             await repo.dataset_repo.check_frames_crossover_other_subset(
                 dataset.dataset_id,
@@ -257,14 +257,14 @@ async def test_invalid_crossover_bounds(video_fps: float, video_frames_count: in
                 -1
             )
 
-        with pytest.raises(ValueError):
+        with pytest.raises(IndexError):
             # Checking negative numbers
             await repo.dataset_repo.check_frames_crossover_other_subset(
                 dataset.dataset_id,
                 -1,
                 -1
             )
-        with pytest.raises(ValueError):
+        with pytest.raises(IndexError):
             await repo.dataset_repo.check_frames_crossover_other_subset(
                 dataset.dataset_id,
                 frames_numbering.stop,

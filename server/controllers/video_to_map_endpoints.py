@@ -219,7 +219,7 @@ class VideoToMapEndpoint(APIEndpoint):
         field_predictor: FromDishka[FieldPredictorService],
         file_lock: FromDishka[FileLock],
         video_id: int,
-        body: Optional[InferenceAnchorPoint],
+        body: Optional[InferenceAnchorPoint] = None,
         frame_timestamp: Annotated[Optional[float], Query(ge=0)] = 0.0
     ) -> list[PointsMapping]:
         if not current_user.user_permissions.can_create_projects:
