@@ -5,9 +5,9 @@ from typing import Any, Literal, Mapping, TYPE_CHECKING
 import torch
 from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_score
 from torch import nn as nn, optim as optim
-from torch.utils.data import DataLoader
+from torch.utils.data import DataLoader, Dataset, Subset
 from torchvision import transforms as transforms
-from torchvision.datasets import ImageFolder, VisionDataset
+from torchvision.datasets import DatasetFolder, VisionDataset
 
 if TYPE_CHECKING:
     from server.algorithms.nn.team_detector import TeamDetectorModel
@@ -27,8 +27,8 @@ class TeamDetectorTeacher:
     """
     def __init__(
         self,
-        train_dataset: ImageFolder,
-        val_dataset: ImageFolder,
+        train_dataset: VisionDataset | Subset,
+        val_dataset: VisionDataset | Subset,
         epochs: int,
         model: TeamDetectorModel,
         device: Literal['cpu', 'cuda'] | str = 'cpu'

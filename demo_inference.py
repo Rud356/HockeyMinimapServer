@@ -12,7 +12,7 @@ import numpy
 import torch
 from torchvision import datasets
 
-from server.algorithms.data_types import BoundingBox, CV_Image, Point, RelativePoint
+from server.algorithms.data_types import BoundingBox, CV_Image, Mask, Point, RelativePoint
 from server.algorithms.data_types.field_extracted_data import FieldExtractedData
 from server.algorithms.enums import CameraPosition, Team
 from server.algorithms.key_point_placer import KeyPointPlacer
@@ -31,6 +31,7 @@ from server.main import server
 from server.utils.async_buffered_generator import buffered_generator
 from server.utils.async_video_reader import async_video_reader
 from server.utils.config import AppConfig, VideoPreprocessingConfig
+from server.utils.dataset_utils import count_labels_in_subsets, split_dataset
 from server.views.map_view import MapView
 
 DEFAULT_CONFIG_PATH: Path = Path(__file__).parent / "config.toml"
@@ -50,10 +51,14 @@ data_dir = 'datasets/custom_dataset'
 
 train_dataset = datasets.ImageFolder(os.path.join(data_dir, 'train'), transform=team_detector_transform)
 val_dataset = datasets.ImageFolder(os.path.join(data_dir, 'val'), transform=team_detector_transform)
+
+demo_set = datasets.ImageFolder(os.path.join('datasets', 'set'), transform=team_detector_transform)
+demo_split = split_dataset(demo_set)
+print(count_labels_in_subsets(demo_set, demo_split[0].indices, demo_split[1].indices))
 print(Path(os.path.join(data_dir, 'train')).resolve(), Path(os.path.join(data_dir, 'val')).resolve())
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
-trainer = TeamDetectorTeacher(train_dataset, val_dataset, 100, TeamDetectorModel(), device)
+trainer = TeamDetectorTeacher(demo_split[0], demo_split[1], 100, TeamDetectorModel(), device)
 model = trainer.train_nn()
 predictor: TeamDetectionPredictor = TeamDetectionPredictor(model, team_detector_transform, device)
 
@@ -102,7 +107,8 @@ async def main(video_path: Path):
         field_service,
         3.0
     )
-
+    cv2.imwrite("mask.png", mask.mask)
+    mask_img = cv2.imread("mask.png")
 
     # DEMO RESOLUTION, FIGURED OUT IN RUNTIME
     key_point_placer = KeyPointPlacer(MINIMAP_KEY_POINTS, CameraPosition.top_middle_point, (1280, 720))
@@ -209,7 +215,7 @@ async def main(video_path: Path):
                 team_predictor,
                 mapper,
                 PlayerTracker(),
-                mask,
+                Mask(mask=mask_img),
                 # Absolute coordinates required
                 BoundingBox(*mask.get_corners_of_mask())
             )

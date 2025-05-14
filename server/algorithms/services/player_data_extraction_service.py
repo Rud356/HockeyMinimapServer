@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Optional, TYPE_CHECKING
+from typing import Optional, TYPE_CHECKING, cast
 
 import cv2
 import torch
@@ -12,10 +12,11 @@ from server.algorithms.enums.player_classes_enum import PlayerClasses
 from server.algorithms.nn import TeamDetectionPredictor
 from server.algorithms.player_tracker import PlayerTracker
 from server.algorithms.players_mapper import PlayersMapper
+from server.algorithms.data_types.image_typehint import CV_Image
 
 if TYPE_CHECKING:
     from torch import Tensor
-    from server.algorithms.data_types import BoundingBox, CV_Image, Mask, RawPlayerTrackingData, RelativePoint
+    from server.algorithms.data_types import BoundingBox, Mask, RawPlayerTrackingData, RelativePoint
 
 
 class PlayerDataExtractionService:

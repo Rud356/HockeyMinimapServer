@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 
 import cv2
 import torch
@@ -29,7 +29,7 @@ class PlayerTrackingService:
         field_bounding_box: BoundingBox
     ):
         self.player_tracker: PlayerTracker = player_tracker
-        self.field_mask: CV_Image = cv2.cvtColor(field_mask.mask, cv2.COLOR_BGR2GRAY)
+        self.field_mask: CV_Image = cast(CV_Image, cv2.cvtColor(field_mask.mask, cv2.COLOR_BGR2GRAY))
         # Find positions of players on mini map
         height, width, channels = field_mask.mask.shape
         self.resolution: tuple[int, int] = (width, height)
