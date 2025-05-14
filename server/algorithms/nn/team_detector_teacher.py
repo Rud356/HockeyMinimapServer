@@ -5,9 +5,9 @@ from typing import Any, Literal, Mapping, TYPE_CHECKING
 import torch
 from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_score
 from torch import nn as nn, optim as optim
-from torch.utils.data import DataLoader, Dataset, Subset
+from torch.utils.data import DataLoader, Subset
 from torchvision import transforms as transforms
-from torchvision.datasets import DatasetFolder, VisionDataset
+from torchvision.datasets import VisionDataset
 
 if TYPE_CHECKING:
     from server.algorithms.nn.team_detector import TeamDetectorModel

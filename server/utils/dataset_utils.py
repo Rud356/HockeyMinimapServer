@@ -2,7 +2,6 @@ import torch
 from sklearn.model_selection import StratifiedShuffleSplit
 from torch import Tensor
 from torch.utils.data import Subset
-from torch.utils.data.sampler import WeightedRandomSampler
 
 
 def split_dataset(dataset, train_ratio=0.67) -> tuple[Subset, Subset]:
@@ -39,10 +38,6 @@ def count_labels_in_subsets(dataset, train_indices, val_indices) -> tuple[Tensor
     """
     # Get the labels for the dataset
     labels = torch.tensor([sample[1] for sample in dataset.samples])
-
-    # Create subsets
-    train_subset = Subset(dataset, train_indices)
-    val_subset = Subset(dataset, val_indices)
 
     # Count labels in each subset
     train_labels = labels[train_indices]

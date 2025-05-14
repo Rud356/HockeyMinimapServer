@@ -49,9 +49,6 @@ classes_names = list(Team.__members__)
 test_dir = 'datasets/custom_validation'
 data_dir = 'datasets/custom_dataset'
 
-train_dataset = datasets.ImageFolder(os.path.join(data_dir, 'train'), transform=team_detector_transform)
-val_dataset = datasets.ImageFolder(os.path.join(data_dir, 'val'), transform=team_detector_transform)
-
 demo_set = datasets.ImageFolder(os.path.join('datasets', 'set'), transform=team_detector_transform)
 demo_split = split_dataset(demo_set)
 print(count_labels_in_subsets(demo_set, demo_split[0].indices, demo_split[1].indices))

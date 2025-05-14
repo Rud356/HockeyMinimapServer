@@ -43,7 +43,7 @@ class PlayerDataExtractionService:
         self.team_predictor: TeamDetectionPredictor = team_predictor
         self.players_mapper: PlayersMapper = players_mapper
         self.player_tracker: PlayerTracker = player_tracker
-        self.field_mask: CV_Image = cv2.cvtColor(field_mask.mask, cv2.COLOR_BGR2GRAY)
+        self.field_mask: CV_Image = cast(CV_Image, cv2.cvtColor(field_mask.mask, cv2.COLOR_BGR2GRAY))
         self.field_bbox: BoundingBox = field_bounding_box.scale_bbox(0.8)
         self.known_tracked_players_teams: dict[int, Team] = {}
 

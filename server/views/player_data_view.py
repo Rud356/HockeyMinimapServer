@@ -7,7 +7,6 @@ from tempfile import TemporaryDirectory
 from typing import cast
 
 import cv2
-from sklearn.model_selection import train_test_split
 from torch.utils.data import Subset
 from torchvision.datasets import ImageFolder, VisionDataset
 
