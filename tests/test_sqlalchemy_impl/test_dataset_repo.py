@@ -287,7 +287,7 @@ async def test_adding_subset_to_out_of_bounds(video_fps: float, video_frames_cou
         await tr.commit()
 
     frames_numbering = range(video_frames_count+10, video_frames_count+20)
-    with pytest.raises(ValueError):
+    with pytest.raises(DataIntegrityError):
         async with repo.transaction:
             subset_id = await repo.dataset_repo.add_subset_to_dataset(
                 dataset.dataset_id,

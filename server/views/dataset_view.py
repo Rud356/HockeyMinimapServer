@@ -135,17 +135,18 @@ class DatasetView:
         subset_data: list[list[SubsetDataInputDTO]] = []
         capture = cv2.VideoCapture(str(video_path), cv2.CAP_FFMPEG)
 
-        async for frame_n, frame in buffered_generator(
-            chain_video_slices(capture, [(from_frame, to_frame)]),
-            frame_buffer_size
-        ):
-            result_instances: Future[
-                list[Instances]
-            ] = await player_predictor.add_inference_task_to_queue(frame)
-            resulting_players_instances: Instances = (await result_instances)[0].to("cpu")
-            subset_data.append(
-                player_tracker.process_frame(frame_n, resulting_players_instances)
-            )
+        async with file_lock.lock_file(video_path, timeout=1):
+            async for frame_n, frame in buffered_generator(
+                chain_video_slices(capture, [(from_frame, to_frame)]),
+                frame_buffer_size
+            ):
+                result_instances: Future[
+                    list[Instances]
+                ] = await player_predictor.add_inference_task_to_queue(frame)
+                resulting_players_instances: Instances = (await result_instances)[0].to("cpu")
+                subset_data.append(
+                    player_tracker.process_frame(frame_n, resulting_players_instances)
+                )
 
         async with self.repository.transaction as tr:
             subset_id: int = await self.repository.dataset_repo.add_subset_to_dataset(

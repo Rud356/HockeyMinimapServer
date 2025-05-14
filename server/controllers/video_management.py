@@ -19,6 +19,7 @@ from server.data_storage.dto import UserDTO
 from server.data_storage.exceptions import DataIntegrityError, NotFoundError
 from server.data_storage.protocols import Repository
 from server.utils.config import AppConfig
+from server.utils.file_lock import FileLock
 from server.utils.providers import StaticDirSpaceAllocator, TmpDirSpaceAllocator, VideoProcessingWorker
 from server.views.video_view import VideoDTO, VideoView
 
@@ -419,6 +420,7 @@ class VideoUploadEndpoint(APIEndpoint):
         temp_disk_space_allocator: FromDishka[TmpDirSpaceAllocator],
         dest_disk_space_allocator: FromDishka[StaticDirSpaceAllocator],
         app_config: FromDishka[AppConfig],
+        file_lock: FromDishka[FileLock],
         video_id: int,
         render_again: Annotated[
             bool,
@@ -434,6 +436,7 @@ class VideoUploadEndpoint(APIEndpoint):
         :param app_config: Конфигурация приложения.
         :param repository: Объект взаимодействия с БД.
         :param current_user: Пользователь системы.
+        :param file_lock: Блокировщик доступа к файлу
         :param video_id: Идентификатор видео.
         :param render_again: Обработать ли видео заново.
         :return: Объект с информацией о видео.
@@ -452,7 +455,8 @@ class VideoUploadEndpoint(APIEndpoint):
                 app_config.static_path,
                 render_again,
                 temp_disk_space_allocator,
-                dest_disk_space_allocator
+                dest_disk_space_allocator,
+                file_lock
             )
             return await view.get_video(video_id)
 
@@ -464,6 +468,9 @@ class VideoUploadEndpoint(APIEndpoint):
 
         except ValueError:
             raise HTTPException(409, "Video is already corrected and rendered")
+
+        except TimeoutError:
+            raise HTTPException(409, "Video is already processing on server")
 
         except KeyError:
             raise HTTPException(500, "Video doesn't have proper length field")

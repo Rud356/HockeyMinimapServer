@@ -158,10 +158,18 @@ class DatasetRepoSQLA(DatasetRepo):
             )
             tr.session.add(new_subset)
 
+            try:
+                await tr.commit()
+            except (IntegrityError, ProgrammingError) as err:
+                raise DataIntegrityError("Invalid data provided") from err
+
+        async with await self.transaction.start_nested_transaction() as tr:
             for n, frame_data in enumerate(subset_data):
+                subset_data_records: list[SubsetData] = []
                 for data_point in frame_data:
                     subset_data_record: SubsetData = SubsetData(
                         tracking_id=data_point.tracking_id,
+                        subset_id=new_subset.subset_id,
                         video_id=dataset.video_id,
                         frame_id=from_frame+n,
                         team_id=data_point.team_id,
@@ -177,7 +185,9 @@ class DatasetRepoSQLA(DatasetRepo):
                             )
                         )
                     )
-                    new_subset.subset_data.append(subset_data_record)
+                    subset_data_records.append(subset_data_record)
+
+                tr.session.add_all(subset_data_records)
 
             try:
                 await tr.commit()

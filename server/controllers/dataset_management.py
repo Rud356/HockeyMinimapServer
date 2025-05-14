@@ -278,6 +278,11 @@ class DatasetEndpoint(APIEndpoint):
                 409, "Converted video not found on disk"
             )
 
+        except TimeoutError:
+            raise HTTPException(
+                409, "Video is currently under processing"
+            )
+
         except DataIntegrityError:
             raise HTTPException(
                 500,

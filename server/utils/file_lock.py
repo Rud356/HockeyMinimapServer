@@ -1,3 +1,4 @@
+import asyncio
 import time
 from asyncio import Lock, sleep
 
@@ -17,11 +18,12 @@ class FileLock:
         self.cleanup_time: float = cleanup_time
 
     @asynccontextmanager
-    async def lock_file(self, path: Path | str) -> AsyncGenerator[None, None]:
+    async def lock_file(self, path: Path | str, timeout: float | None = None) -> AsyncGenerator[None, None]:
         """
         Блокирует параллельный доступ к файлу.
 
         :param path: Путь до файла.
+        :param timeout: Время ожидания взятия блокировки ресурса.
         :return: Контекстный менеджер блокировки.
         """
         current_lock, _ = self.locks.get(path, (None, None))
@@ -32,8 +34,13 @@ class FileLock:
         async with self.modification_lock:
             self.locks[path] = current_lock, time.time()
 
-        async with current_lock:
-            yield None
+        try:
+            async with asyncio.timeout(timeout):
+                await current_lock.acquire()
+            yield
+
+        finally:
+            current_lock.release()
 
     async def run_cleanup_loop(self) -> NoReturn:
         """

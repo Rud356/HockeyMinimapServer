@@ -13,6 +13,7 @@ from server.algorithms.video_processing import VideoProcessing
 from server.data_storage.dto import VideoDTO
 from server.data_storage.exceptions import NotFoundError
 from server.data_storage.protocols import Repository
+from server.utils.file_lock import FileLock
 from server.utils.providers import StaticDirSpaceAllocator, TmpDirSpaceAllocator
 
 
@@ -60,6 +61,7 @@ class VideoView:
                 source_path,
                 video_path
             )
+            total_frames_count: int = video_processing.get_frames_count_from_probe(video_info)
 
         # Make db record
         async with self.repository.transaction as tr:
@@ -67,6 +69,7 @@ class VideoView:
                 video_processing.get_fps_from_probe(video_info),
                 video_path.relative_to(video_directory).as_posix(),
             )
+            await self.repository.frames_repo.create_frames(1, total_frames_count)
             await tr.commit()
 
         return video_dto
@@ -189,6 +192,7 @@ class VideoView:
         render_again: bool,
         temp_disk_space_allocator: TmpDirSpaceAllocator,
         dest_disk_space_allocator: StaticDirSpaceAllocator,
+        file_lock: FileLock
     ) -> None:
         """
         Применяет коррекцию ко всему видео.
@@ -200,6 +204,7 @@ class VideoView:
         :param render_again: Нужно ли корректировать видео заново, если файл уже был откорректирован.
         :param temp_disk_space_allocator: Аллокатор места во временной папке.
         :param dest_disk_space_allocator: Аллокатор места в конечной папке.
+        :param file_lock: Блокировщик доступа к файлу.
         :return: Ничего.
         """
         loop = asyncio.get_running_loop()
@@ -230,7 +235,8 @@ class VideoView:
 
         async with (
             temp_disk_space_allocator.preallocate_disk_space(source_video.stat().st_size),
-            dest_disk_space_allocator.preallocate_disk_space(source_video.stat().st_size)
+            dest_disk_space_allocator.preallocate_disk_space(source_video.stat().st_size),
+            file_lock.lock_file(dest_file, timeout=1)
         ):
             await loop.run_in_executor(
                 executor,
