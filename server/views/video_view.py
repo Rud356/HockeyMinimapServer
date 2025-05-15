@@ -69,7 +69,7 @@ class VideoView:
                 video_processing.get_fps_from_probe(video_info),
                 video_path.relative_to(video_directory).as_posix(),
             )
-            await self.repository.frames_repo.create_frames(1, total_frames_count)
+            await self.repository.frames_repo.create_frames(video_dto.video_id, total_frames_count)
             await tr.commit()
 
         return video_dto
