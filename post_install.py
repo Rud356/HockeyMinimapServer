@@ -67,7 +67,7 @@ def install_pytorch():
                 '--index-url', 'https://download.pytorch.org/whl/cu126'
             ]
             available_backends['rocm'] = [
-                'install', 'torch', 'torchvision', 'torchaudio',
+                'install', 'torch==0.21.0', 'torchvision==0.21.0', 'torchaudio==2.6.0',
                 '--index-url', 'https://download.pytorch.org/whl/rocm6.2.4'
             ]
 
