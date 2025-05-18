@@ -25,6 +25,7 @@ class FileLock:
         :param path: Путь до файла.
         :param timeout: Время ожидания взятия блокировки ресурса.
         :return: Контекстный менеджер блокировки.
+        :raise TimeoutError: Получено исключение по времени.
         """
         current_lock, _ = self.locks.get(path, (None, None))
 

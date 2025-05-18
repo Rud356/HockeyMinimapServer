@@ -80,6 +80,7 @@ class DatasetView:
         :raise NotFoundError: Видео с привязанным идентификатором не найдено или не найден набор данных.
         :raise IndexError: Неправильные ограничения начального и конечного кадра.
         :raise DataIntegrityError: Нарушение целостности данных (повторяющиеся идентификаторы).
+        :raise TimeoutError: Файл уже в обработке и не может быть обработан.
         """
         assert frame_buffer_size >= 1, "Not enough frame buffer size"
 
