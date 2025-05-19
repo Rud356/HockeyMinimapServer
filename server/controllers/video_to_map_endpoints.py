@@ -24,6 +24,10 @@ from server.views.video_view import VideoView
 
 
 class VideoToMapEndpoint(APIEndpoint):
+    """
+    Описывает эндпоинт взаимодействия с картой.
+    """
+
     def __init__(self, router: APIRouter):
         super().__init__(router)
         self.router.add_api_route(

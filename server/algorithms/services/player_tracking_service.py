@@ -9,13 +9,21 @@ from detectron2.structures import Instances
 from server.algorithms.enums import Team
 from server.algorithms.enums.player_classes_enum import PlayerClasses
 from server.algorithms.player_tracker import PlayerTracker
-from server.data_storage.dto import BoxDTO, PointDTO, SubsetDataDTO
+from server.data_storage.dto import BoxDTO, SubsetDataDTO
 from server.data_storage.dto.relative_point_dto import RelativePointDTO
 from server.data_storage.dto.subset_data_input import SubsetDataInputDTO
+from server.algorithms.data_types import (
+    BoundingBox,
+    CV_Image,
+    Mask,
+    RawPlayerTrackingData,
+    Point,
+    RelativeBoundingBox,
+    RelativePoint,
+)
 
 if TYPE_CHECKING:
     from torch import Tensor
-    from server.algorithms.data_types import BoundingBox, CV_Image, Mask, RawPlayerTrackingData, Point, RelativePoint
 
 
 class PlayerTrackingService:
@@ -120,19 +128,29 @@ class PlayerTrackingService:
         """
 
         team_data: list[tuple[Team, CV_Image]] = []
+        height, width, _ = frame.shape
+        resolution = (width, height)
+
         for player_data in frame_data:
             if player_data.class_id == PlayerClasses.Referee:
                 continue
 
             if (player_team := player_data.team_id) is not None:
                 player_with_team: SubsetDataDTO = player_data
-                min_point: PointDTO = player_with_team.box.top_point
-                max_point: PointDTO = player_with_team.box.bottom_point
+                min_point: RelativePointDTO = player_with_team.box.top_point
+                max_point: RelativePointDTO = player_with_team.box.bottom_point
 
-                player_frame: CV_Image = BoundingBox(
-                    min_point=Point(x=min_point.x, y=min_point.y),
-                    max_point=Point(x=max_point.x, y=max_point.y)
+                player_bbox: RelativeBoundingBox = RelativeBoundingBox(
+                    min_point=RelativePoint(x=min_point.x, y=min_point.y),
+                    max_point=RelativePoint(x=max_point.x, y=max_point.y)
+                )
+                player_frame: CV_Image = BoundingBox.from_relative_bounding_box(
+                    player_bbox, resolution
                 ).cut_out_image_part(frame)
+
+                if not player_frame.any():
+                    continue
+
                 team_data.append((player_team, player_frame))
 
         return team_data

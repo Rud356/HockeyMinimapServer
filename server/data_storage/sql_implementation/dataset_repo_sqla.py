@@ -8,7 +8,7 @@ from sqlalchemy.orm import selectinload
 
 from server.algorithms.enums import Team
 from server.algorithms.enums.player_classes_enum import PlayerClasses
-from .tables import Box, Point, SubsetData, TeamsDataset, TeamsSubset
+from .tables import Box, Point, SubsetData, TeamsDataset, TeamsSubset, Video
 from .transaction_manager_sqla import TransactionManagerSQLA
 from ..dto import BoxDTO, DatasetDTO, SubsetDataDTO, TeamsSubsetDTO
 from ..dto.relative_point_dto import RelativePointDTO
@@ -24,7 +24,14 @@ class DatasetRepoSQLA(DatasetRepo):
     async def create_dataset_for_video(self, video_id: int) -> DatasetDTO:
         new_dataset = TeamsDataset(video_id=video_id)
         async with await self.transaction.start_nested_transaction() as tr:
-            tr.session.add(new_dataset)
+            video: Optional[Video] = (await self.transaction.session.execute(
+                Select(Video).where(Video.video_id == video_id)
+            )).scalar_one_or_none()
+
+            if video is None:
+                raise DataIntegrityError("Video not found")
+
+            video.dataset = new_dataset
 
             try:
                 await tr.commit()
@@ -180,8 +187,8 @@ class DatasetRepoSQLA(DatasetRepo):
                                 y=data_point.box.top_point.y
                             ),
                             bottom_point=Point(
-                                x=data_point.box.top_point.x,
-                                y=data_point.box.top_point.y
+                                x=data_point.box.bottom_point.x,
+                                y=data_point.box.bottom_point.y
                             )
                         )
                     )

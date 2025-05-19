@@ -47,16 +47,21 @@ class PlayerDataRepoSQLA(PlayerDataRepo):
                         point_on_minimap_x=data_point.player_on_minimap.x,
                         point_on_minimap_y=data_point.player_on_minimap.y
                     )
-                    is_not_referee: bool = data_point.class_id != PlayerClasses.Referee
-                    if is_not_referee and (assigned_teams.get(data_point.tracking_id) is None):
-                        # Save once and cache it to not overwrite same data or cause conflicts
-                        assigned_teams[data_point.tracking_id] = data_point.team_id
-                        player_data_record.team = TeamAssignment(
-                            tracking_id=data_point.tracking_id,
-                            video_id=video_id,
-                            frame_id=frame_id,
-                            team_id=data_point.team_id
-                        )
+
+                    try:
+                        assigned_teams[data_point.tracking_id]
+
+                    except KeyError:
+                        is_not_referee: bool = data_point.class_id != PlayerClasses.Referee
+                        if is_not_referee:
+                            # Save once and cache it to not overwrite same data or cause conflicts
+                            assigned_teams[data_point.tracking_id] = data_point.team_id
+                            player_data_record.team = TeamAssignment(
+                                tracking_id=data_point.tracking_id,
+                                video_id=video_id,
+                                frame_id=frame_id,
+                                team_id=data_point.team_id
+                            )
 
                     players.append(player_data_record)
 
@@ -66,6 +71,7 @@ class PlayerDataRepoSQLA(PlayerDataRepo):
                         await tr.session.flush()
 
                     except(IntegrityError, ProgrammingError, NotFoundError) as err:
+                        print(err)
                         await tr.rollback()
                         raise DataIntegrityError("Invalid data provided") from err
 
@@ -73,6 +79,7 @@ class PlayerDataRepoSQLA(PlayerDataRepo):
                 await tr.commit()
 
             except (IntegrityError, ProgrammingError, NotFoundError) as err:
+                print(err)
                 raise DataIntegrityError("Invalid data provided") from err
 
     async def kill_tracking(self, video_id: int, frame_id: int, tracking_id: int) -> int:
@@ -250,7 +257,7 @@ class PlayerDataRepoSQLA(PlayerDataRepo):
             try:
                 await tr.commit()
 
-            except NoResultFound as err:
+            except (NoResultFound, DataIntegrityError) as err:
                 raise NotFoundError("Player or alias were not found") from err
 
         return cast(int, result.rowcount)

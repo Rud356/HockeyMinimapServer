@@ -64,7 +64,7 @@ class PlayerDataView:
         :param static_directory: Путь до статической директории.
         :param player_predictor: Сервис определения игроков.
         :return: Ничего.
-        :raise FileNotFound: Видеофайл не найден на диске.
+        :raise FileNotFoundError: Видеофайл не найден на диске.
         :raise MaskNotFoundError: Не найдена маска для видео.
         :raise NotFoundError: Видео не найдено.
         :raise InvalidProjectState: Нет данных для проведения обработки.
@@ -76,12 +76,15 @@ class PlayerDataView:
             video_info: VideoDTO | None = await self.repository.video_repo.get_video(
                 video_id
             )
-            map_data: list[MinimapDataDTO] = await self.repository.map_data_repo.get_points_mapping_for_video(
-                video_id
-            )
+            map_data: list[MinimapDataDTO] = list(filter(
+                lambda p: p.is_used,
+                await self.repository.map_data_repo.get_points_mapping_for_video(
+                    video_id
+                )
+            ))
 
             if len(map_data) < 4:
-                raise InvalidProjectState("Not enough map points")
+                raise InvalidProjectState("Not enough used map points")
 
             if video_info is None:
                 raise NotFoundError("Video was not found")
@@ -105,7 +108,7 @@ class PlayerDataView:
                     dataset_sizes
                 )
 
-            dataset_info: DatasetDTO = await self.repository.dataset_repo.get_dataset_information_by_id(
+            dataset_info: DatasetDTO = await self.repository.dataset_repo.get_team_dataset_by_id(
                 video_info.dataset_id
             )
 
@@ -180,7 +183,7 @@ class PlayerDataView:
             player_data_on_frames: list[list[PlayerDataDTO]] = []
 
             # Process video
-            async for frame_n, frame in buffered_generator(
+            async for frame in buffered_generator(
                 async_video_reader(capture),
                 frame_buffer_size
             ):
@@ -221,6 +224,10 @@ class PlayerDataView:
             await self.repository.player_data_repo.insert_player_data(
                 video_info.video_id,
                 player_data_on_frames
+            )
+            await self.repository.video_repo.set_flag_video_is_processed(
+                video_info.video_id,
+                True
             )
 
     async def kill_tracking(self, video_id: int, frame_id: int, tracking_id: int) -> int:
@@ -268,6 +275,7 @@ class PlayerDataView:
         :param tracking_id: Идентификатор отслеживания.
         :param player_id: Внутренний идентификатор пользовательского назначения.
         :return: Количество изменённых записей.
+        :raise NotFoundError: Не найдены записи.
         """
         async with self.repository.transaction as tr:
             result: int = await self.repository.player_data_repo.set_player_identity_to_user_id(
@@ -451,6 +459,9 @@ class PlayerDataView:
         :param video_processing_config: Настройки вывода видео.
         :param static_directory: Путь до статической папки ресурсов.
         :return: Путь до нового файла с мини-картой.
+        :raise InvalidProjectState: Не выполнены предыдущие шаги обработки.
+        :raise NotFoundError: Видео не найдено.
+        :raise FileNotFound: Файл для обработки не найден.
         """
         loop: AbstractEventLoop = asyncio.get_running_loop()
 
@@ -521,7 +532,9 @@ class PlayerDataView:
         await data_renderer.asend(None)
 
         async with self.repository.transaction:
-            frame_data: FrameDataDTO = await self.repository.player_data_repo.get_all_tracking_data(video_id)
+            frame_data: FrameDataDTO = await self.repository.player_data_repo.get_all_tracking_data(
+                video_id
+            )
 
         async with file_lock.lock_file(map_video, timeout=1):
             for frame in frame_data.frames:

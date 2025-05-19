@@ -29,6 +29,7 @@ from server.algorithms.services.field_predictor_service import FieldPredictorSer
 from server.algorithms.services.player_predictor_service import PlayerPredictorService
 from server.algorithms.video_processing import VideoProcessing
 from server.controllers.dataset_management import DatasetEndpoint
+from server.controllers.player_data_management import PlayerDataEndpoint
 from server.controllers.project_management import ProjectManagementEndpoint
 from server.controllers.user_authentication import UserAuthenticationEndpoint
 from server.controllers.users_management import UserManagementEndpoint
@@ -55,6 +56,11 @@ class MinimapServer:
             lifespan=self.lifespan,
             host=config.server_settings.host,
             port=config.server_settings.port,
+            swagger_ui_default_parameters={
+                "showExtensions": True,
+                "syntaxHighlight": False,
+                "tagsSorter": 'alpha'
+            },
             **fastapi_app_config
         )
         self.config: AppConfig = config
@@ -143,6 +149,7 @@ class MinimapServer:
         VideoToMapEndpoint(api)
         ProjectManagementEndpoint(api)
         DatasetEndpoint(api)
+        PlayerDataEndpoint(api)
 
         self.app.mount("/static", StaticFiles(directory=config.static_path), name="static")
         self.register_routes(api)

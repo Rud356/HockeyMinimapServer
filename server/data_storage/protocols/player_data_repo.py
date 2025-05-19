@@ -61,6 +61,7 @@ class PlayerDataRepo(Protocol):
         :param tracking_id: Идентификатор отслеживания.
         :param player_id: Внутренний идентификатор пользовательского назначения.
         :return: Количество изменённых записей.
+        :raise NotFoundError: Не найдены записи.
         """
 
     async def set_team_to_tracking_id(

@@ -13,6 +13,10 @@ from server.views.project_view import ProjectView
 
 
 class ProjectManagementEndpoint(APIEndpoint):
+    """
+    Описывает эндпоинт взаимодействия с проектами.
+    """
+
     def __init__(self, router: APIRouter):
         super().__init__(router)
         self.router.add_api_route(

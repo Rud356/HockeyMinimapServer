@@ -1,6 +1,6 @@
 local_mode = true
 db_connection_string = "sqlite+aiosqlite:///:memory:"
-enable_gzip_compression = false
+enable_gzip_compression = true
 server_jwt_key = "ExamplePassword1234$$5"
 static_path = "./static"
 players_data_extraction_workers = 4

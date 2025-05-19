@@ -25,6 +25,10 @@ from server.views.video_view import VideoDTO, VideoView
 
 
 class VideoUploadEndpoint(APIEndpoint):
+    """
+    Описывает эндпоинт взаимодействия с видео.
+    """
+
     def __init__(self, router: APIRouter, video_processing: VideoProcessing):
         super().__init__(router)
         self.video_processing: VideoProcessing = video_processing

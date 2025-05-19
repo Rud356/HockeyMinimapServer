@@ -28,11 +28,10 @@ class FileLock:
         :raise TimeoutError: Получено исключение по времени.
         """
         current_lock, _ = self.locks.get(path, (None, None))
-
-        if current_lock is None:
-            current_lock = Lock()
-
         async with self.modification_lock:
+            if current_lock is None:
+                current_lock: Lock = Lock()
+
             self.locks[path] = current_lock, time.time()
 
         try:
@@ -41,7 +40,8 @@ class FileLock:
             yield
 
         finally:
-            current_lock.release()
+            if current_lock.locked():
+                current_lock.release()
 
     async def run_cleanup_loop(self) -> NoReturn:
         """

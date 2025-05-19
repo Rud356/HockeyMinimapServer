@@ -20,6 +20,10 @@ from server.views.exceptions.mask_not_found import MaskNotFoundError
 
 
 class DatasetEndpoint(APIEndpoint):
+    """
+    Описывает эндпоинт взаимодействия с наборами данных.
+    """
+
     def __init__(self, router: APIRouter):
         super().__init__(router)
         self.router.add_api_route(
@@ -102,6 +106,9 @@ class DatasetEndpoint(APIEndpoint):
             description="Удаляет отслеживание игрока, начиная с кадра",
             tags=["teams dataset"],
             responses={
+                200: {
+                    "description": "Возвращает количество удаленных отслеживаний"
+                },
                 401: {
                     "description":
                         "Нет валидного токена авторизации или отсутствуют права управление проектами"
