@@ -50,6 +50,7 @@ async def test_creating_project(video_fps: float, repo):
             team_home_name="Home1",
             team_away_name="Away1"
         )
+        await tr.commit()
 
     project_metadata.created_at = project.created_at
     assert project_metadata == project

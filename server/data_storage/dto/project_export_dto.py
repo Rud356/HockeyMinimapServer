@@ -10,6 +10,6 @@ from server.data_storage.dto.video_dto import VideoDTO
 class ProjectExportDTO(BaseModel):
     project_header: ProjectDTO
     video_data: VideoDTO
-    minimap_data: MinimapDataDTO
+    minimap_data: list[MinimapDataDTO]
     frame_data: FrameDataDTO
     teams_dataset: DatasetDTO

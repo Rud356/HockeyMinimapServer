@@ -26,7 +26,7 @@ class VideoRepoSQLA(VideoRepo):
         source_video_path: str | Path
     ) -> VideoDTO:
         video_record = Video(
-            source_video_path=str(source_video_path),
+            source_video_path=str(source_video_path.as_posix()),
             fps=fps
         )
 

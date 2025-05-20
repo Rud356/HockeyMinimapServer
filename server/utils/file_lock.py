@@ -27,10 +27,11 @@ class FileLock:
         :return: Контекстный менеджер блокировки.
         :raise TimeoutError: Получено исключение по времени.
         """
+        current_lock: Lock | None
         current_lock, _ = self.locks.get(path, (None, None))
         async with self.modification_lock:
             if current_lock is None:
-                current_lock: Lock = Lock()
+                current_lock = Lock()
 
             self.locks[path] = current_lock, time.time()
 

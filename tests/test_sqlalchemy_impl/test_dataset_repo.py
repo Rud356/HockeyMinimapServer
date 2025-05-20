@@ -94,7 +94,7 @@ async def test_adding_subset(video_fps: float, video_frames_count: int, repo: Re
 
     frames_numbering = range(0, 10)
 
-    async with repo.transaction:
+    async with repo.transaction as tr:
         subset_id = await repo.dataset_repo.add_subset_to_dataset(
             dataset.dataset_id,
             frames_numbering.start,
@@ -116,6 +116,8 @@ async def test_adding_subset(video_fps: float, video_frames_count: int, repo: Re
                 for i in frames_numbering
             ]
         )
+
+        await tr.commit()
 
     async with repo.transaction:
         dataset_fetched = await repo.dataset_repo.get_team_dataset_by_id(dataset.dataset_id)

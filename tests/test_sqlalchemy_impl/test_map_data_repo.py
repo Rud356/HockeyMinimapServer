@@ -49,6 +49,8 @@ async def test_creating_map_data(video_fps: float, repo: RepositorySQLA):
             video_id=video.video_id, mapping=point_src
         )
 
+        await tr.commit()
+
     async with repo.transaction as tr:
         points_inserted = await tr.session.scalar(
             Select(func.count("*")).where(MapData.video_id == video.video_id)
@@ -73,6 +75,7 @@ async def test_getting_multiple_points(video_fps: float, repo: RepositorySQLA):
         await repo.map_data_repo.create_point_mapping_for_video(
             video_id=video.video_id, mapping=point_src
         )
+        await tr.commit()
 
     async with repo.transaction as tr:
         mapped_points = await repo.map_data_repo.get_points_mapping_for_video(video.video_id)

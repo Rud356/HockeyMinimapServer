@@ -1,3 +1,4 @@
+from pathlib import Path
 from typing import Protocol, runtime_checkable
 
 from server.data_storage.dto.project_dto import ProjectDTO
@@ -81,12 +82,22 @@ class Repository(Protocol):
 
         :param project_id: Идентификатор проекта для экспорта.
         :return: Данные о всем проекте.
+        :raise NotFoundError: Не найдено валидного проекта с таким идентификатором.
+        :raise ValueError: Неправильные входные данные.
+        :raise InvalidProjectState: Проект не обработан для вывода в файл.
         """
 
-    async def import_project_data(self, project_data: ProjectExportDTO) -> ProjectDTO:
+    async def import_project_data(
+        self,
+        static_path: Path,
+        new_video_folder: Path,
+        project_data: ProjectExportDTO
+    ) -> ProjectDTO:
         """
         Импортирует сохраненные данные.
 
+        :param static_path: Путь до статической директории.
+        :param new_video_folder: Новая папка с видео.
         :param project_data: Данные проекта для импорта.
         :return: Данные о новом проекте.
         """

@@ -178,7 +178,7 @@ class DatasetRepoSQLA(DatasetRepo):
                         tracking_id=data_point.tracking_id,
                         subset_id=new_subset.subset_id,
                         video_id=dataset.video_id,
-                        frame_id=from_frame+n,
+                        frame_id=data_point.frame_id,
                         team_id=data_point.team_id,
                         class_id=data_point.class_id,
                         box=Box(
