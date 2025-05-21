@@ -25,8 +25,11 @@ class VideoRepoSQLA(VideoRepo):
         fps: float,
         source_video_path: str | Path
     ) -> VideoDTO:
+        if isinstance(source_video_path, Path):
+            source_video_path = str(source_video_path.as_posix())
+
         video_record = Video(
-            source_video_path=str(source_video_path.as_posix()),
+            source_video_path=source_video_path,
             fps=fps
         )
 

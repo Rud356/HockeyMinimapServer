@@ -33,7 +33,7 @@ setup(
         "fastapi[standard]~=0.115.12",
         "python-multipart~=0.0.20",
         "starlette>=0.46.2",
-        "dishka~=1.5.2",
+        "dishka~=1.6.0",
         "cython~=3.0.11",
         "scipy~=1.15.2",
         "numpy~=2.2.4",
