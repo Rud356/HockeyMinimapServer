@@ -1,3 +1,4 @@
+from pathlib import Path
 from typing import Annotated
 
 from dishka import FromDishka
@@ -9,6 +10,10 @@ from server.controllers.endpoints_base import APIEndpoint
 from server.data_storage.dto import ProjectDTO, UserDTO
 from server.data_storage.exceptions import DataIntegrityError, NotFoundError
 from server.data_storage.protocols import Repository
+from server.utils.config import AppConfig
+from server.utils.file_lock import FileLock
+from server.utils.providers import StaticDirSpaceAllocator
+from server.views.exceptions import InvalidProjectState
 from server.views.project_view import ProjectView
 
 
@@ -61,6 +66,19 @@ class ProjectManagementEndpoint(APIEndpoint):
                 400: {"description": "Невалидные данные для изменения"},
                 401: {"description": "Нет валидного токена пользователя"},
                 404: {"description": "Проект не найден"}
+            }
+        )
+        self.router.add_api_route(
+            "/projects/{project_id}/export",
+            self.export_project_by_id,
+            methods=["get"],
+            tags=["projects"],
+            description="Экспортирует данные о проекте в файл export.zip в папке с видео проекта",
+            responses={
+                400: {"description": "Невалидные данные для запроса"},
+                401: {"description": "Нет валидного токена пользователя"},
+                409: {"description": "Проект не обработан полностью"},
+                425: {"description": "Данные проекта находятся в обработке и не могут быть добавлены в список"}
             }
         )
 
@@ -191,4 +209,53 @@ class ProjectManagementEndpoint(APIEndpoint):
         except NotFoundError:
             raise HTTPException(
                 404, "Project not found"
+            )
+
+    async def export_project_by_id(
+        self,
+        app_config: FromDishka[AppConfig],
+        file_lock: FromDishka[FileLock],
+        repository: FromDishka[Repository],
+        current_user: FromDishka[UserDTO],
+        dest_disk_space_allocator: FromDishka[StaticDirSpaceAllocator],
+        project_id: int
+    ) -> None:
+        """
+        Выводит всю информацию о конкретном проекте в виде архива.
+
+        :param dest_disk_space_allocator: Аллокатор свободного места на конечном диске.
+        :param app_config: Конфигурация приложения.
+        :param file_lock: Блокировщик доступа к файлам.
+        :param repository: Объект взаимодействия с БД.
+        :param current_user: Текущий пользователь системы.
+        :param project_id: Идентификатор проекта.
+        :return: Данные о проекте.
+        """
+        try:
+            await ProjectView(repository).export_project_data(
+                app_config.static_path,
+                project_id,
+                file_lock,
+                dest_disk_space_allocator
+            )
+            return
+
+        except ValueError:
+            raise HTTPException(
+                400, "Invalid project request"
+            )
+
+        except NotFoundError:
+            raise HTTPException(
+                404, "Project not found"
+            )
+
+        except TimeoutError:
+            raise HTTPException(
+                425, "Project is currently locked for processing"
+            )
+
+        except InvalidProjectState:
+            raise HTTPException(
+                409, "Project is not completed to be processed"
             )

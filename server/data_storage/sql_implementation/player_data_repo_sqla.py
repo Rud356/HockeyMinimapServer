@@ -184,7 +184,7 @@ class PlayerDataRepoSQLA(PlayerDataRepo):
     async def create_user_alias_for_players(
         self,
         video_id: int,
-        users_player_alias: str,
+        users_player_alias: str | None,
         player_team: Team | None = None
     ) -> int:
         player_alias: Player = Player(

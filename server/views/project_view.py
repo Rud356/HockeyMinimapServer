@@ -3,6 +3,7 @@ import uuid
 import zipfile
 from asyncio import AbstractEventLoop
 from concurrent.futures.thread import ThreadPoolExecutor
+from contextlib import AsyncExitStack
 from pathlib import Path
 from typing import Optional
 
@@ -129,27 +130,36 @@ class ProjectView:
         if video.converted_video_path is None:
             raise InvalidProjectState("Project must have already been processed, but not corrected")
 
-        project_video_directory: Path = (static_path / video.source_video_path).parent
+        projects_directory: Path = static_path / "videos"
+        video_project_dir: Path = (projects_directory / video.source_video_path).parent
 
         async with self.repository.transaction:
             project_data: ProjectExportDTO = await self.repository.export_project_data(project_id)
 
         loop: AbstractEventLoop = asyncio.get_running_loop()
-        json_output_path: Path = project_video_directory / "project_data.json"
-        source_video_path: Path = static_path / video.source_video_path
-        converted_video_path: Path = static_path / video.converted_video_path
-        video_mask: Path = source_video_path.parent / "field_mask.jpeg"
-        exported_zip_path: Path = project_video_directory / "export.zip"
+        json_output_path: Path = video_project_dir / "project_data.json"
+        source_video_path: Path = projects_directory / video.source_video_path
+        converted_video_path: Path = projects_directory / video.converted_video_path
+        video_mask: Path = video_project_dir / "field_mask.jpeg"
+        exported_zip_path: Path = video_project_dir / "export.zip"
 
         currently_used_space: int = source_video_path.stat().st_size + converted_video_path.stat().st_size
-
-        async with (
+        file_locks = [
             file_lock.lock_file(json_output_path, timeout=1),
             file_lock.lock_file(source_video_path, timeout=1),
-            file_lock.lock_file(converted_video_path, timeout=1),
             file_lock.lock_file(video_mask, timeout=1),
+        ]
+
+        if source_video_path != converted_video_path:
+            file_locks.append(file_lock.lock_file(converted_video_path, timeout=1))
+
+        async with (
+            AsyncExitStack() as stack,
             dest_disk_space_allocator.preallocate_disk_space(currently_used_space)
         ):
+            for file_locker in file_locks:
+                await stack.enter_async_context(file_locker)
+
             with ThreadPoolExecutor(1) as executor:
                 resulting_json: str = await loop.run_in_executor(
                     executor, project_data.model_dump_json
@@ -159,16 +169,27 @@ class ProjectView:
 
                 with zipfile.ZipFile(exported_zip_path, mode="w") as export:
                     await loop.run_in_executor(
-                        executor, export.write, json_output_path
+                        executor, export.write,
+                        json_output_path,
+                        json_output_path.name
                     )
                     await loop.run_in_executor(
-                        executor, export.write, source_video_path
+                        executor, export.write,
+                        source_video_path,
+                        source_video_path.name
                     )
+
+                    if source_video_path != converted_video_path:
+                        await loop.run_in_executor(
+                            executor, export.write,
+                            converted_video_path,
+                            converted_video_path.name
+                        )
+
                     await loop.run_in_executor(
-                        executor, export.write, converted_video_path
-                    )
-                    await loop.run_in_executor(
-                        executor, export.write, video_mask
+                        executor, export.write,
+                        video_mask,
+                        video_mask.name
                     )
 
         return exported_zip_path

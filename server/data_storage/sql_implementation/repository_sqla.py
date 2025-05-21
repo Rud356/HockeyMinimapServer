@@ -14,6 +14,7 @@ from .transaction_manager_sqla import TransactionManagerSQLA
 from .user_repo_sqla import UserRepoSQLA
 from .video_repo_sqla import VideoRepoSQLA
 from ..dto import DatasetDTO, FrameDataDTO, MinimapDataDTO, ProjectDTO, ProjectExportDTO, SubsetDataInputDTO, VideoDTO
+from ..dto.player_alias import PlayerAlias
 from ..exceptions import NotFoundError
 from ..protocols import Repository
 from ...views.exceptions import InvalidProjectState
@@ -81,6 +82,11 @@ class RepositorySQLA(Repository):
         teams_dataset: DatasetDTO = await self.dataset_repo.get_team_dataset_by_id(
             video.dataset_id
         )
+        players_aliases: list[PlayerAlias] = list(
+            (
+                await self.player_data_repo.get_user_alias_for_players(video.video_id)
+            ).values()
+        )
 
         return ProjectExportDTO(
             video_data=video,
@@ -88,6 +94,7 @@ class RepositorySQLA(Repository):
             frame_data=frame_data,
             teams_dataset=teams_dataset,
             minimap_data=minimap_data,
+            players_aliases=players_aliases
         )
 
     async def import_project_data(
@@ -167,6 +174,22 @@ class RepositorySQLA(Repository):
                 subset.to_frame_id,
                 [subset_temp_format[keyframe] for keyframe in sorted(subset_temp_format.keys())]
             )
+
+        # Restore player aliases
+        aliases_id_mapping: dict[int, int] = {} # maps old ID onto new ID
+        for alias in project_data.players_aliases:
+            new_alias_id: int = await self.player_data_repo.create_user_alias_for_players(
+                new_video.video_id,
+                alias.player_name,
+                alias.player_team
+            )
+            aliases_id_mapping[alias.alias_id] = new_alias_id
+
+        # Assign new ids
+        for frame in project_data.frame_data.frames:
+            for record in frame:
+                if record.player_id:
+                    record.player_id = aliases_id_mapping.get(record.player_id)
 
         # Restore players data
         await self.player_data_repo.insert_player_data(
