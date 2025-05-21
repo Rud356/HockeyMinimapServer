@@ -462,7 +462,7 @@ class PlayerDataEndpoint(APIEndpoint):
         repository: FromDishka[Repository],
         current_user: FromDishka[UserDTO],
         video_id: int,
-    ) -> dict[int, PlayerAlias]:
+    ) -> list[PlayerAlias]:
         """
         Получает соотнесение идентификаторов пользовательских соотнесений к данным об идентификаторе.
 
@@ -471,9 +471,10 @@ class PlayerDataEndpoint(APIEndpoint):
         :param video_id: Идентификатор видео.
         :return: Соотнесение идентификаторов пользовательских идентификаторов к данным об идентификаторах.
         """
-        return await PlayerDataView(repository).get_user_alias_for_players(
+        aliases: dict[int, PlayerAlias] = await PlayerDataView(repository).get_user_alias_for_players(
             video_id
         )
+        return list(aliases.values())
 
     async def delete_user_alias_for_player(
         self,
