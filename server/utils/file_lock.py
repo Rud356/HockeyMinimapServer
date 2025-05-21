@@ -37,14 +37,12 @@ class FileLock:
 
         try:
             async with asyncio.timeout(timeout):
-                print("locking", path)
                 await current_lock.acquire()
             yield
 
         finally:
             if current_lock.locked():
                 current_lock.release()
-                print("unlocking", path)
 
     async def run_cleanup_loop(self) -> NoReturn:
         """
