@@ -7,5 +7,5 @@ class ServerSettings(BaseModel):
     """
     host: str
     port: int = Field(default=17600, ge=1, lt=65536)
-    is_local_instance: bool
+    reload_dirs: bool
     allowed_cors_domains: list[str]

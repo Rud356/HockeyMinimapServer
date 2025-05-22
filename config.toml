@@ -17,7 +17,7 @@ max_batch_size = 5
 [server_settings]
 host = "localhost"
 port = 8000
-is_local_instance = true
+reload_dirs = true
 allowed_cors_domains = [
     "http://localhost:8000",
     "https://localhost:7023"

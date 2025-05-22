@@ -78,7 +78,12 @@ class MinimapServer:
 
         self.app.add_middleware(BaseHTTPMiddleware, dispatch=self.add_process_time_header)
         self.router: APIRouter = APIRouter(route_class=DishkaRoute)
-        self.reload_dirs: list[str] = [str(config.static_path.resolve())]
+
+        if config.server_settings.reload_dirs:
+            self.reload_dirs: list[str] = [str(config.static_path.resolve())]
+
+        else:
+            self.reload_dirs = []
 
         # Initialize engine and provider
         engine: AsyncEngine = create_async_engine(config.db_connection_string)
