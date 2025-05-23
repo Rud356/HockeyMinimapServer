@@ -234,7 +234,7 @@ class ProjectView:
                     raise FileNotFoundError("Linked file in archive is missing")
 
                 new_uuid: str = str(uuid.uuid1())
-                project_dest_path: Path = static_path / new_uuid
+                project_dest_path: Path = static_path / "videos" / new_uuid
                 project_dest_path.mkdir()
 
                 # Extracting files
@@ -246,19 +246,19 @@ class ProjectView:
                         executor,
                         imported_zip.extract,
                         "project_data.json",
-                        project_dest_path / "project_data.json"
+                        project_dest_path
                     )
                     await loop.run_in_executor(
                         executor,
                         imported_zip.extract,
                         "field_mask.jpeg",
-                        project_dest_path / "field_mask.jpeg"
+                        project_dest_path
                     )
                     await loop.run_in_executor(
                         executor,
                         imported_zip.extract,
                         project_data.video_data.source_video_path,
-                        str(project_dest_path / project_data.video_data.source_video_path)
+                        project_dest_path
                     )
 
                 source_file_name: str = project_data.video_data.source_video_path
@@ -269,7 +269,7 @@ class ProjectView:
                         executor,
                         imported_zip.extract,
                         converted_file_name,
-                        str(project_dest_path / converted_file_name)
+                        project_dest_path
                     )
 
             async with self.repository.transaction as tr:
