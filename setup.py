@@ -24,6 +24,7 @@ setup(
         "Natural Language :: Russian",
     ],
     install_requires=[
+        "orjson~=3.10.18",
         "sqlalchemy[asyncio]~=2.0.36",
         "aiosqlite~=0.20.0",
         "aiofiles~=0.8.0",
