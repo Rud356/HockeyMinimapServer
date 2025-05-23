@@ -751,7 +751,7 @@ class PlayerDataEndpoint(APIEndpoint):
         video_id: int,
         from_frame_id: Annotated[int, Query(ge=0)] = 0,
         frames_amount: Annotated[int, Query(ge=1, le=600)] = 300
-    ):
+    ) -> FrameDataDTO:
         """
         Получает информацию о перемещениях игроков на видео.
 

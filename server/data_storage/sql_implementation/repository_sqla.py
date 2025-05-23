@@ -8,7 +8,6 @@ from .frames_repo_sqla import FramesRepoSQLA
 from .map_data_repo_sqla import MapDataRepoSQLA
 from .player_data_repo_sqla import PlayerDataRepoSQLA
 from .project_repo_sqla import ProjectRepoSQLA
-from .tables import Video
 from .tables.base import Base
 from .transaction_manager_sqla import TransactionManagerSQLA
 from .user_repo_sqla import UserRepoSQLA

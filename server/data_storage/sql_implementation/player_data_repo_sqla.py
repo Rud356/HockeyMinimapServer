@@ -1,6 +1,6 @@
 from typing import Optional, Sequence, cast
 
-from sqlalchemy import Delete, Row, Select, Update, and_, exists, func
+from sqlalchemy import Delete, Row, Select, Update, and_, exists, func, select
 from sqlalchemy.engine import TupleResult
 from sqlalchemy.exc import IntegrityError, NoResultFound, ProgrammingError
 from sqlalchemy.ext.asyncio import AsyncScalarResult
@@ -8,7 +8,7 @@ from sqlalchemy.orm import selectinload
 
 from server.algorithms.enums import Team
 from server.algorithms.enums.player_classes_enum import PlayerClasses
-from .tables import Frame, Player, PlayerData, SubsetData
+from .tables import Frame, Player, PlayerData
 from .tables.team_assignment import TeamAssignment
 from .transaction_manager_sqla import TransactionManagerSQLA
 from ..dto import FrameDataDTO
@@ -40,6 +40,7 @@ class PlayerDataRepoSQLA(PlayerDataRepo):
                         video_id=frame.video_id,
                         frame_id=frame_id,
                         class_id=data_point.class_id,
+                        player_id=data_point.player_id,
                         player_on_camera_top_x=data_point.player_on_camera.top_point.x,
                         player_on_camera_top_y=data_point.player_on_camera.top_point.y,
                         player_on_camera_bottom_x=data_point.player_on_camera.top_point.x,
@@ -242,18 +243,27 @@ class PlayerDataRepoSQLA(PlayerDataRepo):
 
     async def set_player_identity_to_user_id(self, video_id: int, tracking_id: int, player_id: int) -> int:
         async with await self.transaction.start_nested_transaction() as tr:
-            player_alias = await tr.session.get_one(
-                Player, {"player_id": player_id, "video_id": video_id}
-            )
+            try:
+                player_alias: Player = (await tr.session.execute(
+                    select(Player).where(
+                        and_(
+                            Player.player_id == player_id,
+                            Player.video_id == video_id
+                        )
+                    )
+                )).scalar_one()
+
+            except NoResultFound as err:
+                raise NotFoundError("Player alias not found") from err
+
             result = await tr.session.execute(
                 Update(PlayerData).where(
                     and_(
                         PlayerData.video_id == video_id,
-                        SubsetData.tracking_id == tracking_id
+                        PlayerData.tracking_id == tracking_id,
                     )
                 ).values(player_id=player_alias.player_id)
             )
-
             try:
                 await tr.commit()
 

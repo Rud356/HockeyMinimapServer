@@ -207,6 +207,8 @@ class ProjectView:
         :param archive_path: Путь до файла архива.
         :param dest_disk_space_allocator: Аллокатор места на диске конечной папки.
         :return: Объект воссозданного проекта.
+        :raise FileNotFoundError: Файл не обнаружен в архиве.
+        :raise ValidationError: Файл с данными о проекте не обнаружен.
         """
         loop: AbstractEventLoop = asyncio.get_running_loop()
 

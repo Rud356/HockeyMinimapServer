@@ -100,4 +100,7 @@ class Repository(Protocol):
         :param new_video_folder: Новая папка с видео.
         :param project_data: Данные проекта для импорта.
         :return: Данные о новом проекте.
+        :raise ValidationError: Предоставленные данные не соответствуют формату.
+        :raise ValueError: Пути до видео пустые.
+        :raise DataIntegrityError: Не удалось сохранить целостность объектов.
         """

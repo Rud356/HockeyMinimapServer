@@ -1,18 +1,20 @@
-from pathlib import Path
+import pathlib
 from typing import Annotated
 
+import aiofiles
 from dishka import FromDishka
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, File, HTTPException, Query, UploadFile
 
 from server.controllers.dto.create_project import CreateProject
 from server.controllers.dto.edit_project import EditProject
 from server.controllers.endpoints_base import APIEndpoint
+from server.controllers.exceptions import UnauthorizedResourceAccess
 from server.data_storage.dto import ProjectDTO, UserDTO
 from server.data_storage.exceptions import DataIntegrityError, NotFoundError
 from server.data_storage.protocols import Repository
 from server.utils.config import AppConfig
 from server.utils.file_lock import FileLock
-from server.utils.providers import StaticDirSpaceAllocator
+from server.utils.providers import StaticDirSpaceAllocator, TmpDirSpaceAllocator
 from server.views.exceptions import InvalidProjectState
 from server.views.project_view import ProjectView
 
@@ -66,6 +68,17 @@ class ProjectManagementEndpoint(APIEndpoint):
                 400: {"description": "Невалидные данные для изменения"},
                 401: {"description": "Нет валидного токена пользователя"},
                 404: {"description": "Проект не найден"}
+            }
+        )
+        self.router.add_api_route(
+            "/projects/import",
+            self.import_project,
+            methods=["post"],
+            tags=["projects"],
+            description="Импортирует данные о проекте из файла загруженного (по умолчанию export.zip)",
+            responses={
+                400: {"description": "Невалидные данные для запроса"},
+                401: {"description": "Нет валидного токена пользователя"},
             }
         )
         self.router.add_api_route(
@@ -258,4 +271,56 @@ class ProjectManagementEndpoint(APIEndpoint):
         except InvalidProjectState:
             raise HTTPException(
                 409, "Project is not completed to be processed"
+            )
+
+    async def import_project(
+        self,
+        app_config: FromDishka[AppConfig],
+        repository: FromDishka[Repository],
+        current_user: FromDishka[UserDTO],
+        temp_disk_space_allocator: FromDishka[TmpDirSpaceAllocator],
+        dest_disk_space_allocator: FromDishka[StaticDirSpaceAllocator],
+        exported_archive_upload: UploadFile = File(...),
+    ) -> ProjectDTO:
+        """
+        Импортирует архив проекта.
+
+        :param app_config: Конфигурация приложения.
+        :param repository: Объект взаимодействия с БД.
+        :param current_user: Текущий пользователь системы.
+        :param temp_disk_space_allocator: Аллокатор дискового пространства во временной папке.
+        :param dest_disk_space_allocator: Аллокатор дискового пространства в постоянной папке.
+        :param exported_archive_upload: Загружаемый файл архива.
+        :return: Данные нового проекта.
+        """
+        if not current_user.user_permissions.can_create_projects:
+            raise UnauthorizedResourceAccess(
+                "User is required to have access to projects management"
+            )
+
+        if exported_archive_upload.filename is None or exported_archive_upload.size is None:
+            raise HTTPException(
+                status_code=400,
+                detail='Invalid file name or file size is not found, expecting valid upload'
+            )
+
+        try:
+            async with (
+                aiofiles.tempfile.TemporaryDirectory(prefix="hmms_backups_uploads_") as tmp_dir,
+                temp_disk_space_allocator.preallocate_disk_space(exported_archive_upload.size),
+            ):
+                temp_file: pathlib.Path = pathlib.Path(tmp_dir) / exported_archive_upload.filename
+                async with aiofiles.open(temp_file, 'wb') as f:
+                    while contents := await exported_archive_upload.read(100 * 1024 * 1024):
+                        await f.write(contents)
+
+                return await ProjectView(repository).import_project(
+                    app_config.static_path,
+                    temp_file,
+                    dest_disk_space_allocator
+                )
+
+        except ValueError:
+            raise HTTPException(
+                400, "Archive file has no video paths specified"
             )

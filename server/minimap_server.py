@@ -19,6 +19,7 @@ from dishka.integrations.fastapi import (
 from fastapi import APIRouter, FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
+from fastapi.responses import ORJSONResponse
 from fastapi.staticfiles import StaticFiles
 from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
 from starlette.middleware.base import BaseHTTPMiddleware
@@ -61,6 +62,7 @@ class MinimapServer:
                 "syntaxHighlight": False,
                 "tagsSorter": 'alpha'
             },
+            default_response_class=ORJSONResponse,
             **fastapi_app_config
         )
         self.config: AppConfig = config
