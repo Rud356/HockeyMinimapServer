@@ -1,18 +1,19 @@
+orjson~=3.10.18
 sqlalchemy[asyncio]~=2.0.36
 aiosqlite~=0.20.0
-opencv-python~=4.10.0.84
-ffmpeg-python~=0.2.0
-fastapi[standart]~=0.115.12
-uvicorn~=0.34.0
-dishka~=1.5.2
-cython~=3.0.11
-torch~=2.5.1
-torchvision~=0.20.1
-torchaudio~=2.5.1
-scipy~=1.15.2
-scikit-learn~=1.6.0
-python-multipart~=0.0.20
 aiofiles~=0.8.0
 types-aiofiles~=0.8.11
+opencv-python~=4.10.0.84
+ffmpeg-python~=0.2.0
+fastapi[standard]~=0.115.12
+python-multipart~=0.0.20
+starlette>=0.46.2
+dishka~=1.6.0
+cython~=3.0.11
+scipy~=1.15.2
 numpy~=2.2.4
-sort-pip @ https://github.com/Rud356/sort-pip.git
+scikit-learn~=1.6.0
+sort-pip @ git+https://github.com/Rud356/sort-pip.git
+pyjwt~=2.10.1
+uvicorn~=0.34.0
+wheel

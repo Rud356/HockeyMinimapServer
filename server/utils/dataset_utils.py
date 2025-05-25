@@ -1,10 +1,12 @@
+from typing import Any
+
 import torch
 from sklearn.model_selection import StratifiedShuffleSplit
 from torch import Tensor
 from torch.utils.data import Subset
 
 
-def split_dataset(dataset, train_ratio=0.67) -> tuple[Subset, Subset]:
+def split_dataset(dataset: Any, train_ratio=0.67) -> tuple[Subset, Subset]:
     """
     Разделяет набор данных в случайном порядке,
     стараясь сохранить соотношения количества классов в поднаборах.
