@@ -4,8 +4,9 @@ from argparse import Namespace
 
 from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
 
-from server.minimap_server import AppConfig, MinimapServer
 from server.data_storage.sql_implementation.sqla_provider import SQLAlchemyProvider
+from server.utils.config import AppConfig
+from server.minimap_server import MinimapServer
 
 args: Namespace = MinimapServer.parse_launch_arguments()
 
@@ -37,5 +38,5 @@ elif args.init_db:
 app = server.app
 server.finish_setup()
 
-def run_server():
+def run_server() -> None:
     server.start()
