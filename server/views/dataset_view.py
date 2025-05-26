@@ -51,7 +51,8 @@ class DatasetView:
         :raise ValueError: Неправильный входной идентификатор.
         :raise NotFoundError: Набор данных не существует.
         """
-        return await self.repository.dataset_repo.get_team_dataset_by_id(dataset_id)
+        async with self.repository.transaction:
+            return await self.repository.dataset_repo.get_team_dataset_by_id(dataset_id)
 
     async def create_subset_to_dataset(
         self,
