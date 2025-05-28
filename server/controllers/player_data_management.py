@@ -105,7 +105,7 @@ class PlayerDataEndpoint(APIEndpoint):
             self.generate_map_video,
             methods=["put"],
             description="Генерирует видео мини-карты, "
-                        "сохраняя видео в файл по пути /static/videos/<UUID видео>/map_video.mp4",
+                        "сохраняя видео в файл по пути /static/videos/<UUID видео>/output_map.mp4",
             tags=["player data"],
             responses={
                 401: {

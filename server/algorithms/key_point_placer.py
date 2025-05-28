@@ -11,6 +11,7 @@ from server.utils.config.minimap_config import MinimapKeyPointConfig
 
 PointQuadrant: TypeAlias = tuple[HorizontalPosition, VerticalPosition]
 
+
 class KeyPointPlacer:
     """
     Класс для автоматизации расположения точек по полю исходят из предоставленных данных.

@@ -135,6 +135,7 @@ class MapView:
         :raise KeyError: Временная метка конца не найдена в метаданных.
         :raise InvalidFileFormat: Неподдерживаемый формат файла предоставлен в качестве файла.
         """
+        # TODO: перенести в отдельный сервис обработки данных
         # Get map to be in relative coordinates
         relative_map_config: RelativeMinimapKeyPointConfig = self.get_relative_minimap_points(
             map_config

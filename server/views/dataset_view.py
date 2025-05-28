@@ -134,6 +134,7 @@ class DatasetView:
             field_bounding_box
         )
 
+        # TODO: перенести в отдельный сервис обработки данных
         subset_data: list[list[SubsetDataInputDTO]] = []
         capture = cv2.VideoCapture(str(video_path), cv2.CAP_FFMPEG)
 

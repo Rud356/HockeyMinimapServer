@@ -197,3 +197,5 @@ where `./config.toml` is replaced with the user's custom file.
 * Description of used enumerations passed as numbers for setting classes or teams is unavailable at the default documentation address
   http://localhost:8000/docs/,
   but available in alternative documentation at http://localhost:8000/redoc.
+* Authorization and check of current user is executed via token, provided in cookies with the name of
+  user_token with value of the token, and it expires in 7 days regardless of if it's in browser or not.

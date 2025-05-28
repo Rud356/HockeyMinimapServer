@@ -120,6 +120,7 @@ class ProjectView:
         :raise InvalidProjectState: Проект не обработан для вывода в файл.
         :raise TimeoutError: Не удалось захватить блокировку файла для работы с ним.
         """
+        # TODO: перенести в отдельный сервис обработки данных
         async with self.repository.transaction:
             current_project: ProjectDTO = await self.repository.project_repo.get_project(project_id)
             video: VideoDTO | None = await self.repository.video_repo.get_video(current_project.for_video_id)
@@ -212,6 +213,7 @@ class ProjectView:
         """
         loop: AbstractEventLoop = asyncio.get_running_loop()
 
+        # TODO: перенести в отдельный сервис обработки данных
         with ThreadPoolExecutor(1) as executor:
             with zipfile.ZipFile(archive_path, mode="r") as imported_zip:
                 filenames: set[str] = set(imported_zip.namelist())
