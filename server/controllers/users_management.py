@@ -202,7 +202,7 @@ class UserManagementEndpoint(APIEndpoint):
         :param repository: Объект для взаимодействия с БД.
         :param user_data: Данные нового пользователя.
         :param current_user: Пользователь системы.
-        :return:
+        :return: Информация о пользователе.
         """
         if not current_user.user_permissions.can_administrate_users:
             raise UnauthorizedResourceAccess(

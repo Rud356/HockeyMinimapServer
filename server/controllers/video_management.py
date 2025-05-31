@@ -333,6 +333,16 @@ class VideoUploadEndpoint(APIEndpoint):
         video_id: int,
         frame_timestamp: Annotated[Optional[float], Query(ge=0)] = 0.0
     ) -> FileResponse:
+        """
+        Получает пример скорректированного изображения.
+
+        :param repository: Объект взаимодействия с БД.
+        :param current_user: Текущий пользователь системы.
+        :param app_config: Конфигурация приложения.
+        :param video_id: Идентификатор видео.
+        :param frame_timestamp: Временная метка кадра, для получения примера.
+        :return: Ответ файлом кадра.
+        """
         try:
             temp_dir = tempfile.mkdtemp(prefix="hmms_preview_")
             temp_dir_path: Path = Path(temp_dir)

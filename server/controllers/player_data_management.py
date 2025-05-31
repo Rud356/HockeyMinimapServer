@@ -25,7 +25,7 @@ from server.views.player_data_view import PlayerDataView
 
 class PlayerDataEndpoint(APIEndpoint):
     """
-
+    Описывает эндпоинт взаимодействия с данными игроков из видео.
     """
     def __init__(self, router: APIRouter):
         super().__init__(router)
