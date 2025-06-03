@@ -132,13 +132,13 @@ class DatasetRepoSQLA(DatasetRepo):
         subset_data: list[list[SubsetDataInputDTO]]
     ) -> int:
         if from_frame < 0:
-            raise ValueError("Invalid from_frame number")
+            raise IndexError("Invalid from_frame number")
 
         if to_frame < from_frame:
-            raise ValueError("Parameter to_frame can't be less than from_frame")
+            raise IndexError("Parameter to_frame can't be less than from_frame")
 
         if len(subset_data) != (to_frame - from_frame):
-            raise ValueError(
+            raise IndexError(
                 f"Invalid subset_data list length: got {len(subset_data)}, "
                 f"expected {to_frame - from_frame}"
             )

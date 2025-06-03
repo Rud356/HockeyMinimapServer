@@ -96,8 +96,21 @@ class DatasetView:
                 dataset_id, from_frame, to_frame
             )
 
-        if video_info is None:
-            raise NotFoundError("Video not found")
+            if video_info is None:
+                raise NotFoundError("Video not found")
+
+            min_frame, max_frame = await self.repository.player_data_repo.get_frames_min_and_max_ids_in_video(
+                video_id=video_info.video_id
+            )
+
+        if from_frame not in range(min_frame, max_frame):
+            raise IndexError("Out of bounds index for min frame")
+
+        if to_frame not in range(min_frame, max_frame):
+            to_frame = max_frame
+
+        if from_frame >= to_frame:
+            raise IndexError("Invalid frames range")
 
         if video_info.converted_video_path is None:
             raise FileNotFoundError(
