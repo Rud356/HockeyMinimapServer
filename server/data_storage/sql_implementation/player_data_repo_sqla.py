@@ -43,8 +43,8 @@ class PlayerDataRepoSQLA(PlayerDataRepo):
                         player_id=data_point.player_id,
                         player_on_camera_top_x=data_point.player_on_camera.top_point.x,
                         player_on_camera_top_y=data_point.player_on_camera.top_point.y,
-                        player_on_camera_bottom_x=data_point.player_on_camera.top_point.x,
-                        player_on_camera_bottom_y=data_point.player_on_camera.top_point.y,
+                        player_on_camera_bottom_x=data_point.player_on_camera.bottom_point.x,
+                        player_on_camera_bottom_y=data_point.player_on_camera.bottom_point.y,
                         point_on_minimap_x=data_point.player_on_minimap.x,
                         point_on_minimap_y=data_point.player_on_minimap.y
                     )

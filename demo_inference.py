@@ -55,7 +55,7 @@ print(count_labels_in_subsets(demo_set, demo_split[0].indices, demo_split[1].ind
 print(Path(os.path.join(data_dir, 'train')).resolve(), Path(os.path.join(data_dir, 'val')).resolve())
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
-trainer = TeamDetectorTeacher(demo_split[0], demo_split[1], 100, TeamDetectorModel(), device)
+trainer = TeamDetectorTeacher(demo_split[0], demo_split[1], 10, TeamDetectorModel(), device)
 model = trainer.train_nn()
 predictor: TeamDetectionPredictor = TeamDetectionPredictor(model, team_detector_transform, device)
 

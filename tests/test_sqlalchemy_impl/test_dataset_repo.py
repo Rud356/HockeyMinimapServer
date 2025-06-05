@@ -330,7 +330,7 @@ async def test_adding_subset_to_invalid_boundaries(video_fps: float, video_frame
         await tr.commit()
 
     frames_numbering = range(10, 20)
-    with pytest.raises(ValueError):
+    with pytest.raises(IndexError):
         async with repo.transaction:
             subset_id = await repo.dataset_repo.add_subset_to_dataset(
                 dataset.dataset_id,

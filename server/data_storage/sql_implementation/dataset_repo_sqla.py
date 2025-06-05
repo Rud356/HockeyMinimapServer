@@ -1,6 +1,7 @@
 from typing import Optional, cast
 
 from pydantic import ValidationError
+from requests import session
 from sqlalchemy import Delete, Select, Update, and_, exists, func, or_
 from sqlalchemy.engine import TupleResult
 from sqlalchemy.exc import IntegrityError, ProgrammingError
@@ -22,8 +23,7 @@ class DatasetRepoSQLA(DatasetRepo):
         self.transaction: TransactionManagerSQLA = transaction
 
     async def create_dataset_for_video(self, video_id: int) -> DatasetDTO:
-        new_dataset = TeamsDataset(video_id=video_id)
-        async with await self.transaction.start_nested_transaction() as tr:
+        async with await self.transaction.start_nested_transaction():
             video: Optional[Video] = (await self.transaction.session.execute(
                 Select(Video).where(Video.video_id == video_id)
             )).scalar_one_or_none()
@@ -31,6 +31,8 @@ class DatasetRepoSQLA(DatasetRepo):
             if video is None:
                 raise DataIntegrityError("Video not found")
 
+        async with await self.transaction.start_nested_transaction() as tr:
+            new_dataset = TeamsDataset(video_id=video_id)
             video.dataset = new_dataset
 
             try:
