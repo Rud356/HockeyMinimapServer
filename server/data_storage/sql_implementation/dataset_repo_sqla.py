@@ -1,7 +1,6 @@
 from typing import Optional, cast
 
 from pydantic import ValidationError
-from requests import session
 from sqlalchemy import Delete, Select, Update, and_, exists, func, or_
 from sqlalchemy.engine import TupleResult
 from sqlalchemy.exc import IntegrityError, ProgrammingError
