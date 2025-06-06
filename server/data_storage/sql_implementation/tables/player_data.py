@@ -58,8 +58,7 @@ class PlayerData(Base):
     team: Mapped[Optional["TeamAssignment"]] = relationship(
         primaryjoin="and_("
                     "TeamAssignment.tracking_id == PlayerData.tracking_id, "
-                    "TeamAssignment.video_id == PlayerData.video_id, "
-                    "TeamAssignment.team_id.isnot(None)"
+                    "TeamAssignment.video_id == PlayerData.video_id"
                     ")",
         lazy="joined"
     )
