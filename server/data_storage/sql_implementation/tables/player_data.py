@@ -3,7 +3,7 @@ from typing import Any, Optional, TYPE_CHECKING
 from sqlalchemy import ForeignKey, ForeignKeyConstraint
 from sqlalchemy.orm import Mapped, relationship
 from sqlalchemy.orm import mapped_column
-from sqlalchemy.sql.schema import CheckConstraint, ColumnCollectionConstraint
+from sqlalchemy.sql.schema import CheckConstraint, ColumnCollectionConstraint, Index
 
 from server.algorithms.enums.player_classes_enum import PlayerClasses
 from server.data_storage.dto import BoxDTO
@@ -69,6 +69,7 @@ class PlayerData(Base):
         ForeignKeyConstraint(
             ["video_id", "frame_id"], ["frame.video_id", "frame.frame_id"]
         ),
+        Index("idx_player_data_by_frame_and_video", "video_id", "frame_id"),
         {}
     )
 

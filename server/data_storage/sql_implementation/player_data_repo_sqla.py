@@ -283,12 +283,16 @@ class PlayerDataRepoSQLA(PlayerDataRepo):
     async def get_tracking_from_frames(
         self, video_id: int, limit: int = 120, offset: int = 0
     ) -> FrameDataDTO:
-        query: Select[tuple[Frame, ...]] = Select(Frame).order_by(
-            Frame.frame_id
-        ).limit(limit).offset(offset).options(
-            selectinload(Frame.player_data)
-        ).where(Frame.video_id == video_id)
-
+        query: Select[tuple[Frame, ...]] = (
+            Select(Frame)
+            .where(
+                Frame.video_id == video_id,
+            )
+            .order_by(Frame.frame_id)
+            .limit(limit)
+            .offset(offset)
+            .options(selectinload(Frame.player_data))
+        )
         result: AsyncScalarResult[Frame] = await self.transaction.session.stream_scalars(query)
 
         from_frame, to_frame = await self.get_frames_min_and_max_ids_with_limit_offset(

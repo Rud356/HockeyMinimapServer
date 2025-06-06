@@ -221,7 +221,7 @@ async def test_project_import(video_fps: float, video_frames_count: int, repo: R
     async with repo.transaction as tr:
         new_project = await repo.import_project_data(
             static,
-            static / "videos",
+            static / "videos" / "123",
             project_data
         )
         new_video = await repo.video_repo.get_video(new_project.for_video_id)
@@ -250,8 +250,8 @@ async def test_project_import(video_fps: float, video_frames_count: int, repo: R
     assert new_project.for_video_id != project.for_video_id
 
     assert minimap_data == original_mapping
-    assert Path(test_video_directory.name) / video.source_video_path == Path(new_video.source_video_path)
-    assert Path(test_video_directory.name) / video.converted_video_path == Path(new_video.converted_video_path)
+    assert Path("123") / video.source_video_path == Path(new_video.source_video_path)
+    assert Path("123") / video.converted_video_path == Path(new_video.converted_video_path)
     assert video.corrective_coefficient_k1 == new_video.corrective_coefficient_k1
     assert video.corrective_coefficient_k2 == new_video.corrective_coefficient_k2
     assert video.fps == new_video.fps

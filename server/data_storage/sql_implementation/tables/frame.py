@@ -1,5 +1,8 @@
+from typing import Any
+
 from sqlalchemy import ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy.sql.schema import ColumnCollectionConstraint, Index
 
 from server.data_storage.sql_implementation.tables.base import Base
 from server.data_storage.sql_implementation.tables.player_data import PlayerData
@@ -25,3 +28,7 @@ class Frame(Base):
     )
 
     __tablename__ = "frame"
+    __table_args__: tuple[ColumnCollectionConstraint | dict[Any, Any], ...] = (
+        Index("idx_frames_by_video_and_frame_id", "video_id", "frame_id"),
+        {}
+    )

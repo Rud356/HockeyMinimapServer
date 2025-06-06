@@ -216,8 +216,12 @@ class RepositorySQLA(Repository):
         """
         async with engine.begin() as conn:
             if engine.dialect.name == 'sqlite':
+                await conn.execute(text("PRAGMA writable_schema=ON"))
                 await conn.execute(text("PRAGMA foreign_keys=ON"))
                 await conn.execute(text("PRAGMA journal_mode=WAL;"))
+                await conn.execute(text("PRAGMA cache_size = -64000;"))
+                await conn.execute(text("PRAGMA auto_vacuum = FULL;"))
+                await conn.execute(text("VACUUM;"))
 
             await conn.run_sync(Base.metadata.create_all)
 
