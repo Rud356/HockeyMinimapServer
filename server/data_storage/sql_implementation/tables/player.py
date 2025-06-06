@@ -1,6 +1,6 @@
 from typing import Optional
 
-from sqlalchemy import ForeignKey, String
+from sqlalchemy import BigInteger, ForeignKey, Integer, String
 from sqlalchemy.orm import Mapped
 from sqlalchemy.orm import mapped_column
 
@@ -13,6 +13,7 @@ class Player(Base):
     Описывает таблицу пользовательских назначений идентификаторов.
     """
     player_id: Mapped[int] = mapped_column(
+        BigInteger().with_variant(Integer, "sqlite"),
         primary_key=True,
         autoincrement=True,
         comment="Идентификатор записи пользовательского имени."
@@ -24,3 +25,4 @@ class Player(Base):
     team_id: Mapped[Optional[Team]] = mapped_column(default=None, comment="Команда игрока.")
 
     __tablename__ = "player"
+    __table_args__ = {"sqlite_autoincrement": True}
