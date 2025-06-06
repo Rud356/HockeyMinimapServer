@@ -206,10 +206,18 @@ class PlayerDataRepoSQLA(PlayerDataRepo):
         try:
             async with await self.transaction.start_nested_transaction() as tr:
                 player_alias: Player = cast(Player, await tr.session.get_one(Player, custom_player_id))
+                await tr.session.execute(
+                    Update(PlayerData).where(
+                        PlayerData.player_id == player_alias.player_id
+                    ).values(player_id=None)
+                )
                 await tr.session.delete(player_alias)
 
         except NoResultFound as err:
             raise NotFoundError("Player alias not found") from err
+
+        except IntegrityError as err:
+            raise DataIntegrityError("Player is already referenced") from err
 
         return True
 

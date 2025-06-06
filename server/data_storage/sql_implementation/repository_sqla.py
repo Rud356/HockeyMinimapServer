@@ -111,7 +111,7 @@ class RepositorySQLA(Repository):
 
             new_video: VideoDTO = await self.video_repo.create_new_video(
                 video_data.fps,
-                (new_video_folder / video_data.source_video_path).relative_to(static_path)
+                (new_video_folder / video_data.source_video_path).relative_to(new_video_folder.parent)
             )
             await self.video_repo.adjust_corrective_coefficients(
                 new_video.video_id,
@@ -122,11 +122,12 @@ class RepositorySQLA(Repository):
                 new_video.video_id,
                 project_data.video_data.camera_position
             )
+
             await self.video_repo.set_flag_video_is_converted(
                 new_video.video_id,
                 True,
-                static_path,
-                new_video_folder / video_data.source_video_path
+                static_path / "videos",
+                new_video_folder / video_data.converted_video_path
             )
             await self.video_repo.set_flag_video_is_processed(new_video.video_id, True)
             await tr.commit()

@@ -506,6 +506,12 @@ class PlayerDataEndpoint(APIEndpoint):
                 "Custom alias ID not found"
             ) from err
 
+        except DataIntegrityError as err:
+            raise HTTPException(
+                409,
+                "Alias is in use"
+            ) from err
+
     async def change_user_alias_name_for_player(
         self,
         repository: FromDishka[Repository],

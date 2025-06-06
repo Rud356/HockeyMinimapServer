@@ -13,7 +13,8 @@ class Player(Base):
     Описывает таблицу пользовательских назначений идентификаторов.
     """
     player_id: Mapped[int] = mapped_column(
-        primary_key=True, autoincrement=True,
+        primary_key=True,
+        autoincrement=True,
         comment="Идентификатор записи пользовательского имени."
     )
     video_id: Mapped[int] = mapped_column(ForeignKey("video.video_id"), index=True)

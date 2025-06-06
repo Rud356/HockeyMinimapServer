@@ -364,6 +364,7 @@ class PlayerDataView:
         :param custom_player_id: Идентификатор пользовательского имени игрока.
         :return: Было ли удалено имя игрока.
         :raise NotFoundError: Имя игрока с представленным идентификатором не найдено.
+        :raise DataIntegrityError: Если уже есть ссылка на этот идентификатор.
         """
         async with self.repository.transaction as tr:
             result: bool = await self.repository.player_data_repo.delete_player_alias(
