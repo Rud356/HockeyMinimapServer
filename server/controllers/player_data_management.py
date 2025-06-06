@@ -385,7 +385,7 @@ class PlayerDataEndpoint(APIEndpoint):
 
         try:
             await PlayerDataView(repository).set_team_to_tracking_id(
-                video_id, tracking_id, from_frame_id, team
+                video_id, from_frame_id, tracking_id, team
             )
 
         except NotFoundError as err:
