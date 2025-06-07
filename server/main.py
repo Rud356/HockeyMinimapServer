@@ -5,8 +5,8 @@ from argparse import Namespace
 from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
 
 from server.data_storage.sql_implementation.sqla_provider import SQLAlchemyProvider
-from server.utils.config import AppConfig
 from server.minimap_server import MinimapServer
+from server.utils.config import AppConfig
 
 args: Namespace = MinimapServer.parse_launch_arguments()
 

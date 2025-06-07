@@ -1,10 +1,10 @@
 from typing import Optional, Sequence, cast
 
-from sqlalchemy import Delete, Row, Select, Update, and_, exists, func, select
+from sqlalchemy import Delete, Row, ScalarResult, Select, Update, and_, exists, func, select
 from sqlalchemy.engine import TupleResult
 from sqlalchemy.exc import IntegrityError, NoResultFound, ProgrammingError
 from sqlalchemy.ext.asyncio import AsyncScalarResult
-from sqlalchemy.orm import selectinload
+from sqlalchemy.orm import joinedload
 
 from server.algorithms.enums import Team
 from server.algorithms.enums.player_classes_enum import PlayerClasses
@@ -29,7 +29,7 @@ class PlayerDataRepoSQLA(PlayerDataRepo):
     ) -> None:
         # Get last frame of sequence and if it doesn't exist - error out
         assigned_teams: dict[int, Team | None] = {}
-        frame: Frame = await self._get_video_frame(video_id, len(players_data_on_frame) - 1)
+        frame: Frame = await self._get_video_frame(video_id, max(len(players_data_on_frame) - 1, 0))
 
         async with await self.transaction.start_nested_transaction() as tr:
             for frame_id, frame_data in enumerate(players_data_on_frame):
@@ -287,13 +287,13 @@ class PlayerDataRepoSQLA(PlayerDataRepo):
             Select(Frame)
             .where(
                 Frame.video_id == video_id,
+                Frame.frame_id.between(offset, offset+limit)
             )
             .order_by(Frame.frame_id)
             .limit(limit)
-            .offset(offset)
-            .options(selectinload(Frame.player_data))
+            .options(joinedload(Frame.player_data, innerjoin=True))
         )
-        result: AsyncScalarResult[Frame] = await self.transaction.session.stream_scalars(query)
+        result: ScalarResult[Frame] = await self.transaction.session.scalars(query)
 
         from_frame, to_frame = await self.get_frames_min_and_max_ids_with_limit_offset(
             video_id, limit, offset
@@ -301,7 +301,7 @@ class PlayerDataRepoSQLA(PlayerDataRepo):
 
         frame_data: list[list[PlayerDataDTO]] = []
 
-        async for frame in result:
+        for frame in result.unique():
             frame_data_players: list[PlayerDataDTO] = []
             for player_data in frame.player_data:
                 player_name: None | str = None
@@ -335,7 +335,7 @@ class PlayerDataRepoSQLA(PlayerDataRepo):
         query: Select[tuple[Frame, ...]] = Select(Frame).order_by(
             Frame.frame_id
         ).options(
-            selectinload(Frame.player_data)
+            joinedload(Frame.player_data, innerjoin=True)
         ).where(Frame.video_id == video_id)
 
         result: AsyncScalarResult[Frame] = await self.transaction.session.stream_scalars(query)
@@ -343,7 +343,7 @@ class PlayerDataRepoSQLA(PlayerDataRepo):
 
         frame_data: list[list[PlayerDataDTO]] = []
 
-        async for frame in result:
+        async for frame in result.unique():
             frame_data_players: list[PlayerDataDTO] = []
             for player_data in frame.player_data:
                 player_name: None | str = None
