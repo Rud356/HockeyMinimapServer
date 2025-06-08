@@ -97,22 +97,21 @@ class MapVideoRendererService:
                 .run_async(pipe_stdin=True)
             )
 
-            with self.renderer_pool_executor as write_executor:
-                while (frame := await self.draw_queue.get()) is not None:
-                    await loop.run_in_executor(write_executor, process.stdin.write, frame.tobytes())
+            while (frame := await self.draw_queue.get()) is not None:
+                await loop.run_in_executor(self.renderer_pool_executor, process.stdin.write, frame.tobytes())
 
-                process.stdin.close()
-                await loop.run_in_executor(
-                    write_executor,
-                    process.wait
+            process.stdin.close()
+            await loop.run_in_executor(
+                self.renderer_pool_executor,
+                process.wait
+            )
+            await loop.run_in_executor(
+                self.renderer_pool_executor,
+                partial(
+                    shutil.move,
+                    temp_video_path.resolve(), self.output_dest.resolve()
                 )
-                await loop.run_in_executor(
-                    write_executor,
-                    partial(
-                        shutil.move,
-                        temp_video_path.resolve(), self.output_dest.resolve()
-                    )
-                )
+            )
 
     async def data_renderer(self) -> AsyncGenerator[int, list[PlayerDataDTO] | None]:
         """

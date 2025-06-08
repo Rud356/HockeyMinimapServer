@@ -31,7 +31,7 @@ class VideoToMapEndpoint(APIEndpoint):
     def __init__(self, router: APIRouter):
         super().__init__(router)
         self.router.add_api_route(
-            "/video/{video_id}/map_points/",
+            "/videos/{video_id}/map_points/",
             self.create_point_mapping_for_video,
             methods=["post"],
             description="Создает соотнесения точек из видео с точками мини-карты, "
@@ -46,7 +46,7 @@ class VideoToMapEndpoint(APIEndpoint):
             }
         )
         self.router.add_api_route(
-            "/video/{video_id}/map_points/",
+            "/videos/{video_id}/map_points/",
             self.get_points_mapped_to_minimap,
             methods=["get"],
             description="Получает все точки соотнесения видео с мини-картой",
@@ -56,7 +56,7 @@ class VideoToMapEndpoint(APIEndpoint):
             }
         )
         self.router.add_api_route(
-            "/video/{video_id}/map_points/",
+            "/videos/{video_id}/map_points/",
             self.drop_all_mapped_points_for_video,
             methods=["delete"],
             description="Удаляет все соотнесения точек, привязанные к видео, "
@@ -66,11 +66,15 @@ class VideoToMapEndpoint(APIEndpoint):
                 401: {
                     "description":
                         "Нет валидного токена авторизации или отсутствуют права управление проектами"
-                    }
+                    },
+                404: {
+                    "description":
+                        "Точки на карте не найдены"
+                }
             }
         )
         self.router.add_api_route(
-            "/video/{video_id}/map_points/inference",
+            "/videos/{video_id}/map_points/inference",
             self.infer_key_points_from_video,
             methods=["post"],
             description="Получает ключевые точки с помощью нейронной сети на основе кадра, "
@@ -168,13 +172,18 @@ class VideoToMapEndpoint(APIEndpoint):
         :param current_user: Текущий пользователь системы.
         :param video_id: Идентификатор видео.
         :return: Сколько записей было удалено.
+        :raise NotFoundError: Не найдены точки.
         """
         if not current_user.user_permissions.can_create_projects:
             raise UnauthorizedResourceAccess(
                 "User is required to have permission to create projects to modify project"
             )
 
-        deleted: int = await MapView(repository).drop_all_mapping_points_for_video(video_id)
+        try:
+            deleted: int = await MapView(repository).drop_all_mapping_points_for_video(video_id)
+
+        except NotFoundError:
+            raise HTTPException(404, "Points for video not found")
 
         return deleted
 
