@@ -3,7 +3,7 @@ from setuptools import setup
 
 setup(
     name="HockeyMinimapServer",
-    version="1.0.3",
+    version="1.0.4",
     description="Server for minimap generation application",
     long_description=open("README.md", encoding="UTF8").read(),
     long_description_content_type="text/markdown",
