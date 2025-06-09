@@ -305,7 +305,7 @@ class MapVideoRendererService:
         :param color: Цвет текста.
         :return: Обновленное изображение.
         """
-        font = cv2.FONT_HERSHEY_SIMPLEX
+        font = cv2.FONT_HERSHEY_COMPLEX
         font_scale = 1
         font_thickness = 2
         (text_width, text_height), _ = cv2.getTextSize(text, font, font_scale, font_thickness)
