@@ -54,7 +54,7 @@ class MinimapServer:
 
     def __init__(self, config: AppConfig, **fastapi_app_config) -> None:
         self.app = FastAPI(
-            version="1.0.4",
+            version="1.0.5",
             lifespan=self.lifespan,
             host=config.server_settings.host,
             port=config.server_settings.port,
