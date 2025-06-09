@@ -1,7 +1,9 @@
+import asyncio
 import sys
 import tomllib
 from argparse import Namespace
 
+from dishka import make_async_container
 from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
 
 from server.data_storage.sql_implementation.sqla_provider import SQLAlchemyProvider
@@ -19,20 +21,20 @@ server = MinimapServer(config_data)
 if args.drop_db and args.init_db:
     tmp_engine: AsyncEngine = create_async_engine(config_data.db_connection_string)
     tmp_sqla_provider: SQLAlchemyProvider = SQLAlchemyProvider(tmp_engine)
-    server.drop_db(tmp_engine, tmp_sqla_provider)
-    server.init_db(tmp_engine, tmp_sqla_provider)
+    asyncio.run(server.drop_db(tmp_engine, make_async_container(tmp_sqla_provider)))
+    asyncio.run(server.init_db(tmp_engine, make_async_container(tmp_sqla_provider)))
     sys.exit(0)
 
 elif args.drop_db:
     tmp_engine = create_async_engine(config_data.db_connection_string)
     tmp_sqla_provider = SQLAlchemyProvider(tmp_engine)
-    server.drop_db(tmp_engine, tmp_sqla_provider)
+    asyncio.run(server.drop_db(tmp_engine, make_async_container(tmp_sqla_provider)))
     sys.exit(0)
 
 elif args.init_db:
     tmp_engine = create_async_engine(config_data.db_connection_string)
     tmp_sqla_provider = SQLAlchemyProvider(tmp_engine)
-    server.init_db(tmp_engine, tmp_sqla_provider)
+    asyncio.run(server.init_db(tmp_engine, make_async_container(tmp_sqla_provider)))
     sys.exit(0)
 
 app = server.app

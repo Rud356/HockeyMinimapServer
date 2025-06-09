@@ -10,7 +10,7 @@ from pathlib import Path
 from typing import Any, AsyncGenerator
 
 import uvicorn
-from dishka import AsyncContainer, make_async_container
+from dishka import AsyncContainer, Scope, make_async_container
 from dishka.integrations.fastapi import (
     DishkaRoute,
     FastapiProvider,
@@ -36,8 +36,10 @@ from server.controllers.user_authentication import UserAuthenticationEndpoint
 from server.controllers.users_management import UserManagementEndpoint
 from server.controllers.video_management import VideoUploadEndpoint
 from server.controllers.video_to_map_endpoints import VideoToMapEndpoint
+from server.data_storage.protocols import Repository
 from server.data_storage.sql_implementation.repository_sqla import RepositorySQLA
 from server.data_storage.sql_implementation.sqla_provider import SQLAlchemyProvider
+from server.data_storage.sql_implementation.transaction_manager_sqla import TransactionManagerSQLA
 from server.utils.config import AppConfig
 from server.utils.providers import (
     ConfigProvider,
@@ -54,7 +56,7 @@ class MinimapServer:
 
     def __init__(self, config: AppConfig, **fastapi_app_config) -> None:
         self.app = FastAPI(
-            version="1.0.6",
+            version="1.0.7",
             lifespan=self.lifespan,
             host=config.server_settings.host,
             port=config.server_settings.port,
@@ -94,7 +96,7 @@ class MinimapServer:
 
         # Init if database is in memory automatically
         if "sqlite+aiosqlite:///:memory:" in config.db_connection_string:
-            self.init_db(engine, sqla_provider)
+            asyncio.run(self.init_db(engine, make_async_container(sqla_provider)))
 
         temp_dir = Path(tempfile.gettempdir())
         temp_disk_allocator: DiskSpaceAllocator = DiskSpaceAllocator(temp_dir)
@@ -245,28 +247,30 @@ class MinimapServer:
         await app.state.dishka_container.close()
 
     @staticmethod
-    def init_db(engine: AsyncEngine, sqla_provider: SQLAlchemyProvider) -> None:
+    async def init_db(engine: AsyncEngine, container: AsyncContainer) -> None:
         """
         Инициализирует базу данных.
 
         :param engine: Подключение к базе данных.
-        :param sqla_provider: Объект получения других объектов взаимодействия с БД.
+        :param container: Объект получения других объектов взаимодействия с БД.
         :return: Ничего.
         """
-        tmp_repo: RepositorySQLA = typing.cast(RepositorySQLA, sqla_provider.get_repository())
-        asyncio.run(tmp_repo.init_db(engine))
+        async with container(scope=Scope.REQUEST) as container_fetch:
+            tmp_repo: RepositorySQLA = typing.cast(RepositorySQLA, await container_fetch.get(Repository))
+        await tmp_repo.init_db(engine)
 
     @staticmethod
-    def drop_db(engine: AsyncEngine, sqla_provider: SQLAlchemyProvider) -> None:
+    async def drop_db(engine: AsyncEngine, container: AsyncContainer) -> None:
         """
         Удаляет базу данных.
 
         :param engine: Подключение к базе данных.
-        :param sqla_provider: Объект получения других объектов взаимодействия с БД.
+        :param container: Объект получения других объектов взаимодействия с БД.
         :return: Ничего.
         """
-        tmp_repo: RepositorySQLA = typing.cast(RepositorySQLA, sqla_provider.get_repository())
-        asyncio.run(tmp_repo.drop_db(engine))
+        async with container(scope=Scope.REQUEST) as container_fetch:
+            tmp_repo: RepositorySQLA = typing.cast(RepositorySQLA, await container_fetch.get(Repository))
+        await tmp_repo.drop_db(engine)
 
     def start(self) -> None:
         """

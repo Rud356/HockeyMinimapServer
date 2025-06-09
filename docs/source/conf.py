@@ -17,7 +17,7 @@ sys.path.insert(1, str(Path(__file__).parent))
 project = 'HockeyServerMinimap'
 copyright = '2025, Rud356'
 author = 'Rud356'
-release = "1.0.6"
+release = "1.0.7"
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
 
