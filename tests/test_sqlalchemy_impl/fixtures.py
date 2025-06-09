@@ -1,5 +1,5 @@
 import pytest
-from dishka import Container, make_container
+from dishka import AsyncContainer, Container, make_async_container, make_container
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
 
@@ -23,14 +23,14 @@ def provider(engine: AsyncEngine) -> SQLAlchemyProvider:
     return SQLAlchemyProvider(engine)
 
 @pytest.fixture()
-def container(provider: SQLAlchemyProvider) -> Container:
-    container: Container = make_container(provider)
+def container(provider: SQLAlchemyProvider) -> AsyncContainer:
+    container: AsyncContainer = make_async_container(provider)
     return container
 
 @pytest.fixture()
-def repo(container: Container) -> RepositorySQLA:
-    with container() as request_container:
-        repo: Repository = request_container.get(Repository)
+async def repo(container: Container) -> RepositorySQLA:
+    async with container() as request_container:
+        repo: Repository = await request_container.get(Repository)
         assert isinstance(repo, RepositorySQLA)
     return repo
 
