@@ -28,7 +28,7 @@ class Frame(Base):
     )
 
     __tablename__ = "frame"
-    __table_args__: tuple[ColumnCollectionConstraint | dict[Any, Any], ...] = (
+    __table_args__: tuple[ColumnCollectionConstraint | Index | dict[Any, Any], ...] = (
         Index("idx_frames_by_video_and_frame_id", "video_id", "frame_id"),
         {}
     )

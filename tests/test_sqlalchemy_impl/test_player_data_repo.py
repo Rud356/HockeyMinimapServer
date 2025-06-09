@@ -158,7 +158,7 @@ async def test_fetching_partial_player_data(video_fps: float, video_frames_count
     async with repo.transaction:
         fetched = await repo.player_data_repo.get_tracking_from_frames(video.video_id, 10, 10)
 
-    assert all((frame == [] for frame in fetched.frames[0]))
+    assert all((frame == [] for frame in fetched.frames))
 
     async with repo.transaction:
         fetched = await repo.player_data_repo.get_tracking_from_frames(video.video_id, 5, 0)

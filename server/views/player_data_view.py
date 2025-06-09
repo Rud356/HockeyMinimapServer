@@ -221,14 +221,16 @@ class PlayerDataView:
                 player_data_on_frames.append(frame_data)
 
             # Add records
-            await self.repository.player_data_repo.insert_player_data(
-                video_info.video_id,
-                player_data_on_frames
-            )
-            await self.repository.video_repo.set_flag_video_is_processed(
-                video_info.video_id,
-                True
-            )
+            async with self.repository.transaction as tr:
+                await self.repository.player_data_repo.insert_player_data(
+                    video_info.video_id,
+                    player_data_on_frames
+                )
+                await self.repository.video_repo.set_flag_video_is_processed(
+                    video_info.video_id,
+                    True
+                )
+                await tr.commit()
 
     async def kill_tracking(self, video_id: int, frame_id: int, tracking_id: int) -> int:
         """

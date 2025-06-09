@@ -11,9 +11,10 @@ from server.algorithms.enums.player_classes_enum import PlayerClasses
 from .tables import Frame, Player, PlayerData
 from .tables.team_assignment import TeamAssignment
 from .transaction_manager_sqla import TransactionManagerSQLA
-from ..dto import FrameDataDTO
+from ..dto import BoxDTO, FrameDataDTO
 from ..dto.player_alias import PlayerAlias
 from ..dto.player_data_dto import PlayerDataDTO
+from ..dto.relative_point_dto import RelativePointDTO
 from ..exceptions import DataIntegrityError, NotFoundError
 from ..protocols import PlayerDataRepo
 
@@ -29,9 +30,9 @@ class PlayerDataRepoSQLA(PlayerDataRepo):
     ) -> None:
         # Get last frame of sequence and if it doesn't exist - error out
         assigned_teams: dict[int, Team | None] = {}
-        frame: Frame = await self._get_video_frame(video_id, max(len(players_data_on_frame) - 1, 0))
 
         async with await self.transaction.start_nested_transaction() as tr:
+            frame: Frame = await self._get_video_frame(video_id, max(len(players_data_on_frame) - 1, 0))
             for frame_id, frame_data in enumerate(players_data_on_frame):
                 players: list[PlayerData] = []
                 for data_point in frame_data:
@@ -84,10 +85,10 @@ class PlayerDataRepoSQLA(PlayerDataRepo):
                 raise DataIntegrityError("Invalid data provided") from err
 
     async def kill_tracking(self, video_id: int, frame_id: int, tracking_id: int) -> int:
-        if not await self._does_video_frame_data_exists(video_id, tracking_id):
-            raise NotFoundError("Records for specified tracks not found")
-
         async with await self.transaction.start_nested_transaction() as tr:
+            if not await self._does_video_frame_data_exists(video_id, tracking_id):
+                raise NotFoundError("Records for specified tracks not found")
+
             deleted = await tr.session.execute(
                 Delete(PlayerData).where(
                     and_(
@@ -102,10 +103,10 @@ class PlayerDataRepoSQLA(PlayerDataRepo):
         return cast(int, deleted.rowcount)
 
     async def kill_all_tracking_of_player(self, video_id: int, tracking_id: int) -> int:
-        if not await self._does_video_frame_data_exists(video_id, tracking_id):
-            raise NotFoundError("Records for specified tracks not found")
-
         async with await self.transaction.start_nested_transaction() as tr:
+            if not await self._does_video_frame_data_exists(video_id, tracking_id):
+                raise NotFoundError("Records for specified tracks not found")
+
             deleted = await tr.session.execute(
                 Delete(PlayerData).where(
                     and_(
@@ -121,10 +122,10 @@ class PlayerDataRepoSQLA(PlayerDataRepo):
     async def set_player_class_to_tracking_id(
         self, video_id: int, frame_id: int, tracking_id: int, class_id: PlayerClasses
     ) -> int:
-        if not await self._does_video_frame_data_exists(video_id, tracking_id):
-            raise NotFoundError("Tracking id not found")
-
         async with await self.transaction.start_nested_transaction() as tr:
+            if not await self._does_video_frame_data_exists(video_id, tracking_id):
+                raise NotFoundError("Tracking id not found")
+
             result = await tr.session.execute(
                 Update(PlayerData).where(
                     and_(
@@ -140,20 +141,20 @@ class PlayerDataRepoSQLA(PlayerDataRepo):
     async def set_team_to_tracking_id(
         self, video_id: int, frame_id: int, tracking_id: int, team: Team
     ) -> None:
-        player_data: Optional[PlayerData] = (await self.transaction.session.scalars(
-            Select(PlayerData)
-            .where(
-                and_(
-                    PlayerData.video_id == video_id,
-                    PlayerData.tracking_id == tracking_id
-                )
-            )
-        )).first()
-
-        if player_data is None:
-            raise NotFoundError("Player tracking data was not found")
-
         async with await self.transaction.start_nested_transaction() as tr:
+            player_data: Optional[PlayerData] = (await self.transaction.session.scalars(
+                Select(PlayerData)
+                .where(
+                    and_(
+                        PlayerData.video_id == video_id,
+                        PlayerData.tracking_id == tracking_id
+                    )
+                )
+            )).first()
+
+            if player_data is None:
+                raise NotFoundError("Player tracking data was not found")
+
             if player_data.team is not None:
                 player_data.team.team_id = team
 
@@ -168,19 +169,20 @@ class PlayerDataRepoSQLA(PlayerDataRepo):
             await tr.commit()
 
     async def get_user_alias_for_players(self, video_id: int) -> dict[int, PlayerAlias]:
-        players_ids: Sequence[Player] = (await self.transaction.session.scalars(
-            Select(Player).where(Player.video_id == video_id)
-        )).all()
+        async with await self.transaction.start_nested_transaction():
+            players_ids: Sequence[Player] = (await self.transaction.session.scalars(
+                Select(Player).where(Player.video_id == video_id)
+            )).all()
 
-        return {
-            player_id.player_id:
-                PlayerAlias(
-                    alias_id=player_id.player_id,
-                    player_name=player_id.user_id,
-                    player_team=player_id.team_id
-                )
-            for player_id in players_ids
-        }
+            return {
+                player_id.player_id:
+                    PlayerAlias(
+                        alias_id=player_id.player_id,
+                        player_name=player_id.user_id,
+                        player_team=player_id.team_id
+                    )
+                for player_id in players_ids
+            }
 
     async def create_user_alias_for_players(
         self,
@@ -318,8 +320,20 @@ class PlayerDataRepoSQLA(PlayerDataRepo):
                     player_name=player_name,
                     team_id=team_id,
                     class_id=player_data.class_id,
-                    player_on_camera=player_data.box,
-                    player_on_minimap=player_data.point_on_minimap
+                    player_on_camera=BoxDTO(
+                        top_point=RelativePointDTO(
+                            x=player_data.player_on_camera_top_x,
+                            y=player_data.player_on_camera_top_y
+                        ),
+                        bottom_point=RelativePointDTO(
+                            x=player_data.player_on_camera_bottom_x,
+                            y=player_data.player_on_camera_bottom_y
+                        )
+                    ),
+                    player_on_minimap=RelativePointDTO(
+                        x=player_data.point_on_minimap_x,
+                        y=player_data.point_on_minimap_y
+                    )
                 )
                 frame_data_players.append(player)
 
@@ -360,8 +374,20 @@ class PlayerDataRepoSQLA(PlayerDataRepo):
                     player_name=player_name,
                     team_id=team_id,
                     class_id=player_data.class_id,
-                    player_on_camera=player_data.box,
-                    player_on_minimap=player_data.point_on_minimap
+                    player_on_camera=BoxDTO(
+                        top_point=RelativePointDTO(
+                            x=player_data.player_on_camera_top_x,
+                            y=player_data.player_on_camera_top_y
+                        ),
+                        bottom_point=RelativePointDTO(
+                            x=player_data.player_on_camera_bottom_x,
+                            y=player_data.player_on_camera_bottom_y
+                        )
+                    ),
+                    player_on_minimap=RelativePointDTO(
+                        x=player_data.point_on_minimap_x,
+                        y=player_data.point_on_minimap_y
+                    )
                 )
                 frame_data_players.append(player)
 

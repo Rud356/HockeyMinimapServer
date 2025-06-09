@@ -6,8 +6,6 @@ from sqlalchemy.orm import mapped_column
 from sqlalchemy.sql.schema import CheckConstraint, ColumnCollectionConstraint, Index
 
 from server.algorithms.enums.player_classes_enum import PlayerClasses
-from server.data_storage.dto import BoxDTO
-from server.data_storage.dto.relative_point_dto import RelativePointDTO
 from server.data_storage.sql_implementation.tables.base import Base
 from server.data_storage.sql_implementation.tables.team_assignment import TeamAssignment
 
@@ -64,40 +62,10 @@ class PlayerData(Base):
     )
 
     __tablename__ = "player_data"
-    __table_args__: tuple[ColumnCollectionConstraint | dict[Any, Any], ...] = (
+    __table_args__: tuple[ColumnCollectionConstraint | Index | dict[Any, Any], ...] = (
         ForeignKeyConstraint(
             ["video_id", "frame_id"], ["frame.video_id", "frame.frame_id"]
         ),
         Index("idx_player_data_by_frame_and_video", "video_id", "frame_id"),
         {}
     )
-
-    @property
-    def box(self) -> BoxDTO:
-        """
-        Получает представление позиций точек в виде охватывающего прямоугольника.
-
-        :return: Охватывающий прямоугольник.
-        """
-        return BoxDTO(
-            top_point=RelativePointDTO(
-                x=self.player_on_camera_top_x,
-                y=self.player_on_camera_top_y
-            ),
-            bottom_point=RelativePointDTO(
-                x=self.player_on_camera_bottom_x,
-                y=self.player_on_camera_bottom_y
-            )
-        )
-
-    @property
-    def point_on_minimap(self) -> RelativePointDTO:
-        """
-        Получает представление позиции игрока на карте.
-
-        :return: Точка позиции на карте.
-        """
-        return RelativePointDTO(
-            x=self.point_on_minimap_x,
-            y=self.point_on_minimap_y
-        )

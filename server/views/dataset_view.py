@@ -164,11 +164,11 @@ class DatasetView:
                     player_tracker.process_frame(frame_n, resulting_players_instances)
                 )
 
-        async with self.repository.transaction as tr:
-            subset_id: int = await self.repository.dataset_repo.add_subset_to_dataset(
-                dataset_id, from_frame, to_frame, subset_data
-            )
-            await tr.commit()
+            async with self.repository.transaction as tr:
+                subset_id: int = await self.repository.dataset_repo.add_subset_to_dataset(
+                    dataset_id, from_frame, to_frame, subset_data
+                )
+                await tr.commit()
 
         return subset_id
 
