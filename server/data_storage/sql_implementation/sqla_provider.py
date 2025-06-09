@@ -1,3 +1,5 @@
+from typing import AsyncIterator
+
 from dishka import Provider, Scope, provide
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker
 
@@ -18,13 +20,16 @@ class SQLAlchemyProvider(Provider):
         )
 
     @provide(scope=Scope.REQUEST)
-    def get_session(self) -> AsyncSession:
+    async def get_session(self) -> AsyncIterator[AsyncSession]:
         """
         Получает сессию SQLAlchemy.
 
         :return: Сессия SQLAlchemy.
         """
-        return self.session_maker()
+        session: AsyncSession = self.session_maker()
+        yield session
+        await session.close()
+        return
 
     @provide(scope=Scope.REQUEST)
     def get_transaction_manager(self, session: AsyncSession) -> TransactionManagerSQLA:
@@ -45,14 +50,10 @@ class SQLAlchemyProvider(Provider):
         return self.get_transaction_manager(session)
 
     @provide(scope=Scope.REQUEST)
-    def get_repository(self) -> Repository:
+    def get_repository(self, transaction: TransactionManagerSQLA) -> Repository:
         """
         Получает репозиторий SQLAlchemy.
 
         :return: SQLAlchemy версия репозитория.
         """
-        return RepositorySQLA(
-            self.get_transaction_manager(
-                self.get_session()
-            )
-        )
+        return RepositorySQLA(transaction)
