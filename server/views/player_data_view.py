@@ -535,12 +535,19 @@ class PlayerDataView:
         await data_renderer.asend(None)
 
         async with self.repository.transaction:
+            aliases: dict[int, PlayerAlias] = await self.repository.player_data_repo.get_user_alias_for_players(
+                video_id
+            )
             frame_data: FrameDataDTO = await self.repository.player_data_repo.get_all_tracking_data(
                 video_id
             )
 
         async with file_lock.lock_file(map_video, timeout=1):
             for frame in frame_data.frames:
+                for player in frame:
+                    if (assigned_alias := aliases.get(player.player_id)) is not None:
+                        player.team_id = assigned_alias.player_team
+
                 await data_renderer.asend(frame)
 
             try:
